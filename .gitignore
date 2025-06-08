@@ -1,3 +1,27 @@
+# Configuration
 /config/database.php
+
+# Uploads
 /uploads/*
+!/uploads/.gitkeep
+
+# IDE
+.vscode/sftp.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log
+error_log
+
+# Dependencies
+/vendor/
+node_modules/
+
+# Environment
+.env
