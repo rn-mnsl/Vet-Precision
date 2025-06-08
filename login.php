@@ -35,125 +35,296 @@ $pageTitle = 'Login - ' . SITE_NAME;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
-    <!-- <link rel="stylesheet" href="assets/css/style.css"> -->
     <style>
-        body {
-            background-color: #f5f5f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        * {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .login-container {
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FFF5F5 0%, #F0FFFF 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
             background: white;
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 400px;
+            animation: fadeIn 0.5s ease-out;
         }
-        .logo {
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-logo {
             text-align: center;
             margin-bottom: 30px;
         }
-        .logo-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
+
+        .auth-logo-icon {
+            font-size: 60px;
+            display: block;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
         }
-        .logo h1 {
-            color: #2c3e50;
-            margin: 0;
-            font-size: 24px;
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
-        .logo p {
-            color: #7f8c8d;
-            margin: 5px 0 0 0;
-            font-size: 14px;
+
+        .auth-logo h1 {
+            color: #FF6B6B;
+            font-size: 28px;
+            margin-bottom: 5px;
         }
+
+        .auth-logo p {
+            color: #666;
+            font-size: 16px;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
+
         .form-label {
             display: block;
             margin-bottom: 8px;
-            color: #555;
+            color: #333;
             font-weight: 500;
+            font-size: 14px;
         }
+
         .form-control {
             width: 100%;
-            padding: 10px 15px;
+            padding: 12px 15px;
             border: 2px solid #e0e0e0;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s ease;
+            font-family: inherit;
         }
+
         .form-control:focus {
             outline: none;
-            border-color: #3498db;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
         }
+
         .form-control.is-invalid {
             border-color: #e74c3c;
         }
+
         .invalid-feedback {
             color: #e74c3c;
-            font-size: 14px;
+            font-size: 13px;
             margin-top: 5px;
+            display: block;
         }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+
         .btn {
-            width: 100%;
-            padding: 12px;
+            display: inline-block;
+            padding: 12px 24px;
             border: none;
-            border-radius: 6px;
+            border-radius: 50px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
         }
+
         .btn-primary {
-            background-color: #3498db;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #FF6B6B;
+            border: 2px solid #FF6B6B;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover {
+            background: #FF6B6B;
             color: white;
         }
-        .btn-primary:hover {
-            background-color: #2980b9;
-        }
+
         .alert {
             padding: 12px 15px;
-            border-radius: 6px;
+            border-radius: 8px;
             margin-bottom: 20px;
+            font-size: 14px;
         }
+
         .alert-danger {
             background-color: #fee;
             color: #c33;
             border: 1px solid #fcc;
         }
+
         .alert-warning {
             background-color: #fffbf0;
             color: #856404;
             border: 1px solid #ffeeba;
         }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
         .text-center {
             text-align: center;
         }
+
+        .text-muted {
+            color: #6c757d;
+        }
+
         .mt-3 {
             margin-top: 20px;
         }
+
+        .mt-4 {
+            margin-top: 30px;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            color: #999;
+            font-size: 14px;
+        }
+
         a {
-            color: #3498db;
+            color: #FF6B6B;
             text-decoration: none;
         }
+
         a:hover {
             text-decoration: underline;
+        }
+
+        .back-link {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        /* Paw pattern decorations */
+        .paw-pattern {
+            position: fixed;
+            opacity: 0.05;
+            font-size: 40px;
+            animation: float 10s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 30px 20px;
+            }
+            
+            .auth-logo h1 {
+                font-size: 24px;
+            }
+            
+            .form-control {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">
-            <div class="logo-icon">🐾</div>
+    <!-- Decorative paw prints -->
+    <div class="paw-pattern" style="top: 10%; left: 10%; animation-delay: 0s;">🐾</div>
+    <div class="paw-pattern" style="top: 20%; right: 15%; animation-delay: 2s;">🐾</div>
+    <div class="paw-pattern" style="bottom: 20%; left: 20%; animation-delay: 4s;">🐾</div>
+    <div class="paw-pattern" style="bottom: 10%; right: 10%; animation-delay: 6s;">🐾</div>
+    
+    <div class="auth-container">
+        <div class="auth-logo">
+            <span class="auth-logo-icon">🐾</span>
             <h1>Vet Precision</h1>
-            <p>Pet Health Management System</p>
+            <p>Welcome back! Please login to continue.</p>
         </div>
 
         <?php if ($flash = getFlash()): ?>
@@ -177,6 +348,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
                     name="email" 
                     class="form-control <?php echo isset($errors['email']) ? 'is-invalid' : ''; ?>"
                     value="<?php echo sanitize($_POST['email'] ?? ''); ?>"
+                    placeholder="Enter your email"
                     required
                     autofocus
                 >
@@ -192,6 +364,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
                     id="password" 
                     name="password" 
                     class="form-control <?php echo isset($errors['password']) ? 'is-invalid' : ''; ?>"
+                    placeholder="Enter your password"
                     required
                 >
                 <?php if (isset($errors['password'])): ?>
@@ -199,15 +372,29 @@ $pageTitle = 'Login - ' . SITE_NAME;
                 <?php endif; ?>
             </div>
 
-            <button type="submit" class="btn btn-primary">Login</button>
+            <div class="checkbox-group">
+                <input type="checkbox" id="remember" name="remember" value="1">
+                <label for="remember">Remember me</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Login to Your Account</button>
         </form>
 
+        <div class="divider">
+            <span>or</span>
+        </div>
+
+        <div class="text-center">
+            <p class="text-muted">Don't have an account?</p>
+            <a href="register.php" class="btn btn-secondary">Create Account</a>
+        </div>
+
         <div class="text-center mt-3">
-            <p>Don't have an account? <a href="register.php">Register here</a></p>
+            <a href="index.php" class="back-link">← Back to Home</a>
         </div>
 
         <!-- Test credentials for development -->
-        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 6px; font-size: 14px;">
+        <div class="alert alert-info mt-4">
             <strong>Test Accounts:</strong><br>
             Staff: admin@vetprecision.com / password123<br>
             Client: client1@example.com / password123

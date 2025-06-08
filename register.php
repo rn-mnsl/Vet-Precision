@@ -43,139 +43,33 @@ $pageTitle = 'Register - ' . SITE_NAME;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
-    <style>
-        body {
-            background-color: #f5f5f5;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-        .register-container {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
-        }
-        .logo h1 {
-            color: #2c3e50;
-            margin: 0;
-            font-size: 24px;
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-        }
-        .required {
-            color: #e74c3c;
-        }
-        .form-control {
-            width: 100%;
-            padding: 10px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-            box-sizing: border-box;
-        }
-        .form-control:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-        .form-control.is-invalid {
-            border-color: #e74c3c;
-        }
-        .invalid-feedback {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .btn-primary {
-            background-color: #3498db;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #2980b9;
-        }
-        .alert {
-            padding: 12px 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-        .alert-danger {
-            background-color: #fee;
-            color: #c33;
-            border: 1px solid #fcc;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .mt-3 {
-            margin-top: 20px;
-        }
-        a {
-            color: #3498db;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        @media (max-width: 600px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
-<body>
-    <div class="register-container">
-        <div class="logo">
-            <div class="logo-icon">🐾</div>
-            <h1>Vet Precision</h1>
-            <p>Create Your Account</p>
+<body class="auth-page">
+    <!-- Decorative paw prints -->
+    <div class="paw-pattern" style="top: 5%; left: 5%; animation-delay: 0s;">🐾</div>
+    <div class="paw-pattern" style="top: 15%; right: 10%; animation-delay: 1s;">🐾</div>
+    <div class="paw-pattern" style="bottom: 15%; left: 10%; animation-delay: 2s;">🐾</div>
+    <div class="paw-pattern" style="bottom: 5%; right: 5%; animation-delay: 3s;">🐾</div>
+    
+    <div class="auth-container register animate-fadeIn">
+        <div class="auth-logo">
+            <span class="auth-logo-icon">🐾</span>
+            <h1>Join Vet Precision</h1>
+            <p>Create your account to start caring for your pets</p>
         </div>
 
         <?php if (isset($errors['general'])): ?>
-            <div class="alert alert-danger">
+            <div class="alert alert-danger animate-fadeIn">
                 <?php echo sanitize($errors['general']); ?>
             </div>
         <?php endif; ?>
 
         <form method="POST" action="">
+            <h3 class="mb-3">Personal Information</h3>
             <div class="form-row">
                 <div class="form-group">
                     <label for="first_name" class="form-label">
-                        First Name <span class="required">*</span>
+                        First Name <span class="text-danger">*</span>
                     </label>
                     <input 
                         type="text" 
@@ -184,6 +78,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
                         class="form-control <?php echo isset($errors['first_name']) ? 'is-invalid' : ''; ?>"
                         value="<?php echo sanitize($_POST['first_name'] ?? ''); ?>"
                         required
+                        placeholder="John"
                     >
                     <?php if (isset($errors['first_name'])): ?>
                         <div class="invalid-feedback"><?php echo sanitize($errors['first_name']); ?></div>
@@ -192,7 +87,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
 
                 <div class="form-group">
                     <label for="last_name" class="form-label">
-                        Last Name <span class="required">*</span>
+                        Last Name <span class="text-danger">*</span>
                     </label>
                     <input 
                         type="text" 
@@ -201,6 +96,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
                         class="form-control <?php echo isset($errors['last_name']) ? 'is-invalid' : ''; ?>"
                         value="<?php echo sanitize($_POST['last_name'] ?? ''); ?>"
                         required
+                        placeholder="Doe"
                     >
                     <?php if (isset($errors['last_name'])): ?>
                         <div class="invalid-feedback"><?php echo sanitize($errors['last_name']); ?></div>
@@ -208,9 +104,10 @@ $pageTitle = 'Register - ' . SITE_NAME;
                 </div>
             </div>
 
+            <h3 class="mb-3 mt-4">Account Details</h3>
             <div class="form-group">
                 <label for="email" class="form-label">
-                    Email Address <span class="required">*</span>
+                    Email Address <span class="text-danger">*</span>
                 </label>
                 <input 
                     type="email" 
@@ -219,6 +116,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
                     class="form-control <?php echo isset($errors['email']) ? 'is-invalid' : ''; ?>"
                     value="<?php echo sanitize($_POST['email'] ?? ''); ?>"
                     required
+                    placeholder="john.doe@example.com"
                 >
                 <?php if (isset($errors['email'])): ?>
                     <div class="invalid-feedback"><?php echo sanitize($errors['email']); ?></div>
@@ -228,7 +126,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
             <div class="form-row">
                 <div class="form-group">
                     <label for="password" class="form-label">
-                        Password <span class="required">*</span>
+                        Password <span class="text-danger">*</span>
                     </label>
                     <input 
                         type="password" 
@@ -236,6 +134,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
                         name="password" 
                         class="form-control <?php echo isset($errors['password']) ? 'is-invalid' : ''; ?>"
                         required
+                        placeholder="Min. 6 characters"
                     >
                     <?php if (isset($errors['password'])): ?>
                         <div class="invalid-feedback"><?php echo sanitize($errors['password']); ?></div>
@@ -244,7 +143,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
 
                 <div class="form-group">
                     <label for="confirm_password" class="form-label">
-                        Confirm Password <span class="required">*</span>
+                        Confirm Password <span class="text-danger">*</span>
                     </label>
                     <input 
                         type="password" 
@@ -252,6 +151,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
                         name="confirm_password" 
                         class="form-control <?php echo isset($errors['confirm_password']) ? 'is-invalid' : ''; ?>"
                         required
+                        placeholder="Re-enter password"
                     >
                     <?php if (isset($errors['confirm_password'])): ?>
                         <div class="invalid-feedback"><?php echo sanitize($errors['confirm_password']); ?></div>
@@ -259,6 +159,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
                 </div>
             </div>
 
+            <h3 class="mb-3 mt-4">Contact Information</h3>
             <div class="form-group">
                 <label for="phone" class="form-label">Phone Number</label>
                 <input 
@@ -282,6 +183,7 @@ $pageTitle = 'Register - ' . SITE_NAME;
                     name="address" 
                     class="form-control"
                     value="<?php echo sanitize($_POST['address'] ?? ''); ?>"
+                    placeholder="123 Main Street, Barangay"
                 >
             </div>
 
@@ -297,12 +199,17 @@ $pageTitle = 'Register - ' . SITE_NAME;
                 >
             </div>
 
-            <button type="submit" class="btn btn-primary">Create Account</button>
+            <button type="submit" class="btn btn-primary btn-lg btn-block mt-4">Create Account</button>
         </form>
 
+        <div class="text-center mt-4">
+            <p class="text-muted">Already have an account?</p>
+            <a href="login.php" class="btn btn-secondary">Login Instead</a>
+        </div>
+
         <div class="text-center mt-3">
-            <p>Already have an account? <a href="login.php">Login here</a></p>
+            <a href="index.php" class="text-muted">← Back to Home</a>
         </div>
     </div>
 </body>
-</html> 
+</html>
