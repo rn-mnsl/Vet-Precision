@@ -1,0 +1,3 @@
+@echo off
+echo Starting SSH tunnel to Lightsail MySQL...
+ssh -N -L 3308:localhost:3306 bitnami@vet-precision.roanmanansala.com -i "~/.ssh/vet-precision.pem"

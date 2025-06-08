@@ -1,7 +1,12 @@
 <?php
 // Application constants
 define('SITE_NAME', 'Vet Precision');
-define('SITE_URL', 'http://vet-precision.roanmanansala.com/vet-precision');
+
+$scheme = isset($_SERVER['HTTPS']) ? 'https' : 'http';
+$host   = $_SERVER['HTTP_HOST'];         // localhost *or* vet-precision.roanmanansala.com
+$base   = '/vet-precision';              // folder where the app lives
+define('SITE_URL', "$scheme://$host$base");
+
 define('ADMIN_EMAIL', 'admin@vetprecision.com');
 
 // Paths
