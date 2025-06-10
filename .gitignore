@@ -1,6 +1,3 @@
-# Configuration
-/config/database.php
-
 # Uploads
 /uploads/*
 !/uploads/.gitkeep
