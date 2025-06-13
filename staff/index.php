@@ -73,6 +73,30 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute();
 $recent_activities = $stmt->fetchAll();
+
+// Helper function for time ago
+function timeAgo($timestamp) {
+    $time_ago = strtotime($timestamp);
+    $current_time = time();
+    $time_difference = $current_time - $time_ago;
+    $seconds = $time_difference;
+    
+    $minutes = round($seconds / 60);
+    $hours = round($seconds / 3600);
+    $days = round($seconds / 86400);
+    
+    if ($seconds <= 60) {
+        return "Just now";
+    } else if ($minutes <= 60) {
+        return $minutes == 1 ? "1 minute ago" : "$minutes minutes ago";
+    } else if ($hours <= 24) {
+        return $hours == 1 ? "1 hour ago" : "$hours hours ago";
+    } else if ($days <= 7) {
+        return $days == 1 ? "Yesterday" : "$days days ago";
+    } else {
+        return date('M j, Y', $time_ago);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -81,16 +105,23 @@ $recent_activities = $stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
+   <style>
         /* Dashboard specific styles */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             background-color: var(--light-color);
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         .dashboard-layout {
-            display: grid;
-            grid-template-columns: 250px 1fr;
+            display: flex;
             min-height: 100vh;
+            width: 100%;
         }
 
         /* Sidebar */
@@ -98,10 +129,14 @@ $recent_activities = $stmt->fetchAll();
             background: var(--dark-color);
             color: white;
             padding: 2rem 0;
-            position: fixed;
-            height: 100vh;
             width: 250px;
+            min-width: 250px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
             overflow-y: auto;
+            z-index: 1000;
         }
 
         .sidebar-header {
@@ -135,6 +170,7 @@ $recent_activities = $stmt->fetchAll();
         .sidebar-menu {
             list-style: none;
             padding: 1.5rem 0;
+            margin: 0;
         }
 
         .sidebar-menu li {
@@ -168,6 +204,10 @@ $recent_activities = $stmt->fetchAll();
         .main-content {
             margin-left: 250px;
             padding: 2rem;
+            flex: 1;
+            width: calc(100% - 250px);
+            min-height: 100vh;
+            background-color: var(--light-color);
         }
 
         .welcome-header {
@@ -179,29 +219,96 @@ $recent_activities = $stmt->fetchAll();
             display: flex;
             justify-content: space-between;
             align-items: center;
+            width: 100%;
         }
 
         .welcome-header h1 {
             margin-bottom: 0.5rem;
+            color: var(--text-dark);
+            font-size: 2rem;
         }
 
         .welcome-header p {
             color: var(--text-light);
             margin: 0;
+            font-size: 1rem;
         }
 
-        /* Quick Actions */
+        /* Statistics Grid - FIXED */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: all var(--transition-base);
+            border: 1px solid var(--gray-light);
+            min-height: 120px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--light-color);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .stat-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* Quick Actions - FIXED */
         .quick-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
             margin-bottom: 2rem;
+            width: 100%;
         }
 
         .quick-action-btn {
             background: white;
             border: 2px solid var(--gray-light);
-            padding: 1.5rem;
+            padding: 2rem 1.5rem;
             border-radius: var(--radius-lg);
             text-align: center;
             text-decoration: none;
@@ -210,7 +317,9 @@ $recent_activities = $stmt->fetchAll();
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: 1rem;
+            min-height: 140px;
         }
 
         .quick-action-btn:hover {
@@ -218,18 +327,31 @@ $recent_activities = $stmt->fetchAll();
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
             text-decoration: none;
+            color: var(--text-dark);
         }
 
         .quick-action-btn .icon {
-            font-size: 2rem;
+            font-size: 2.5rem;
             color: var(--primary-color);
         }
 
-        /* Dashboard Grid */
+        .quick-action-btn span {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* Dashboard Grid - FIXED */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1fr 350px;
+            grid-template-columns: 2fr 1fr;
             gap: 2rem;
+            width: 100%;
+            align-items: start;
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
         }
 
         /* Appointments Table */
@@ -238,18 +360,26 @@ $recent_activities = $stmt->fetchAll();
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
             overflow: hidden;
+            width: 100%;
         }
 
         .card-header {
             padding: 1.5rem;
             border-bottom: 1px solid var(--gray-light);
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 1.25rem;
         }
 
         .appointments-table {
             width: 100%;
+            border-collapse: collapse;
         }
 
         .appointments-table th {
@@ -266,6 +396,7 @@ $recent_activities = $stmt->fetchAll();
         .appointments-table td {
             padding: 1rem;
             border-bottom: 1px solid var(--gray-light);
+            vertical-align: top;
         }
 
         .appointments-table tr:hover {
@@ -292,17 +423,18 @@ $recent_activities = $stmt->fetchAll();
             background: white;
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
+            width: 100%;
         }
 
         .activity-list {
-            padding: 1rem;
+            padding: 0;
         }
 
         .activity-item {
             display: flex;
-            align-items: start;
+            align-items: flex-start;
             gap: 1rem;
-            padding: 1rem;
+            padding: 1rem 1.5rem;
             border-bottom: 1px solid var(--gray-light);
         }
 
@@ -345,21 +477,124 @@ $recent_activities = $stmt->fetchAll();
             color: var(--text-light);
         }
 
+        /* Utility classes */
+        .mb-4 {
+            margin-bottom: 2rem;
+        }
+
+        .p-4 {
+            padding: 1.5rem;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-primary {
+            color: var(--primary-color) !important;
+            text-decoration: none;
+        }
+
+        .text-primary:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .text-dark {
+            color: var(--text-dark) !important;
+        }
+
+        .text-muted {
+            color: var(--text-light) !important;
+        }
+
+        .small {
+            font-size: 0.875rem;
+        }
+
+        /* Status badges */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-requested {
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: rgba(40, 167, 69, 0.1);
+            color: #155724;
+        }
+
+        .status-completed {
+            background: rgba(23, 162, 184, 0.1);
+            color: #0c5460;
+        }
+
+        .status-cancelled {
+            background: rgba(220, 53, 69, 0.1);
+            color: #721c24;
+        }
+
+        /* Button styles */
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-weight: 600;
+            text-align: center;
+            transition: all var(--transition-base);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            color: white;
+            text-decoration: none;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 1200px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
             .dashboard-layout {
-                grid-template-columns: 1fr;
+                display: block;
             }
 
             .sidebar {
                 transform: translateX(-100%);
                 transition: transform var(--transition-base);
+                position: fixed;
             }
 
             .sidebar.active {
@@ -368,14 +603,49 @@ $recent_activities = $stmt->fetchAll();
 
             .main-content {
                 margin-left: 0;
+                width: 100%;
+                padding: 1rem;
             }
 
             .stats-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .stat-card {
+                padding: 1.5rem;
+                min-height: 100px;
+            }
+
+            .stat-icon {
+                font-size: 2rem;
+                width: 50px;
+                height: 50px;
+            }
+
+            .stat-number {
+                font-size: 1.75rem;
             }
 
             .quick-actions {
                 grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            .quick-action-btn {
+                padding: 1.5rem 1rem;
+                min-height: 120px;
+            }
+
+            .welcome-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1.5rem;
+            }
+
+            .welcome-header h1 {
+                font-size: 1.5rem;
             }
 
             .mobile-menu-toggle {
@@ -387,9 +657,10 @@ $recent_activities = $stmt->fetchAll();
                 background: var(--primary-color);
                 color: white;
                 border: none;
-                padding: 0.5rem;
+                padding: 0.75rem;
                 border-radius: var(--radius-sm);
                 cursor: pointer;
+                font-size: 1.25rem;
             }
         }
     </style>
@@ -413,7 +684,7 @@ $recent_activities = $stmt->fetchAll();
             </div>
 
             <!-- Statistics -->
-            <div class="stats-grid mb-4">
+            <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">📅</div>
                     <div class="stat-content">
@@ -556,31 +827,5 @@ $recent_activities = $stmt->fetchAll();
             </div>
         </main>
     </div>
-
-    <?php
-    // Helper function for time ago
-    function timeAgo($timestamp) {
-        $time_ago = strtotime($timestamp);
-        $current_time = time();
-        $time_difference = $current_time - $time_ago;
-        $seconds = $time_difference;
-        
-        $minutes = round($seconds / 60);
-        $hours = round($seconds / 3600);
-        $days = round($seconds / 86400);
-        
-        if ($seconds <= 60) {
-            return "Just now";
-        } else if ($minutes <= 60) {
-            return $minutes == 1 ? "1 minute ago" : "$minutes minutes ago";
-        } else if ($hours <= 24) {
-            return $hours == 1 ? "1 hour ago" : "$hours hours ago";
-        } else if ($days <= 7) {
-            return $days == 1 ? "Yesterday" : "$days days ago";
-        } else {
-            return date('M j, Y', $time_ago);
-        }
-    }
-    ?>
 </body>
 </html>

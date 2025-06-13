@@ -396,8 +396,8 @@ $pageTitle = 'Login - ' . SITE_NAME;
         <!-- Test credentials for development -->
         <div class="alert alert-info mt-4">
             <strong>Test Accounts:</strong><br>
-            Staff: admin@vetprecision.com / password123<br>
-            Client: client1@example.com / password123
+staff - manansalarin@gmail.com - password123 <br>
+client - ryan.percival@gmail.com - password1234 
         </div>
     </div>
 </body>

@@ -56,32 +56,40 @@ $past_appointments = $stmt->fetchAll();
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
-        /* Client Dashboard Specific Styles */
-        body {
-            background-color: var(--light-color);
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* Dashboard Layout */
         .dashboard-layout {
-            display: grid;
-            grid-template-columns: 250px 1fr;
+            display: flex;
             min-height: 100vh;
         }
 
-        /* Sidebar - Using similar style but with primary color */
+        /* Sidebar Styles */
         .sidebar {
-            background: var(--gradient-primary);
+            width: 250px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
             color: white;
-            padding: 2rem 0;
             position: fixed;
             height: 100vh;
-            width: 250px;
             overflow-y: auto;
+            z-index: 100;
         }
 
         .sidebar-header {
-            padding: 0 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding: 2rem 1.5rem;
             text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
         .sidebar-logo {
@@ -93,7 +101,7 @@ $past_appointments = $stmt->fetchAll();
             font-weight: 700;
             color: white;
             text-decoration: none;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .sidebar-logo:hover {
@@ -108,28 +116,28 @@ $past_appointments = $stmt->fetchAll();
 
         .sidebar-menu {
             list-style: none;
-            padding: 1.5rem 0;
+            padding: 1rem 0;
+            margin: 0;
         }
 
         .sidebar-menu li {
-            margin-bottom: 0.25rem;
+            margin: 0;
         }
 
         .sidebar-menu a {
             display: flex;
             align-items: center;
             gap: 1rem;
-            padding: 0.75rem 1.5rem;
+            padding: 1rem 1.5rem;
             color: rgba(255,255,255,0.9);
             text-decoration: none;
-            transition: all var(--transition-base);
+            transition: all 0.3s ease;
         }
 
         .sidebar-menu a:hover,
         .sidebar-menu a.active {
             background: rgba(255,255,255,0.2);
             color: white;
-            border-left: 3px solid white;
         }
 
         .sidebar-menu .icon {
@@ -141,15 +149,18 @@ $past_appointments = $stmt->fetchAll();
         /* Main Content */
         .main-content {
             margin-left: 250px;
+            flex: 1;
             padding: 2rem;
+            background-color: #f5f5f5;
+            min-height: 100vh;
         }
 
         /* Welcome Section */
         .welcome-section {
             background: white;
             padding: 2.5rem;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
             margin-bottom: 2rem;
             background-image: linear-gradient(135deg, #FFF5F5 0%, #F0FFFF 100%);
             position: relative;
@@ -168,19 +179,100 @@ $past_appointments = $stmt->fetchAll();
 
         .welcome-content h1 {
             margin-bottom: 0.5rem;
-            color: var(--primary-color);
+            color: #FF6B6B;
+            font-size: 2rem;
         }
 
         .welcome-content p {
-            color: var(--text-light);
+            color: #666;
             margin-bottom: 1.5rem;
         }
 
-        /* Pet Cards */
-        .pets-section {
-            margin-bottom: 3rem;
+        /* Button Styles */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
         }
 
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #FF6B6B;
+            border: 2px solid #FF6B6B;
+        }
+
+        .btn-secondary:hover {
+            background: #FF6B6B;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .quick-action-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .quick-action-card:hover {
+            border-color: #FF6B6B;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-decoration: none;
+        }
+
+        .quick-action-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .quick-action-card h4 {
+            margin: 0.5rem 0;
+            color: #333;
+        }
+
+        .quick-action-card p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        /* Section Headers */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -188,28 +280,35 @@ $past_appointments = $stmt->fetchAll();
             margin-bottom: 1.5rem;
         }
 
+        .section-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        /* Pet Cards */
         .pet-cards {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1.5rem;
+            margin-bottom: 3rem;
         }
 
         .pet-card {
             background: white;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
             overflow: hidden;
-            transition: all var(--transition-base);
-            position: relative;
+            transition: all 0.3s ease;
         }
 
         .pet-card:hover {
             transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
 
         .pet-card-header {
-            background: var(--gradient-secondary);
+            background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
             padding: 1.5rem;
             text-align: center;
             color: white;
@@ -227,6 +326,11 @@ $past_appointments = $stmt->fetchAll();
             font-size: 2.5rem;
         }
 
+        .pet-card-header h3 {
+            margin: 0;
+            color: white;
+        }
+
         .pet-card-body {
             padding: 1.5rem;
         }
@@ -235,16 +339,17 @@ $past_appointments = $stmt->fetchAll();
             display: flex;
             justify-content: space-between;
             margin-bottom: 0.5rem;
-            color: var(--text-light);
+            color: #666;
+            font-size: 0.875rem;
         }
 
         .pet-info-row strong {
-            color: var(--text-dark);
+            color: #333;
         }
 
         .pet-card-footer {
             padding: 1rem 1.5rem;
-            background: var(--light-color);
+            background: #f8f9fa;
             display: flex;
             gap: 0.5rem;
         }
@@ -252,31 +357,46 @@ $past_appointments = $stmt->fetchAll();
         /* Appointments Section */
         .appointments-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 2rem;
+            margin-bottom: 2rem;
         }
 
         .appointment-card {
             background: white;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.25rem;
         }
 
         .appointment-list {
-            padding: 1rem;
+            padding: 0;
         }
 
         .appointment-item {
             display: flex;
-            justify-content: space-between;
-            align-items: start;
-            padding: 1rem;
-            border-bottom: 1px solid var(--gray-light);
-            transition: background var(--transition-base);
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.3s ease;
         }
 
         .appointment-item:hover {
-            background: var(--light-color);
+            background: #f8f9fa;
         }
 
         .appointment-item:last-child {
@@ -288,10 +408,11 @@ $past_appointments = $stmt->fetchAll();
             flex-direction: column;
             align-items: center;
             padding: 0.5rem;
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
             color: white;
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             min-width: 60px;
+            margin-right: 1rem;
         }
 
         .appointment-date .day {
@@ -307,89 +428,93 @@ $past_appointments = $stmt->fetchAll();
 
         .appointment-details {
             flex: 1;
-            margin-left: 1rem;
         }
 
         .appointment-pet {
             font-weight: 600;
-            color: var(--text-dark);
+            color: #333;
             margin-bottom: 0.25rem;
         }
 
         .appointment-time {
             font-size: 0.875rem;
-            color: var(--text-light);
+            color: #666;
         }
 
         .appointment-status {
-            margin-left: 1rem;
+            margin-left: auto;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .status-requested {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-completed {
+            background: #cce5ff;
+            color: #004085;
         }
 
         /* Empty States */
         .empty-state {
             text-align: center;
             padding: 3rem;
-            color: var(--text-light);
+            color: #666;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
 
         .empty-state-icon {
             font-size: 3rem;
             opacity: 0.5;
             margin-bottom: 1rem;
+            display: block;
+        }
+
+        .empty-state h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
         }
 
         .empty-state p {
             margin-bottom: 1.5rem;
         }
 
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .quick-action-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            text-align: center;
-            text-decoration: none;
-            color: var(--text-dark);
-            transition: all var(--transition-base);
-            border: 2px solid transparent;
-        }
-
-        .quick-action-card:hover {
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            text-decoration: none;
-        }
-
-        .quick-action-icon {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
         /* Mobile Responsive */
-        @media (max-width: 1200px) {
-            .appointments-grid {
-                grid-template-columns: 1fr;
-            }
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 101;
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.5rem;
         }
 
         @media (max-width: 768px) {
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
-
             .sidebar {
                 transform: translateX(-100%);
-                transition: transform var(--transition-base);
+                transition: transform 0.3s ease;
             }
 
             .sidebar.active {
@@ -398,36 +523,99 @@ $past_appointments = $stmt->fetchAll();
 
             .main-content {
                 margin-left: 0;
+                padding: 1rem;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .pet-cards {
                 grid-template-columns: 1fr;
             }
 
-            .quick-actions {
-                grid-template-columns: 1fr 1fr;
+            .appointments-grid {
+                grid-template-columns: 1fr;
             }
 
-            .mobile-menu-toggle {
-                display: block;
-                position: fixed;
-                top: 1rem;
-                left: 1rem;
-                z-index: 1001;
-                background: var(--primary-color);
-                color: white;
-                border: none;
-                padding: 0.5rem;
-                border-radius: var(--radius-sm);
-                cursor: pointer;
+            .welcome-section {
+                padding: 1.5rem;
+            }
+
+            .welcome-content h1 {
+                font-size: 1.5rem;
             }
         }
+
+        /* Utility Classes */
+        .mb-4 { margin-bottom: 2rem; }
+        .text-primary { color: #FF6B6B; }
+        .text-muted { color: #6c757d; }
+        .small { font-size: 0.875rem; }
     </style>
 </head>
 <body>
     <div class="dashboard-layout">
-        <!-- Include Sidebar -->
-        <?php include '../includes/sidebar-client.php'; ?>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="#" class="sidebar-logo">
+                    <span>🐾</span>
+                    <span>Vet Precision</span>
+                </a>
+                <div class="sidebar-user">
+                    Welcome, <?php echo sanitize($_SESSION['first_name']); ?>!
+                </div>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="index.php" class="active">
+                        <span class="icon">🏠</span>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pets/index.php">
+                        <span class="icon">🐾</span>
+                        <span>My Pets</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="appointments/index.php">
+                        <span class="icon">📅</span>
+                        <span>Appointments</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="medical/history.php">
+                        <span class="icon">📋</span>
+                        <span>Medical History</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="profile/index.php">
+                        <span class="icon">👤</span>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="../logout.php">
+                        <span class="icon">🚪</span>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
+            ☰
+        </button>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -436,7 +624,7 @@ $past_appointments = $stmt->fetchAll();
                 <div class="welcome-content">
                     <h1>Welcome back, <?php echo sanitize($_SESSION['first_name']); ?>!</h1>
                     <p>Manage your pets' health and appointments all in one place</p>
-                    <a href="appointments/book.php" class="btn btn-primary btn-lg">Book New Appointment</a>
+                    <a href="appointments/book.php" class="btn btn-primary">Book New Appointment</a>
                 </div>
             </div>
 
@@ -474,8 +662,8 @@ $past_appointments = $stmt->fetchAll();
                 </div>
 
                 <?php if (empty($pets)): ?>
-                    <div class="empty-state card">
-                        <div class="empty-state-icon">🐾</div>
+                    <div class="empty-state">
+                        <span class="empty-state-icon">🐾</span>
                         <h3>No Pets Added Yet</h3>
                         <p>Add your first pet to start managing their health records</p>
                         <a href="pets/add.php" class="btn btn-primary">Add Your First Pet</a>
@@ -551,7 +739,7 @@ $past_appointments = $stmt->fetchAll();
                         <div class="appointment-list">
                             <?php if (empty($upcoming_appointments)): ?>
                                 <div class="empty-state">
-                                    <div class="empty-state-icon">📅</div>
+                                    <span class="empty-state-icon">📅</span>
                                     <p>No upcoming appointments</p>
                                     <a href="appointments/book.php" class="btn btn-primary btn-sm">Book Appointment</a>
                                 </div>
@@ -591,7 +779,7 @@ $past_appointments = $stmt->fetchAll();
                         <div class="appointment-list">
                             <?php if (empty($past_appointments)): ?>
                                 <div class="empty-state">
-                                    <div class="empty-state-icon">📋</div>
+                                    <span class="empty-state-icon">📋</span>
                                     <p>No past appointments</p>
                                 </div>
                             <?php else: ?>
