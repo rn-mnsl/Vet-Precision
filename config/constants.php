@@ -1,11 +1,28 @@
 <?php
-// Application constants
+// Application constants for Lightsail Server
 define('SITE_NAME', 'Vet Precision');
 
-$scheme = isset($_SERVER['HTTPS']) ? 'https' : 'http';
-$host   = $_SERVER['HTTP_HOST'];         // localhost *or* vet-precision.roanmanansala.com
-$base   = '/vet-precision';              // folder where the app lives
-define('SITE_URL', "$scheme://$host$base");
+// Detect if we're on local development or production server
+$isLocal = (
+    $_SERVER['HTTP_HOST'] === 'localhost' || 
+    strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false ||
+    strpos($_SERVER['HTTP_HOST'], '.local') !== false
+);
+
+if ($isLocal) {
+    // Local development configuration
+    $scheme = isset($_SERVER['HTTPS']) ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'];
+    $base   = '/vet-precision';
+    define('SITE_URL', "$scheme://$host$base");
+} else {
+    // Production server configuration
+    // Use HTTP for now until SSL is fixed
+    $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host   = 'vet-precision.roanmanansala.com';
+    $base   = '/vet-precision';
+    define('SITE_URL', "$scheme://$host$base");
+}
 
 define('ADMIN_EMAIL', 'admin@vetprecision.com');
 

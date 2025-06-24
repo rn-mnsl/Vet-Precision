@@ -2,7 +2,7 @@
 require_once '../../config/init.php';
 // insert php here 
 
-$pageTitle = 'Owners- ' . SITE_NAME;
+$pageTitle = 'Medical - ' . SITE_NAME;
 
 
 
@@ -16,43 +16,40 @@ $pageTitle = 'Owners- ' . SITE_NAME;
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="../../assets/css/style.css">
     <style>
-                /* Dashboard specific styles */
+                /* Reset and Base Styles */
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
         body {
-            background-color: var(--light-color);
-            margin: 0;
-            padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
         }
 
+        /* Dashboard Layout */
         .dashboard-layout {
             display: flex;
             min-height: 100vh;
-            width: 100%;
         }
 
-        /* Sidebar */
+        /* Sidebar Styles */
         .sidebar {
-            background: var(--dark-color);
-            color: white;
-            padding: 2rem 0;
             width: 250px;
-            min-width: 250px;
-            height: 100vh;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
             position: fixed;
-            left: 0;
-            top: 0;
+            height: 100vh;
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 100;
         }
 
         .sidebar-header {
-            padding: 0 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 2rem 1.5rem;
             text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
         .sidebar-logo {
@@ -64,7 +61,7 @@ $pageTitle = 'Owners- ' . SITE_NAME;
             font-weight: 700;
             color: white;
             text-decoration: none;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .sidebar-logo:hover {
@@ -74,34 +71,33 @@ $pageTitle = 'Owners- ' . SITE_NAME;
 
         .sidebar-user {
             font-size: 0.9rem;
-            color: rgba(255,255,255,0.7);
+            color: rgba(255,255,255,0.9);
         }
 
         .sidebar-menu {
             list-style: none;
-            padding: 1.5rem 0;
+            padding: 1rem 0;
             margin: 0;
         }
 
         .sidebar-menu li {
-            margin-bottom: 0.25rem;
+            margin: 0;
         }
 
         .sidebar-menu a {
             display: flex;
             align-items: center;
             gap: 1rem;
-            padding: 0.75rem 1.5rem;
-            color: rgba(255,255,255,0.8);
+            padding: 1rem 1.5rem;
+            color: rgba(255,255,255,0.9);
             text-decoration: none;
-            transition: all var(--transition-base);
+            transition: all 0.3s ease;
         }
 
         .sidebar-menu a:hover,
         .sidebar-menu a.active {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.2);
             color: white;
-            border-left: 3px solid var(--primary-color);
         }
 
         .sidebar-menu .icon {
@@ -109,9 +105,21 @@ $pageTitle = 'Owners- ' . SITE_NAME;
             width: 1.5rem;
             text-align: center;
         }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 2rem;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* INSERT ALL THE OTHER CSS HERE */
+
     </style>
 </head>
 <body>
-    <!-- Include Sidebar -->
-    <?php include '../../includes/sidebar-staff.php'; ?>
+    <?php include '../../includes/sidebar-client.php'; ?>
+    <!-- INSERT ALL THE BODY HERE  -->
 </body>
