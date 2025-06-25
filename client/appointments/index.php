@@ -307,6 +307,16 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             padding: 0.25rem 0.75rem;
             font-size: 0.8rem;
         }
+        .cancel-appointment-btn {
+            background-color: #dc3545; /* A standard 'danger' red */
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .cancel-appointment-btn:hover {
+            background-color: #c82333; /* A slightly darker red for hover */
+            border-color: #c82333;
+        }
 
         .card {
             background-color: white; border-radius: 12px; padding: 2rem;
@@ -353,9 +363,9 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             background-color: #fff; font-weight: 500; color: #495057;
         }
         .time-slot input[type="radio"]:checked + label {
-            background-color: #007bff; color: white; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+            background-color: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0,123,255,.25);
         }
-        .time-slot label:hover { border-color: #007bff; }
+        .time-slot label:hover { border-color: var(--primary-color); }
 
 
         /* === NEW CSS FOR DISABLED TIME SLOTS === */
