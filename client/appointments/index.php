@@ -68,16 +68,58 @@ if ($owner_id) {
     $stmt_pets->execute([$owner_id]);
     $pets = $stmt_pets->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($action === 'list') {
-        $stmt_appts = $pdo->prepare("
-            SELECT a.*, p.name AS pet_name 
-            FROM appointments a
-            JOIN pets p ON a.pet_id = p.pet_id
-            WHERE p.owner_id = ? 
-            ORDER BY a.appointment_date DESC, a.appointment_time DESC
-        ");
-        $stmt_appts->execute([$owner_id]);
-        $appointments = $stmt_appts->fetchAll(PDO::FETCH_ASSOC);
+        if ($action === 'list') {
+        // --- PAGINATION LOGIC START ---
+        $items_per_page = 5; // Define how many appointments to show per page
+        $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        if ($current_page < 1) $current_page = 1;
+
+        // 1. Get the total number of appointments for this specific owner
+        $total_items = 0;
+        $total_pages = 1;
+        try {
+            $count_stmt = $pdo->prepare("
+                SELECT COUNT(a.appointment_id) 
+                FROM appointments a
+                JOIN pets p ON a.pet_id = p.pet_id
+                WHERE p.owner_id = ?
+            ");
+            $count_stmt->execute([$owner_id]);
+            $total_items = (int)$count_stmt->fetchColumn();
+            if ($total_items > 0) {
+                 $total_pages = ceil($total_items / $items_per_page);
+            }
+           
+        } catch (PDOException $e) {
+            $errors[] = "Could not retrieve appointment count.";
+        }
+        
+        // 2. Calculate the offset for the SQL query
+        $offset = ($current_page - 1) * $items_per_page;
+        // --- PAGINATION LOGIC END ---
+
+        // 3. Fetch the paginated results for the current page
+        try {
+            $stmt_appts = $pdo->prepare("
+                SELECT a.*, p.name AS pet_name 
+                FROM appointments a
+                JOIN pets p ON a.pet_id = p.pet_id
+                WHERE p.owner_id = :owner_id 
+                ORDER BY a.appointment_date DESC, a.appointment_time DESC
+                LIMIT :limit OFFSET :offset
+            ");
+            
+            // Bind parameters using ONLY named placeholders
+            $stmt_appts->bindParam(':owner_id', $owner_id, PDO::PARAM_INT);
+            $stmt_appts->bindParam(':limit', $items_per_page, PDO::PARAM_INT);
+            $stmt_appts->bindParam(':offset', $offset, PDO::PARAM_INT);
+            $stmt_appts->execute();
+            
+            $appointments = $stmt_appts->fetchAll(PDO::FETCH_ASSOC);
+
+        } catch (PDOException $e) {
+            $errors[] = "Could not retrieve appointments.";
+        }
     }
 } else {
     $errors[] = "Could not find your owner profile. Please contact support.";
@@ -127,77 +169,6 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             background-color: #f8f9fa;
             min-height: 100vh;
         }
-
-        /* ----- 2.  SIDEBAR STYLES ----- */
-        .sidebar {
-            width: 250px;
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
-            color: white;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            z-index: 100;
-        }
-
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            margin-bottom: 0.5rem;
-        }
-
-        .sidebar-logo:hover {
-            color: white;
-            text-decoration: none;
-        }
-
-        .sidebar-user {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.9);
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 1rem 0;
-            margin: 0;
-        }
-
-        .sidebar-menu li {
-            margin: 0;
-        }
-
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.5rem;
-            color: rgba(255,255,255,0.9);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .sidebar-menu .icon {
-            font-size: 1.25rem;
-            width: 1.5rem;
-            text-align: center;
-        }
         
         /* ----- 3. PAGE-SPECIFIC STYLES (FOR APPOINTMENTS CONTENT) ----- */
         .page-header {
@@ -217,10 +188,24 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex;
             align-items: center; gap: 0.5rem; transition: all 0.2s ease-in-out;
         }
-        .btn-primary { background-color: #007bff; color: white; }
+        .btn-primary { background-color: var(--primary-color);; color: white; }
         .btn-primary:hover { background-color: #0056b3; }
         .btn-secondary { background-color: #f1f3f5; color: #495057; border: 1px solid #dee2e6; }
-        .btn-secondary:hover { background-color: #e9ecef; }
+        .btn-secondary:hover { background-color: var(--primary-color) }
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        .cancel-appointment-btn {
+            background-color: #dc3545; /* A standard 'danger' red */
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .cancel-appointment-btn:hover {
+            background-color: #c82333; /* A slightly darker red for hover */
+            border-color: #c82333;
+        }
 
         .card {
             background-color: white; border-radius: 12px; padding: 2rem;
@@ -267,9 +252,9 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             background-color: #fff; font-weight: 500; color: #495057;
         }
         .time-slot input[type="radio"]:checked + label {
-            background-color: #007bff; color: white; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+            background-color: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0,123,255,.25);
         }
-        .time-slot label:hover { border-color: #007bff; }
+        .time-slot label:hover { border-color: var(--primary-color); }
 
 
         /* === NEW CSS FOR DISABLED TIME SLOTS === */
@@ -302,6 +287,7 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
 </head>
 <body>
     <?php include '../../includes/sidebar-client.php'; ?>
+    <?php include '../../includes/navbar.php'; ?>
     <div class="main-content">
 
         <?php if ($action === 'create'): ?>
@@ -358,18 +344,55 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                                 <tr><td colspan="5" class="no-data">You have no upcoming appointments.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($appointments as $appt): ?>
-                                    <tr>
-                                        <td><strong><?php echo date("F j, Y", strtotime($appt['appointment_date'])); ?></strong><br><small><?php echo date("g:i A", strtotime($appt['appointment_time'])); ?></small></td>
+                                    <tr data-appointment-id="<?php echo $appt['appointment_id']; ?>">
+                                        <td>
+                                            <strong><?php echo date("F j, Y", strtotime($appt['appointment_date'])); ?></strong><br>
+                                            <small><?php echo date("g:i A", strtotime($appt['appointment_time'])); ?></small>
+                                        </td>
                                         <td><?php echo htmlspecialchars($appt['pet_name']); ?></td>
                                         <td><?php echo htmlspecialchars($appt['reason']); ?></td>
-                                        <td><span class="status-badge status-<?php echo htmlspecialchars(strtolower($appt['status'])); ?>"><?php echo htmlspecialchars($appt['status']); ?></span></td>
-                                        <td><a href="#" class="action-link">Cancel</a></td>
+                                        <td class="status-cell">
+                                            <span class="status-badge status-<?php echo htmlspecialchars(strtolower($appt['status'])); ?>">
+                                                <?php echo htmlspecialchars($appt['status']); ?>
+                                            </span>
+                                        </td>
+                                        <td class="action-cell">
+                                            <?php if (!in_array($appt['status'], ['cancelled', 'completed'])): ?>
+                                                <button class="btn btn-secondary btn-sm cancel-appointment-btn">Cancel</button>
+                                            <?php else: ?>
+                                                <span>-</span>
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
+                    <!-- PAGINATION CONTROLS START -->
+                    <?php if (isset($total_pages) && $total_pages > 1): ?>
+                        <div class="pagination-controls">
+                            <!-- Previous Button -->
+                            <a href="?page=<?php echo $current_page - 1; ?>" 
+                            class="pagination-link <?php echo ($current_page <= 1) ? 'disabled' : ''; ?>">
+                                « Previous
+                            </a>
+
+                            <!-- Page Number Links -->
+                            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                <a href="?page=<?php echo $i; ?>" 
+                                class="pagination-link <?php echo ($i == $current_page) ? 'active' : ''; ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            <?php endfor; ?>
+
+                            <!-- Next Button -->
+                            <a href="?page=<?php echo $current_page + 1; ?>" 
+                            class="pagination-link <?php echo ($current_page >= $total_pages) ? 'disabled' : ''; ?>">
+                                Next »
+                            </a>
+                        </div>
+                    <?php endif; ?> 
             </div>
             <div class="bottom-cards">
                 <div class="card">
@@ -442,6 +465,101 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
         dateInput.addEventListener('change', updateAvailableSlots);
         updateAvailableSlots();
     });
+
+        // This function can be reused from your staff panel for a consistent look
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            `;
+            
+            if (type === 'success') {
+                notification.style.backgroundColor = '#28a745'; // Green for success
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#dc3545'; // Red for error
+            }
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+
+        // New event listener for the cancel button
+        document.addEventListener('click', async function(e) {
+            // Target only our new cancel button
+            if (e.target.classList.contains('cancel-appointment-btn')) {
+                const button = e.target;
+                const row = button.closest('tr');
+                const appointmentId = row.dataset.appointmentId;
+                
+                if (!confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')) {
+                    return;
+                }
+
+                // Disable the button to prevent multiple clicks
+                button.disabled = true;
+                button.textContent = 'Cancelling...';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('appointment_id', appointmentId);
+                    
+                    // Call our new, secure AJAX endpoint
+                    const response = await fetch('ajax/cancel_appointment.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        // Update the UI without a page reload
+                        const statusCell = row.querySelector('.status-cell .status-badge');
+                        statusCell.textContent = 'cancelled';
+                        statusCell.className = 'status-badge status-cancelled';
+
+                        // Remove the button
+                        const actionCell = row.querySelector('.action-cell');
+                        actionCell.innerHTML = '<span>-</span>';
+                        
+                        showNotification('Appointment cancelled successfully!', 'success');
+                    } else {
+                        // Throw an error to be caught by the catch block
+                        throw new Error(result.error || 'An unknown error occurred.');
+                    }
+
+                } catch (error) {
+                    showNotification('Error: ' + error.message, 'error');
+                    // Re-enable the button if something went wrong
+                    button.disabled = false;
+                    button.textContent = 'Cancel';
+                }
+            }
+        });
+
     </script>
 
 </body>

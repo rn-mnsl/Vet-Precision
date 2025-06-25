@@ -114,4 +114,5 @@ $pageTitle = 'Owners- ' . SITE_NAME;
 <body>
     <!-- Include Sidebar -->
     <?php include '../../includes/sidebar-staff.php'; ?>
+    <?php include '../../includes/navbar.php'; ?>
 </body>
