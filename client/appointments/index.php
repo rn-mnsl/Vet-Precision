@@ -127,77 +127,6 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             background-color: #f8f9fa;
             min-height: 100vh;
         }
-
-        /* ----- 2.  SIDEBAR STYLES ----- */
-        .sidebar {
-            width: 250px;
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
-            color: white;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            z-index: 100;
-        }
-
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            margin-bottom: 0.5rem;
-        }
-
-        .sidebar-logo:hover {
-            color: white;
-            text-decoration: none;
-        }
-
-        .sidebar-user {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.9);
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 1rem 0;
-            margin: 0;
-        }
-
-        .sidebar-menu li {
-            margin: 0;
-        }
-
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.5rem;
-            color: rgba(255,255,255,0.9);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .sidebar-menu .icon {
-            font-size: 1.25rem;
-            width: 1.5rem;
-            text-align: center;
-        }
         
         /* ----- 3. PAGE-SPECIFIC STYLES (FOR APPOINTMENTS CONTENT) ----- */
         .page-header {
@@ -302,6 +231,7 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
 </head>
 <body>
     <?php include '../../includes/sidebar-client.php'; ?>
+    <?php include '../../includes/navbar.php'; ?>
     <div class="main-content">
 
         <?php if ($action === 'create'): ?>
