@@ -8,6 +8,7 @@ $pageTitle = 'Patients - ' . SITE_NAME;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
     <style>
         /* Dashboard specific styles */
@@ -276,12 +277,55 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             gap: 10px;
             margin-top: 20px;
         }
+
+
+        /* Pagination */
+        .pagination-controls {
+            display: flex;
+            justify-content: center; /* This centers the controls horizontally */
+            align-items: center;
+            gap: 0.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e9ecef; /* Matching table border color */
+        }
+        .pagination-link {
+            display: inline-flex; /* Helps center the icon */
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            color: var(--primary-color); /* Make sure --primary-color is defined */
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            min-width: 40px; /* Ensures consistent button size */
+            height: 40px;
+        }
+        .pagination-link:hover {
+            background-color: #f5f5f5;
+            border-color: #ccc;
+        }
+        .pagination-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            cursor: default;
+        }
+        .pagination-link.disabled {
+            color: #aaa;
+            pointer-events: none;
+            background-color: #f8f9fa;
+            border-color: #e9ecef;
+        }
+
     </style>
 </head>
 <body>
     <div class="dashboard-layout">
         <!-- Include Sidebar -->
         <?php include '../../includes/sidebar-staff.php'; ?>
+        <?php include '../../includes/navbar.php'; ?>
         
         <main class="main-content">
             <div class="container">
@@ -323,14 +367,14 @@ $pageTitle = 'Patients - ' . SITE_NAME;
                             <span></span>
                             <span>Show</span>
                             <select id="entriesPerPage" onchange="changeEntriesPerPage()">
-                                <option value="10">10</option>
+                                <option value="5">5</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>
                                 <option value="100">100</option>
                             </select>
                         </div>
-                        <div>
-                            <span></span>
+                        <div id="pagination-controls">
+                            <!-- Pagination buttons will be generated here by JavaScript -->
                         </div>
                     </div>
                 </div>
@@ -338,209 +382,322 @@ $pageTitle = 'Patients - ' . SITE_NAME;
         </main>
     </div>
 
-    <!-- Modal -->
+        <!-- Modal -->
     <div id="clientModal" class="modal hidden">
         <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-content">
-            <h2>Add New Client</h2>
-            <form id="clientForm">
-                <label>Name*</label>
-                <input type="text" placeholder="Enter name" required>
+            <h2 id="modalTitle">Add New Client</h2>
+            <form id="clientForm" novalidate>
+                <!-- Hidden input to store user_id during edits -->
+                <input type="hidden" name="user_id" id="user_id">
 
-                <label>Alternate Phone</label>
-                <input type="text" placeholder="+1">
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label for="first_name">First Name*</label>
+                        <input type="text" id="first_name" name="first_name" placeholder="Enter first name" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="last_name">Last Name*</label>
+                        <input type="text" id="last_name" name="last_name" placeholder="Enter last name" required>
+                    </div>
+                </div>
 
-                <label>City</label>
-                <input type="text" placeholder="Enter city">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="Enter email">
+                
+                <label for="phone">Phone</label>
+                <input type="text" id="phone" name="phone" placeholder="Enter phone number">
 
-                <label>Purpose of Visit</label>
-                <input type="text" placeholder="Enter purpose of visit">
+                <label for="address">Address</label>
+                <input type="text" id="address" name="address" placeholder="Enter address">
 
-                <label>Status</label>
-                <select>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                <label for="city">City</label>
+                <input type="text" id="city" name="city" placeholder="Enter city">
+                
+                <label for="is_active">Status</label>
+                <select id="is_active" name="is_active">
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
                 </select>
-
-                <label>Phone</label>
-                <input type="text" placeholder="+1">
-
-                <label>Email</label>
-                <input type="email" placeholder="Enter email">
-
-                <label>Address</label>
-                <input type="text" placeholder="Enter address">
-
-                <label>Notes</label>
-                <textarea placeholder="Enter notes"></textarea>
-
+                
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Client</button>
-                    <button type="button" class="btn btn-primary" onclick="saveAndAddPet()">Save & Add Pet</button>
+                    <button type="submit" class="btn btn-primary" id="modalSubmitButton">Create Client</button>
                 </div>
             </form>
         </div>
     </div>
 
    <script>
-    let patients = [
-        {
-            id: 1,
-            name: "Roan Manansala",
-            phone: "No phone",
-            email: "mananasalaroan1@gmail.com",
-            city: "Lubao",
-            status: "Active",
-            createdAt: "Jun 24, 2025"
-        }
-    ];
+        // --- GLOBAL STATE & CONFIG ---
+        let currentPage = 1;
+        let entriesPerPage = 5;
+        let totalRecords = 0;
+        let searchTimeout; // For debouncing search input
 
-    let currentPage = 1;
-    let entriesPerPage = 10;
-    let filteredPatients = [...patients];
-    let clientIdCounter = patients.length + 1;
+        const API_URL = 'ajax/owners_handler.php';
 
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        const start = (currentPage - 1) * entriesPerPage;
-        const end = start + entriesPerPage;
-        const paginated = filteredPatients.slice(start, end);
+        // --- DOM ELEMENTS ---
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const entriesPerPageSelect = document.getElementById('entriesPerPage');
+        const paginationControls = document.getElementById('pagination-controls');
+        const clientModal = document.getElementById('clientModal');
+        const clientForm = document.getElementById('clientForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubmitButton = document.getElementById('modalSubmitButton');
 
-        if (paginated.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No patients found</td></tr>`;
-            return;
-        }
+        // --- DATA FETCHING & RENDERING ---
 
-        tbody.innerHTML = paginated.map(p => `
-            <tr>
-                <td>${p.name}</td>
-                <td>${p.phone}</td>
-                <td>${p.email}</td>
-                <td>${p.city}</td>
-                <td><span class="status ${p.status.toLowerCase()}">${p.status}</span></td>
-                <td>${p.createdAt}</td>
-                <td class="action-links">
-                    <a href="#" onclick="editClient(${p.id})">Edit</a>
-                    <a href="#" class="delete" onclick="deleteClient(${p.id})">Delete</a>
-                </td>
-            </tr>
-        `).join('');
-        updatePaginationInfo();
-    }
+        async function fetchPatients() {
+            const searchTerm = searchInput.value;
+            const url = new URL(API_URL, window.location.href);
+            url.searchParams.append('action', 'fetch');
+            url.searchParams.append('page', currentPage);
+            url.searchParams.append('limit', entriesPerPage);
+            url.searchParams.append('search', searchTerm);
 
-    function updatePaginationInfo() {
-        const total = filteredPatients.length;
-        const start = (currentPage - 1) * entriesPerPage + 1;
-        const end = Math.min(currentPage * entriesPerPage, total);
-        const totalPages = Math.ceil(total / entriesPerPage);
-
-        document.querySelector('.pagination-info span').textContent =
-            `Showing ${start} to ${end} of ${total} entries`;
-        document.querySelector('.pagination div:last-child span').textContent =
-            `Page ${currentPage} of ${totalPages}`;
-    }
-
-    function changeEntriesPerPage() {
-        entriesPerPage = parseInt(document.getElementById('entriesPerPage').value);
-        currentPage = 1;
-        renderTable();
-    }
-
-    function searchPatients() {
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        filteredPatients = patients.filter(p =>
-            p.name.toLowerCase().includes(term) ||
-            p.city.toLowerCase().includes(term) ||
-            p.email.toLowerCase().includes(term) ||
-            p.phone.toLowerCase().includes(term)
-        );
-        currentPage = 1;
-        renderTable();
-    }
-
-    function createClient() {
-        document.getElementById('clientModal').classList.remove('hidden');
-        document.getElementById('clientForm').reset();
-    }
-
-    function closeModal() {
-        document.getElementById('clientModal').classList.add('hidden');
-    }
-
-    function importData() {
-        alert('Import Data functionality triggered.');
-    }
-
-    function toggleFilters() {
-        alert('Filters toggle triggered.');
-    }
-
-    function editClient(id) {
-        const client = patients.find(p => p.id === id);
-        if (!client) return alert("Client not found.");
-
-        // Populate form with client data
-        const form = document.getElementById('clientForm');
-        form.elements[0].value = client.name;
-        form.elements[1].value = client.phone !== "No phone" ? client.phone : "";
-        form.elements[2].value = client.city;
-        form.elements[3].value = client.purpose || "";
-        form.elements[4].value = client.status;
-        form.elements[5].value = client.phone !== "No phone" ? client.phone : "";
-        form.elements[6].value = client.email;
-        form.elements[7].value = client.address || "";
-        form.elements[8].value = client.notes || "";
-
-        form.dataset.editingId = id; // Flag to know we're editing
-        document.getElementById('clientModal').classList.remove('hidden');
-    }
-
-    function deleteClient(id) {
-        if (confirm("Are you sure you want to delete this client?")) {
-            patients = patients.filter(p => p.id !== id);
-            filteredPatients = filteredPatients.filter(p => p.id !== id);
-            renderTable();
-        }
-    }
-
-    function saveAndAddPet() {
-        // Same logic as submit but simulate redirect
-        document.getElementById('clientForm').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-        alert("Client saved. Redirecting to pet registration...");
-    }
-
-    document.getElementById('clientForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const form = e.target;
-        const formData = new FormData(form);
-
-        const newClient = {
-            id: form.dataset.editingId ? parseInt(form.dataset.editingId) : clientIdCounter++,
-            name: formData.get(form[0].name || '') || form[0].value,
-            phone: formData.get(form[5].name || '') || form[5].value || "No phone",
-            email: formData.get(form[6].name || '') || form[6].value,
-            city: formData.get(form[2].name || '') || form[2].value,
-            status: formData.get(form[4].name || '') || form[4].value,
-            createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        };
-
-        if (form.dataset.editingId) {
-            patients = patients.map(p => p.id === newClient.id ? newClient : p);
-            delete form.dataset.editingId;
-        } else {
-            patients.push(newClient);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    totalRecords = result.totalRecords;
+                    renderTable(result.data);
+                    updatePaginationInfo();
+                    renderPaginationControls();
+                } else {
+                    alert('Error fetching data: ' + result.message);
+                    tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${result.message}</td></tr>`;
+                }
+            } catch (error) {
+                console.error('Failed to fetch patients:', error);
+                tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">Error loading data. Please try again.</td></tr>`;
+            }
         }
 
-        filteredPatients = [...patients];
-        renderTable();
-        form.reset();
-        closeModal();
-    });
+        function renderTable(patients) {
+            if (patients.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">No patients found</td></tr>`;
+                return;
+            }
 
-    document.getElementById('searchInput').addEventListener('input', searchPatients);
-    renderTable();
-</script>
+            tableBody.innerHTML = patients.map(p => {
+                const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+                const statusText = p.is_active == 1 ? 'Active' : 'Inactive';
+                const statusClass = p.is_active == 1 ? 'active' : 'inactive';
+                const createdAt = new Date(p.user_created_at).toLocaleDateString('en-CA');
+
+                return `
+                    <tr>
+                        <td>${fullName || 'N/A'}</td>
+                        <td>${p.phone || 'No phone'}</td>
+                        <td>${p.email || 'N/A'}</td>
+                        <td>${p.city || 'N/A'}</td>
+                        <td><span class="status ${statusClass}">${statusText}</span></td>
+                        <td>${createdAt}</td>
+                        <td class="action-links">
+                            <a href="#" onclick="event.preventDefault(); editClient(${p.user_id})">Edit</a>
+                            <a href="#" class="delete" onclick="event.preventDefault(); deleteClient(${p.user_id})">Delete</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- PAGINATION & SEARCH ---
+
+        function updatePaginationInfo() {
+            const start = totalRecords === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1;
+            const end = Math.min(currentPage * entriesPerPage, totalRecords);
+            document.querySelector('.pagination-info span:first-child').textContent = `Showing ${start} to ${end} of ${totalRecords} entries`;
+        }
+
+        function renderPaginationControls() {
+            const totalPages = Math.ceil(totalRecords / entriesPerPage);
+            paginationControls.innerHTML = ''; // Clear previous controls
+
+            if (totalPages <= 1) {
+                return; // No need for controls if there's only one page
+            }
+
+            // Use an array to build the links, then join. It's cleaner.
+            const links = [];
+
+            // Previous Page Link
+            const prevClass = (currentPage === 1) ? 'disabled' : '';
+            links.push(`<a href="#" class="pagination-link ${prevClass}" onclick="goToPage(${currentPage - 1}, event)"><i class="fas fa-chevron-left"></i></a>`);
+
+            // Page Number Links (Smart Ellipsis Logic)
+            const pagesToShow = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(pagesToShow / 2));
+            let endPage = Math.min(totalPages, startPage + pagesToShow - 1);
+
+            if (endPage - startPage + 1 < pagesToShow) {
+                startPage = Math.max(1, endPage - pagesToShow + 1);
+            }
+            
+            if (startPage > 1) {
+                links.push(`<a href="#" class="pagination-link" onclick="goToPage(1, event)">1</a>`);
+                if (startPage > 2) {
+                    links.push(`<span class="pagination-link disabled">...</span>`);
+                }
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = (i === currentPage) ? 'active' : '';
+                links.push(`<a href="#" class="pagination-link ${activeClass}" onclick="goToPage(${i}, event)">${i}</a>`);
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    links.push(`<span class="pagination-link disabled">...</span>`);
+                }
+                links.push(`<a href="#" class="pagination-link" onclick="goToPage(${totalPages}, event)">${totalPages}</a>`);
+            }
+
+            // Next Page Link
+            const nextClass = (currentPage === totalPages) ? 'disabled' : '';
+            links.push(`<a href="#" class="pagination-link ${nextClass}" onclick="goToPage(${currentPage + 1}, event)"><i class="fas fa-chevron-right"></i></a>`);
+            
+            paginationControls.innerHTML = links.join('');
+        }
+
+        function goToPage(page, event) {
+            if (event) event.preventDefault(); // Prevent the link from navigating
+
+            // Do nothing if the link is disabled or it's the current page
+            if (page === currentPage || page < 1 || page > Math.ceil(totalRecords / entriesPerPage)) {
+                return;
+            }
+            
+            currentPage = page;
+            fetchPatients();
+        }
+
+        function changeEntriesPerPage() {
+            entriesPerPage = parseInt(entriesPerPageSelect.value);
+            currentPage = 1;
+            fetchPatients();
+        }
+
+        function handleSearch() {
+            clearTimeout(searchTimeout);
+            // Debounce: wait 300ms after user stops typing before making the API call
+            searchTimeout = setTimeout(() => {
+                currentPage = 1;
+                fetchPatients();
+            }, 300);
+        }
+        
+        // --- MODAL & FORM HANDLING (Largely unchanged, minor tweaks for clarity) ---
+
+        function openModal() { clientModal.classList.remove('hidden'); }
+        function closeModal() {
+            clientModal.classList.add('hidden');
+            clientForm.reset();
+            clientForm.removeAttribute('data-editing-id');
+        }
+
+        function createClient() {
+            clientForm.reset();
+            modalTitle.textContent = 'Add New Client';
+            modalSubmitButton.textContent = 'Create Client';
+            document.getElementById('is_active').value = '1';
+            openModal();
+        }
+
+        async function editClient(userId) {
+            // We fetch the latest data directly instead of relying on a potentially stale local copy
+            const client = await getClientById(userId);
+            if (!client) return alert("Could not retrieve client data.");
+            
+            clientForm.reset();
+            modalTitle.textContent = 'Edit Client';
+            modalSubmitButton.textContent = 'Save Changes';
+            
+            document.getElementById('user_id').value = client.user_id;
+            document.getElementById('first_name').value = client.first_name || '';
+            document.getElementById('last_name').value = client.last_name || '';
+            document.getElementById('email').value = client.email || '';
+            document.getElementById('phone').value = client.phone || '';
+            document.getElementById('address').value = client.address || '';
+            document.getElementById('city').value = client.city || '';
+            document.getElementById('is_active').value = client.is_active;
+            
+            clientForm.setAttribute('data-editing-id', userId);
+            openModal();
+        }
+        
+        // Helper to get a single client's full details for the edit form
+        async function getClientById(userId) {
+            // This is a simplified approach. In a real app, you might have a dedicated API endpoint `?action=get&id=...`
+            // For now, we'll just re-fetch the list and find the user.
+            const response = await fetch(`${API_URL}?action=fetch&search=&limit=${totalRecords || 1000}`);
+            const result = await response.json();
+            return result.success ? result.data.find(p => p.user_id === userId) : null;
+        }
+
+        async function deleteClient(userId) {
+            if (!confirm("Are you sure you want to deactivate this client?")) return;
+            const formData = new FormData();
+            formData.append('action', 'delete');
+            formData.append('user_id', userId);
+            
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: formData });
+                const result = await response.json();
+                alert(result.message);
+                if (result.success) {
+                    // If the last item on a page is deleted, go to the previous page
+                    if (tableBody.rows.length === 1 && currentPage > 1) {
+                        currentPage--;
+                    }
+                    fetchPatients();
+                }
+            } catch (error) {
+                console.error('Failed to delete client:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+        
+        clientForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(clientForm);
+            formData.append('action', clientForm.hasAttribute('data-editing-id') ? 'update' : 'create');
+            
+            if (!formData.get('first_name') || !formData.get('last_name')) {
+                return alert('First Name and Last Name are required.');
+            }
+            modalSubmitButton.disabled = true;
+            modalSubmitButton.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: formData });
+                const result = await response.json();
+                alert(result.message);
+                if (result.success) {
+                    closeModal();
+                    fetchPatients();
+                }
+            } catch (error) {
+                console.error('Form submission error:', error);
+                alert('An error occurred while saving.');
+            } finally {
+                modalSubmitButton.disabled = false;
+            }
+        });
+
+        // --- INITIALIZATION ---
+        function importData() { alert('Import Data functionality triggered.'); }
+        function toggleFilters() { alert('Filters toggle triggered.'); }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchPatients();
+            searchInput.addEventListener('input', handleSearch);
+        });
+    </script>
 
 </body>
 </html>
