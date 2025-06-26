@@ -1,5 +1,15 @@
 <?php
 // includes/navbar.php - Top navigation bar
+<<<<<<< HEAD
+=======
+
+if (isLoggedIn()) {
+    checkAndSendAppointmentReminders(getCurrentUserId());
+    $notification_count = getUnreadNotificationCount(getCurrentUserId());
+    $recent_notifications = getRecentNotifications(getCurrentUserId());
+}
+
+>>>>>>> ad8f7097450c78a93915cbb3b75003ba7f431c9d
 ?>
 <style>
 * { 
@@ -97,6 +107,43 @@
     font-weight: 600;
 }
 
+<<<<<<< HEAD
+=======
+/* Notification Dropdown */
+.notification-dropdown {
+    position: absolute;
+    right: 0;
+    top: 48px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    width: 280px;
+    padding: 0.5rem 0;
+    display: none;
+    z-index: 1002;
+}
+
+.notification-dropdown.show {
+    display: block;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #f1f1f1;
+}
+.notification-item:last-child {
+    border-bottom: none;
+}
+.no-notifications {
+    padding: 0.75rem 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+>>>>>>> ad8f7097450c78a93915cbb3b75003ba7f431c9d
 /* User Dropdown */
 .user-dropdown {
     position: relative;
@@ -302,6 +349,19 @@ body {
                 <span class="notification-badge"><?php echo $notification_count; ?></span>
             <?php endif; ?>
         </button>
+<<<<<<< HEAD
+=======
+
+        <div class="notification-dropdown" id="notificationDropdown">
+            <?php if (!empty($recent_notifications)): ?>
+                <?php foreach ($recent_notifications as $note): ?>
+                    <div class="notification-item"><?php echo sanitize($note['message']); ?></div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="no-notifications">No notifications</div>
+            <?php endif; ?>
+        </div>
+>>>>>>> ad8f7097450c78a93915cbb3b75003ba7f431c9d
  
         <!-- Settings -->
         <button class="navbar-icon" onclick="window.location.href='<?php echo SITE_URL; ?>/client/profile/index.php'" title="Settings">
@@ -358,9 +418,31 @@ document.addEventListener('click', function(event) {
     }
 });
 
+<<<<<<< HEAD
 // Notification button functionality
 document.getElementById('notificationBtn').addEventListener('click', function() {
     // Add your notification logic here
     alert('Notifications feature coming soon!');
+=======
+const notifBtn = document.getElementById('notificationBtn');
+const notifDropdown = document.getElementById('notificationDropdown');
+notifBtn.addEventListener('click', function(event) {
+    event.stopPropagation();
+    notifDropdown.classList.toggle('show');
+
+    if (notifDropdown.classList.contains('show')) {
+        fetch('<?php echo SITE_URL; ?>/client/notifications/mark_read.php')
+            .then(() => {
+                const badge = document.querySelector('.notification-badge');
+                if (badge) badge.remove();
+            });
+    }
+});
+
+document.addEventListener('click', function(e) {
+    if (!notifDropdown.contains(e.target) && e.target !== notifBtn) {
+        notifDropdown.classList.remove('show');
+    }
+>>>>>>> ad8f7097450c78a93915cbb3b75003ba7f431c9d
 });
 </script>

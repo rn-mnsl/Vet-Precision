@@ -181,8 +181,10 @@ for ($i = 0; $i < 7; $i++) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
     <style>
+        /* === EXISTING STYLES === */
         /* === EXISTING STYLES === */
         body {
             background-color: var(--light-color);
@@ -190,6 +192,7 @@ for ($i = 0; $i < 7; $i++) {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
+        .dashboard-layout { display: flex; min-height: 100vh; }
         .dashboard-layout { display: flex; min-height: 100vh; }
 
         /* Sidebar */

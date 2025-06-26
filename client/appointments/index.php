@@ -219,6 +219,21 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             background-color: #c82333; /* A slightly darker red for hover */
             border-color: #c82333;
         }
+        .btn-secondary:hover { background-color: var(--primary-color) }
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        .cancel-appointment-btn {
+            background-color: #dc3545; /* A standard 'danger' red */
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .cancel-appointment-btn:hover {
+            background-color: #c82333; /* A slightly darker red for hover */
+            border-color: #c82333;
+        }
 
         .card {
             background-color: white; border-radius: 12px; padding: 2rem;
