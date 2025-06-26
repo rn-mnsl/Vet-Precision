@@ -1,7 +1,10 @@
 <?php
 // includes/navbar.php - Top navigation bar
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> master
 
 if (isLoggedIn()) {
     checkAndSendAppointmentReminders(getCurrentUserId());
@@ -9,7 +12,10 @@ if (isLoggedIn()) {
     $recent_notifications = getRecentNotifications(getCurrentUserId());
 }
 
+<<<<<<< HEAD
 >>>>>>> ad8f7097450c78a93915cbb3b75003ba7f431c9d
+=======
+>>>>>>> master
 ?>
 <style>
 * { 
@@ -108,7 +114,10 @@ if (isLoggedIn()) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> master
 /* Notification Dropdown */
 .notification-dropdown {
     position: absolute;
@@ -143,7 +152,10 @@ if (isLoggedIn()) {
     color: #6c757d;
 }
 
+<<<<<<< HEAD
 >>>>>>> ad8f7097450c78a93915cbb3b75003ba7f431c9d
+=======
+>>>>>>> master
 /* User Dropdown */
 .user-dropdown {
     position: relative;
@@ -350,7 +362,10 @@ body {
             <?php endif; ?>
         </button>
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> master
 
         <div class="notification-dropdown" id="notificationDropdown">
             <?php if (!empty($recent_notifications)): ?>
@@ -361,7 +376,10 @@ body {
                 <div class="no-notifications">No notifications</div>
             <?php endif; ?>
         </div>
+<<<<<<< HEAD
 >>>>>>> ad8f7097450c78a93915cbb3b75003ba7f431c9d
+=======
+>>>>>>> master
  
         <!-- Settings -->
         <button class="navbar-icon" onclick="window.location.href='<?php echo SITE_URL; ?>/client/profile/index.php'" title="Settings">
@@ -419,11 +437,14 @@ document.addEventListener('click', function(event) {
 });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Notification button functionality
 document.getElementById('notificationBtn').addEventListener('click', function() {
     // Add your notification logic here
     alert('Notifications feature coming soon!');
 =======
+=======
+>>>>>>> master
 const notifBtn = document.getElementById('notificationBtn');
 const notifDropdown = document.getElementById('notificationDropdown');
 notifBtn.addEventListener('click', function(event) {
@@ -443,6 +464,9 @@ document.addEventListener('click', function(e) {
     if (!notifDropdown.contains(e.target) && e.target !== notifBtn) {
         notifDropdown.classList.remove('show');
     }
+<<<<<<< HEAD
 >>>>>>> ad8f7097450c78a93915cbb3b75003ba7f431c9d
+=======
+>>>>>>> master
 });
 </script>
