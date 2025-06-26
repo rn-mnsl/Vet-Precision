@@ -35,6 +35,8 @@ try {
     $stmt->execute([$new_status, $appointment_id]);
     
     if ($stmt->rowCount() > 0) {
+<<<<<<< HEAD
+=======
         // Fetch client user and email
         $info = $pdo->prepare(
             "SELECT u.user_id, u.email, p.name AS pet_name, a.appointment_date, a.appointment_time
@@ -69,6 +71,7 @@ try {
             }
         }
 
+>>>>>>> master
         echo json_encode(['success' => true, 'message' => 'Status updated successfully']);
     } else {
         http_response_code(404);

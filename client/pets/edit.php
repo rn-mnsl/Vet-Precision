@@ -5,22 +5,20 @@ requireClient(); // Ensure only logged-in clients can access
 $pageTitle = 'Edit Pet - ' . SITE_NAME;
 
 // --- Configuration for File Uploads ---
-define('UPLOAD_DIR', '../../uploads/pets/'); // Relative path from THIS SCRIPT to the uploads directory
-define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5 MB in bytes
-define('ALLOWED_IMAGE_TYPES', [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp'
-]);
-
+// --- Configuration for File Uploads ---
+// REMINDER: Use defined() to prevent "already defined" warnings.
+// This checks if the constant exists before trying to create it.
+if (!defined('UPLOAD_DIR')) {
+    define('UPLOAD_DIR', '../../uploads/pets/');
+}
+$petIdParam = 'id';
 // 1. Get Pet ID from URL
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+if (!isset($_GET[$petIdParam]) || !is_numeric($_GET[$petIdParam])) {
     setFlash('Invalid pet ID provided for editing.', 'danger');
     redirect('/client/pets/index.php'); // Redirect to pets list if ID is missing or invalid
 }
 
-$petId = (int)$_GET['id'];
+$petId = (int)$_GET[$petIdParam];
 $ownerId = $_SESSION['owner_id'];
 
 $errors = [];
@@ -28,8 +26,8 @@ $formData = []; // Will be populated from DB or POST
 
 // --- Fetch Existing Pet Data ---
 try {
-    $stmt = $pdo->prepare("SELECT * FROM pets WHERE id = :id AND owner_id = :owner_id AND is_active = 1");
-    $stmt->execute(['id' => $petId, 'owner_id' => $ownerId]);
+    $stmt = $pdo->prepare("SELECT * FROM pets WHERE pet_id = :pet_id AND owner_id = :owner_id AND is_active = 1");
+    $stmt->execute(['pet_id' => $petId, 'owner_id' => $ownerId]);
     $pet = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$pet) {
@@ -39,7 +37,7 @@ try {
 
     // Pre-populate formData with existing pet details
     $formData = [
-        'id' => $pet['id'], // Keep ID for update query
+        'pet_id' => $pet['pet_id'], // Keep ID for update query
         'name' => $pet['name'],
         'species' => $pet['species'],
         'breed' => $pet['breed'],
@@ -49,7 +47,7 @@ try {
         'weight' => $pet['weight'],
         'microchip_id' => $pet['microchip_id'],
         'notes' => $pet['notes'],
-        'photo' => $pet['photo'] // Store existing photo path
+        'photo_url' => $pet['photo_url'] // Store existing photo path
     ];
 
     // Update page title
@@ -65,7 +63,7 @@ try {
 if (isPost()) {
     // Collect form data (including potential updates)
     $formData = [
-        'id' => $petId, // Ensure petId is carried over
+        'pet_id' => $petId, // Ensure petId is carried over
         'name' => sanitize($_POST['name'] ?? ''),
         'species' => sanitize($_POST['species'] ?? ''),
         'breed' => sanitize($_POST['breed'] ?? ''),
@@ -75,7 +73,7 @@ if (isPost()) {
         'weight' => $_POST['weight'] ?? '',
         'microchip_id' => sanitize($_POST['microchip_id'] ?? ''),
         'notes' => sanitize($_POST['notes'] ?? ''),
-        'photo' => $pet['photo'] // Start with existing photo path, will update if new photo uploaded
+        'photo_url' => $pet['photo_url'] // Start with existing photo path, will update if new photo uploaded
     ];
     
     // --- Validation ---
@@ -145,10 +143,10 @@ if (isPost()) {
             if (move_uploaded_file($fileTmpName, $uploadPath)) {
                 // Successfully uploaded new photo
                 // Delete old photo if it exists and is different from the new one
-                if (!empty($pet['photo']) && file_exists($pet['photo']) && $pet['photo'] != $uploadPath) {
-                    unlink($pet['photo']); // Delete the old file
+                if (!empty($pet['photo_url']) && file_exists($pet['photo_url']) && $pet['photo_url'] != $uploadPath) {
+                    unlink($pet['photo_url']); // Delete the old file
                 }
-                $formData['photo'] = $uploadPath; // Update photo path in formData
+                $formData['photo_url'] = $uploadPath; // Update photo path in formData
             } else {
                 $errors['pet_photo'] = 'Failed to upload photo. Please try again.';
             }
@@ -160,10 +158,10 @@ if (isPost()) {
 
     // If 'remove_photo' checkbox was checked
     if (isset($_POST['remove_photo']) && $_POST['remove_photo'] == '1') {
-        if (!empty($pet['photo']) && file_exists($pet['photo'])) {
-            unlink($pet['photo']); // Delete the file
+        if (!empty($pet['photo_url']) && file_exists($pet['photo_url'])) {
+            unlink($pet['photo_url']); // Delete the file
         }
-        $formData['photo'] = null; // Set photo path to null in formData
+        $formData['photo_url'] = null; // Set photo path to null in formData
     }
 
 
@@ -181,13 +179,13 @@ if (isPost()) {
                     weight = :weight,
                     microchip_id = :microchip_id,
                     notes = :notes,
-                    photo = :photo,
+                    photo_url = :photo_url,
                     updated_at = NOW()
-                WHERE id = :id AND owner_id = :owner_id
+                WHERE pet_id = :pet_id AND owner_id = :owner_id
             ");
             
             $stmt->execute([
-                'id' => $formData['id'],
+                'pet_id' => $formData['pet_id'],
                 'owner_id' => $ownerId,
                 'name' => $formData['name'],
                 'species' => $formData['species'],
@@ -198,11 +196,16 @@ if (isPost()) {
                 'weight' => !empty($formData['weight']) ? (float)$formData['weight'] : null,
                 'microchip_id' => !empty($formData['microchip_id']) ? $formData['microchip_id'] : null,
                 'notes' => !empty($formData['notes']) ? $formData['notes'] : null,
-                'photo' => $formData['photo'] // This will be the new path or null
+                'photo_url' => $formData['photo_url'] // This will be the new path or null
             ]);
             
-            setFlash($formData['name'] . ' has been successfully updated!', 'success');
-            redirect('/client/pets/view.php?id=' . $formData['id']);
+            // (Optional but Recommended) Check if any rows were actually updated
+            if ($stmt->rowCount() > 0) {
+                setFlash(sanitize($formData['name']) . ' has been successfully updated!', 'success');
+            } else {
+                setFlash('No changes were detected for ' . sanitize($formData['name']) . '.', 'info');
+            }
+            redirect('/client/pets/view.php?id=' . $formData['pet_id']);
             
         } catch (PDOException $e) {
             // error_log("Failed to update pet: " . $e->getMessage()); 
@@ -246,6 +249,7 @@ $commonSpecies = [
             background-color: #f5f5f5;
             color: #333;
         }
+        
 
         .dashboard-layout {
             display: flex;
@@ -772,6 +776,7 @@ $commonSpecies = [
     <div class="dashboard-layout">
         <!-- Include Sidebar -->
         <?php include '../../includes/sidebar-client.php'; ?>
+        <?php include '../../includes/navbar.php'; ?>
 
         <!-- Mobile Menu Toggle -->
         <button class="mobile-menu-toggle" aria-label="Toggle Navigation">
@@ -1009,21 +1014,32 @@ $commonSpecies = [
                         <div class="form-group">
                             <label for="pet_photo" class="form-label">Upload New Photo</label>
                             
-                            <?php if (!empty($formData['photo']) && file_exists($formData['photo'])): ?>
-                                <div class="pet-photo-preview">
-                                    <p class="form-hint">Current Photo:</p>
-                                    <img src="<?php echo sanitize($formData['photo']); ?>" alt="Current Pet Photo">
+                            <!-- START: MODIFIED PHOTO PREVIEW AREA -->
+                            <div class="pet-photo-preview">
+                                <?php $hasPhoto = !empty($formData['photo_url']) && file_exists($formData['photo_url']); ?>
+                                
+                                <!-- The image tag is now always here, we just control its visibility and src -->
+                                <img 
+                                    id="image-preview" 
+                                    src="<?php echo $hasPhoto ? sanitize($formData['photo_url']) : ''; ?>" 
+                                    alt="Pet Photo Preview"
+                                    style="display: <?php echo $hasPhoto ? 'block' : 'none'; ?>;"
+                                >
+                                
+                                <!-- The placeholder is also always here, its visibility is controlled -->
+                                <div 
+                                    id="image-placeholder" 
+                                    class="pet-photo-placeholder" 
+                                    style="display: <?php echo $hasPhoto ? 'none' : 'inline-flex'; ?>;"
+                                >
+                                    <i class="fas fa-image"></i>
                                 </div>
+                            </div>
+
+                            <?php if ($hasPhoto): ?>
                                 <div class="remove-photo-checkbox">
                                     <input type="checkbox" id="remove_photo" name="remove_photo" value="1">
                                     <label for="remove_photo">Remove current photo</label>
-                                </div>
-                            <?php else: ?>
-                                <div class="pet-photo-preview">
-                                    <p class="form-hint">No photo uploaded yet.</p>
-                                    <div class="pet-photo-placeholder">
-                                        <i class="fas fa-image"></i>
-                                    </div>
                                 </div>
                             <?php endif; ?>
 
@@ -1158,6 +1174,29 @@ $commonSpecies = [
                     sidebar.classList.toggle('active');
                 });
             }
+
+            // --- START: NEW JAVASCRIPT FOR IMAGE PREVIEW ---
+            const fileInput = document.getElementById('pet_photo');
+            const imagePreview = document.getElementById('image-preview');
+            const imagePlaceholder = document.getElementById('image-placeholder');
+
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0]; // Get the selected file
+
+                if (file) {
+                    const reader = new FileReader(); // Create a new FileReader object
+
+                    reader.onload = function(e) {
+                        // This function runs when the file has been successfully read
+                        imagePreview.src = e.target.result; // Set the img src to the file's data URL
+                        imagePreview.style.display = 'block'; // Make the image visible
+                        imagePlaceholder.style.display = 'none'; // Hide the placeholder
+                    };
+
+                    reader.readAsDataURL(file); // Read the file as a Data URL
+                }
+            });
+            
         });
     </script>
 </body>
