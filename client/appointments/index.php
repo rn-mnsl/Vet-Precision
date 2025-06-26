@@ -382,6 +382,42 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
         .modal-body p { margin: 0 0 1rem; }
         .modal-body strong { color: var(--text-dark); }
         .modal-footer { padding: 1rem 1.5rem; text-align: right; border-top: 1px solid var(--gray-light); background: #f8f9fa; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;}
+
+
+        /* Pagination */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--gray-light);
+        }
+        .pagination-link {
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            color: var(--primary-color);
+            border: 1px solid var(--gray-light);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        .pagination-link:hover {
+            background-color: var(--light-color);
+            border-color: #ccc;
+        }
+        .pagination-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            cursor: default;
+        }
+        .pagination-link.disabled {
+            color: var(--text-light);
+            pointer-events: none;
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
@@ -517,6 +553,29 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                         </tbody>
                     </table>
                     <!-- REMINDER: Pagination controls would go here if needed for the list view -->
+                    <div class="pagination-controls">
+                        <?php if (isset($total_pages) && $total_pages > 1): ?>
+                            <!-- Previous Button -->
+                            <a href="?view=list&page=<?php echo $current_page - 1; ?>" 
+                            class="pagination-link <?php echo ($current_page <= 1) ? 'disabled' : ''; ?>">
+                                « Previous
+                            </a>
+
+                            <!-- Page Number Links -->
+                            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                <a href="?view=list&page=<?php echo $i; ?>" 
+                                class="pagination-link <?php echo ($i == $current_page) ? 'active' : ''; ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            <?php endfor; ?>
+
+                            <!-- Next Button -->
+                            <a href="?view=list&page=<?php echo $current_page + 1; ?>" 
+                            class="pagination-link <?php echo ($current_page >= $total_pages) ? 'disabled' : ''; ?>">
+                                Next »
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
             <?php endif; ?>
         <?php endif; ?>
