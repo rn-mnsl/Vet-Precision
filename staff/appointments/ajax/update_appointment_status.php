@@ -35,6 +35,40 @@ try {
     $stmt->execute([$new_status, $appointment_id]);
     
     if ($stmt->rowCount() > 0) {
+        // Fetch client user and email
+        $info = $pdo->prepare(
+            "SELECT u.user_id, u.email, p.name AS pet_name, a.appointment_date, a.appointment_time
+             FROM appointments a
+             JOIN pets p ON a.pet_id = p.pet_id
+             JOIN owners o ON p.owner_id = o.owner_id
+             JOIN users u ON o.user_id = u.user_id
+             WHERE a.appointment_id = :aid"
+        );
+        $info->execute([':aid' => $appointment_id]);
+        $client = $info->fetch();
+
+        if ($client) {
+            $date = formatDate($client['appointment_date']);
+            $time = formatTime($client['appointment_time']);
+            switch ($new_status) {
+                case 'confirmed':
+                    $msg = "Your appointment for {$client['pet_name']} on {$date} at {$time} has been approved.";
+                    break;
+                case 'cancelled':
+                    $msg = "Your appointment for {$client['pet_name']} on {$date} at {$time} was cancelled.";
+                    break;
+                case 'completed':
+                    $msg = "Your appointment for {$client['pet_name']} on {$date} at {$time} is completed.";
+                    break;
+                default:
+                    $msg = '';
+            }
+            if ($msg !== '') {
+                addNotification($client['user_id'], $msg, 'appointment', $appointment_id);
+                sendEmail($client['email'], 'Appointment Update', $msg);
+            }
+        }
+
         echo json_encode(['success' => true, 'message' => 'Status updated successfully']);
     } else {
         http_response_code(404);
