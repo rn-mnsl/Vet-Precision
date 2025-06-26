@@ -95,21 +95,23 @@ if ($view === 'list') {
         $errors[] = "Could not fetch appointments."; 
     }
 } elseif ($view === 'week') {
-    // --- FIX 1: Use a reliable date calculation method ---
-    date_default_timezone_set('UTC'); // Or your local timezone
+    date_default_timezone_set('Asia/Manila'); 
     $current_date_str = $_GET['date'] ?? 'now';
     $target_date = new DateTime($current_date_str);
 
-    // Calculate start and end of the week (e.g., Sunday to Saturday)
-    // This is more reliable than strtotime('... this week')
-    $day_of_week = (int)$target_date->format('w'); // 0 (Sun) to 6 (Sat)
-    $week_start_dt = (clone $target_date)->modify('-' . $day_of_week . ' days');
+    $day_of_week = (int)$target_date->format('w');
+    if ($day_of_week == 0) {
+        $week_start_dt = (clone $target_date)->modify('last monday');
+    } else {
+        $week_start_dt = (clone $target_date)->modify('-' . ($day_of_week - 1) . ' days');
+    }
     $week_end_dt = (clone $week_start_dt)->modify('+6 days');
     
     // Fetch appointments for the calculated week
     try {
         $stmt_week = $pdo->prepare("
-            SELECT a.*, p.name AS pet_name, u_owner.first_name AS owner_first_name, u_owner.last_name AS owner_last_name
+            SELECT a.*, p.name AS pet_name, u_owner.first_name AS owner_first_name, u_owner.last_name AS owner_last_name,
+                   p.species, p.breed, p.date_of_birth
             FROM appointments a
             JOIN pets p ON a.pet_id = p.pet_id
             JOIN owners o ON p.owner_id = o.owner_id
@@ -119,12 +121,10 @@ if ($view === 'list') {
         $stmt_week->execute([$week_start_dt->format('Y-m-d'), $week_end_dt->format('Y-m-d')]);
         $week_appointments = $stmt_week->fetchAll(PDO::FETCH_ASSOC);
         
-        // --- FIX 2: Use a more flexible data structure (group by hour) ---
-        // This allows appointments at any time (e.g., 9:15) to show up in the 9:00 hour slot.
         $appointments_grid = [];
         foreach ($week_appointments as $appt) {
             $date_key = $appt['appointment_date'];
-            $hour_key = date('H', strtotime($appt['appointment_time'])); // '08', '09', etc.
+            $hour_key = date('H', strtotime($appt['appointment_time'])); 
             if (!isset($appointments_grid[$date_key][$hour_key])) {
                  $appointments_grid[$date_key][$hour_key] = [];
             }
@@ -134,9 +134,8 @@ if ($view === 'list') {
         $errors[] = "Could not fetch week appointments."; 
     }
 
-    // Generate helper arrays needed for the CSS Grid HTML structure
     $week_dates = [];
-    if (isset($week_start_dt)) { // Ensure this only runs for week view
+    if (isset($week_start_dt)) {
         $day_looper = clone $week_start_dt;
         for ($i = 0; $i < 7; $i++) {
             $week_dates[] = [
@@ -147,13 +146,12 @@ if ($view === 'list') {
             $day_looper->modify('+1 day');
         }
     }
-
-    // Time slots for the grid rows, as defined in your preferred layout
-    $time_slots = [
-        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-        '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-        '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00'
-    ];
+    
+    // --- MODIFICATION 1: Generate hourly time slots ---
+    $time_slots = [];
+    for ($h = 8; $h <= 19; $h++) { // 8 AM to 7 PM (19:00)
+        $time_slots[] = str_pad($h, 2, '0', STR_PAD_LEFT) . ':00';
+    }
 }
 
 if (isset($_SESSION['success_message'])) {
@@ -174,12 +172,7 @@ for ($i = 0; $i < 7; $i++) {
     ];
 }
 
-// Time slots for week view
-$time_slots = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00'
-];
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -188,8 +181,10 @@ $time_slots = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="../../assets/css/style.css">
     <style>
+        /* === EXISTING STYLES === */
         /* === EXISTING STYLES === */
         body {
             background-color: var(--light-color);
@@ -197,6 +192,7 @@ $time_slots = [
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
+        .dashboard-layout { display: flex; min-height: 100vh; }
         .dashboard-layout { display: flex; min-height: 100vh; }
 
         /* Sidebar */
@@ -393,6 +389,8 @@ $time_slots = [
         .btn-primary { background: var(--primary-color); color: white; }
         .btn-primary:hover { opacity: 0.9; }
         .btn-secondary { background: var(--gray-light); color: var(--text-dark); }
+        .btn-close { background: var(--gray-light); color: var(--text-dark); }
+        .btn-close:hover { background: #FF0000; color: white; }
 
         /* Table Styles */
         .table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -520,13 +518,16 @@ $time_slots = [
 
         .calendar-cell {
             background: white;
-            min-height: 60px;
+            min-height: 60px; /* Increased height to better fit multiple appointments */
             padding: 0.25rem;
-            position: relative;
             border-right: 1px solid var(--gray-light);
+            /* Added for vertical alignment */
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
         }
 
-        .appointment-block {
+        -block {
             background: var(--primary-color);
             color: white;
             padding: 0.25rem 0.5rem;
@@ -535,6 +536,18 @@ $time_slots = [
             margin-bottom: 0.25rem;
             cursor: pointer;
             transition: all 0.2s ease;
+        }
+
+        .appointment-block {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.3rem 0.6rem; /* Make it more compact */
+            border-radius: 4px;
+            font-size: 0.8rem; /* Smaller font for compactness */
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            overflow: hidden;
         }
 
         .appointment-block:hover {
@@ -585,10 +598,46 @@ $time_slots = [
             display: block;
         }
 
+        .appointment-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .appointment-summary i {
+            transition: transform 0.2s ease;
+        }
+        
+        /* The details section that is hidden by default */
+        .appointment-details {
+            display: none; /* Hide details by default */
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .appointment-details strong {
+            color: rgba(255,255,255,0.8);
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        /* This class will be toggled by JavaScript */
+        .appointment-block.is-expanded .appointment-details {
+            display: block; /* Show details when expanded */
+        }
+        
+        .appointment-block.is-expanded .appointment-summary i {
+            transform: rotate(180deg); /* Flip the chevron icon */
+        }
+
 
         /* === PAGINATION STYLES === */
         .pagination-controls {
-            display: flex;
+            disp.appointmentlay: flex;
             justify-content: center;
             align-items: center;
             gap: 0.5rem;
@@ -698,7 +747,7 @@ $time_slots = [
                             <div class="form-group"><label for="reason">Reason for Visit*</label><textarea id="reason" name="reason" required></textarea></div>
                             <div class="form-group"><label for="notes">Additional Notes</label><textarea id="notes" name="notes"></textarea></div>
                         </div>
-                        <div class="form-actions"><a href="index.php?view=<?php echo $view; ?>" class="btn btn-secondary">Cancel</a><button type="submit" name="create_appointment" class="btn btn-primary">Create Appointment</button></div>
+                        <div class="form-actions"><a href="index.php?view=<?php echo $view; ?>" class="btn btn-close">Cancel</a><button type="submit" name="create_appointment" class="btn btn-primary">Create Appointment</button></div>
                         <input type="hidden" id="selected_owner_id" name="owner_id"><input type="hidden" id="selected_pet_id" name="pet_id">
                     </form>
                 </div>
@@ -758,24 +807,41 @@ $time_slots = [
                                 <?php foreach ($week_dates as $date_info): ?>
                                     <div class="calendar-cell">
                                         <?php
-                                        // NEW LOGIC: This checks our flexible hourly data against your specific 30-min slots
+                                        // --- MODIFICATION 3: Simplified Rendering Logic ---
                                         $current_date = $date_info['date'];
-                                        $current_hour = substr($time, 0, 2); // Get '08', '09', etc.
+                                        $current_hour = substr($time, 0, 2); // '08', '09', etc.
 
-                                        // Check if appointments exist for this day and hour
+                                        // Check if there are ANY appointments for this entire hour
                                         if (isset($appointments_grid[$current_date][$current_hour])) {
-                                            // Loop through appointments for that hour
+                                            
+                                            // Loop through ALL appointments found for this hour and display them
                                             foreach ($appointments_grid[$current_date][$current_hour] as $appt) {
-                                                // Check if the appointment's specific time matches the current 30-min slot
-                                                if (date('H:i', strtotime($appt['appointment_time'])) === $time) {
-                                                    echo '<div class="appointment-block status-' . $appt['status'] . '" onclick="viewAppointment(' . $appt['appointment_id'] . ')">';
-                                                    echo '<span class="appointment-time">' . date('g:i A', strtotime($appt['appointment_time'])) . '</span>';
-                                                    echo '<span class="appointment-client">' . htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']) . '</span>';
-                                                    echo '<span class="appointment-pet">' . htmlspecialchars($appt['pet_name']) . '</span>';
-                                                    echo '</div>';
-                                                }
+                                                
+                                                // The rendering logic is the same, but now it runs for every appointment in the hour
+                                                echo '<div class="appointment-block status-' . htmlspecialchars($appt['status']) . '" 
+                                                           data-id="' . $appt['appointment_id'] . '"
+                                                           data-datetime="' . date("D, M j, Y, g:i A", strtotime($appt['appointment_date'] . ' ' . $appt['appointment_time'])) . '"
+                                                           data-client="' . htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']) . '"
+                                                           data-pet="' . htmlspecialchars($appt['pet_name']) . '"
+                                                           data-reason="' . htmlspecialchars($appt['reason']) . '"
+                                                           data-notes="' . htmlspecialchars($appt['notes']) . '"
+                                                           data-status="' . htmlspecialchars($appt['status']) . '">';
+                                                
+                                                echo '<div class="appointment-summary">';
+                                                // Display the specific time (e.g., 9:30AM) to differentiate
+                                                echo '<span>' . date('g:iA', strtotime($appt['appointment_time'])) . ' ' . htmlspecialchars($appt['pet_name']) . '</span>';
+                                                echo '<i class="fas fa-chevron-down"></i>';
+                                                echo '</div>';
+                                                
+                                                echo '<div class="appointment-details">';
+                                                echo '<strong>Client:</strong> ' . htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']) . '<br>';
+                                                echo '<strong>Reason:</strong> ' . htmlspecialchars($appt['reason']);
+                                                echo '</div>';
+                                                
+                                                echo '</div>';
                                             }
                                         }
+                                        // --- END MODIFICATION 3 ---
                                         ?>
                                     </div>
                                 <?php endforeach; ?>
@@ -870,6 +936,27 @@ $time_slots = [
     </div>
 
     <!-- MODALS -->
+    <!-- NEW: MODAL for Appointment Details -->                                   
+    <div class="modal-overlay" id="appointment-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Appointment Details</h3>
+                <button type="button" class="close-btn" onclick="closeModal('appointment-details-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Date & Time:</strong> <span id="modal-datetime"></span></p>
+                <p><strong>Client:</strong> <span id="modal-client"></span></p>
+                <p><strong>Pet:</strong> <span id="modal-pet"></span></p>
+                <p><strong>Status:</strong> <span id="modal-status" class="status-badge"></span></p>
+                <p><strong>Reason for Visit:</strong><br><span id="modal-reason"></span></p>
+                <p><strong>Notes:</strong><br><span id="modal-notes"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-close" onclick="closeModal('appointment-details-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="client-modal"><div class="modal-content"><div class="modal-header"><h3>Select Client</h3><button type="button" class="close-btn">×</button></div><div class="modal-body"><input type="search" id="client-search-input" class="search-bar" placeholder="Search by name, email, or phone..."><div class="table-wrapper"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th></tr></thead><tbody id="client-list-tbody"></tbody></table></div></div></div></div>
     <div class="modal-overlay" id="pet-modal">
         <div class="modal-content">
@@ -908,6 +995,56 @@ $time_slots = [
         function goToToday() {
             window.location.href = 'index.php?view=week';
         }
+
+        // Function to open any modal by its ID
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        // Function to close any modal by its ID
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Add one event listener to the calendar grid for efficiency
+        document.addEventListener('click', function (e) {
+            // Find the closest appointment block ancestor from the clicked element
+            const appointmentBlock = e.target.closest('.appointment-block');
+
+            if (appointmentBlock) {
+                // Prevent default browser action, if any
+                e.preventDefault();
+
+                // 1. Toggle the expansion for details in the grid
+                appointmentBlock.classList.toggle('is-expanded');
+
+                // 2. Populate and show the details modal
+                const details = appointmentBlock.dataset;
+                
+                document.getElementById('modal-datetime').textContent = details.datetime;
+                document.getElementById('modal-client').textContent = details.client;
+                document.getElementById('modal-pet').textContent = details.pet;
+                document.getElementById('modal-reason').textContent = details.reason || 'N/A';
+                document.getElementById('modal-notes').textContent = details.notes || 'N/A';
+                
+                const statusBadge = document.getElementById('modal-status');
+                statusBadge.textContent = details.status.charAt(0).toUpperCase() + details.status.slice(1);
+                statusBadge.className = 'status-badge status-' + details.status;
+
+                openModal('appointment-details-modal');
+            }
+
+            // Close modal if overlay is clicked
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal(e.target.id);
+            }
+        });
 
         function viewAppointment(appointmentId) {
             // You can implement appointment details modal or redirect to edit page
