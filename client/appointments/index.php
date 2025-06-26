@@ -219,7 +219,6 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             background-color: #c82333; /* A slightly darker red for hover */
             border-color: #c82333;
         }
-<<<<<<< HEAD
         .btn-secondary:hover { background-color: var(--primary-color) }
         .btn-sm {
             padding: 0.25rem 0.75rem;
@@ -235,8 +234,6 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             background-color: #c82333; /* A slightly darker red for hover */
             border-color: #c82333;
         }
-=======
->>>>>>> master
 
         .card {
             background-color: white; border-radius: 12px; padding: 2rem;
@@ -400,7 +397,6 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
         .modal-body p { margin: 0 0 1rem; }
         .modal-body strong { color: var(--text-dark); }
         .modal-footer { padding: 1rem 1.5rem; text-align: right; border-top: 1px solid var(--gray-light); background: #f8f9fa; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;}
-<<<<<<< HEAD
 
 
         /* Pagination */
@@ -437,8 +433,6 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             pointer-events: none;
             background-color: #f8f9fa;
         }
-=======
->>>>>>> master
     </style>
 </head>
 <body>
@@ -574,7 +568,6 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                         </tbody>
                     </table>
                     <!-- REMINDER: Pagination controls would go here if needed for the list view -->
-<<<<<<< HEAD
                     <div class="pagination-controls">
                         <?php if (isset($total_pages) && $total_pages > 1): ?>
                             <!-- Previous Button -->
@@ -598,8 +591,6 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                             </a>
                         <?php endif; ?>
                     </div>
-=======
->>>>>>> master
                 </div>
             <?php endif; ?>
         <?php endif; ?>
