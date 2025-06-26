@@ -669,6 +669,7 @@ function timeAgo($timestamp) {
     <div class="dashboard-layout">
         <!-- Include Sidebar -->
         <?php include '../includes/sidebar-staff.php'; ?>
+        <?php include '../includes/navbar.php'; ?>
 
         <!-- Main Content -->
         <main class="main-content">

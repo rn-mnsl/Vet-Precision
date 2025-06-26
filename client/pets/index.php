@@ -513,10 +513,6 @@ function getPetEmoji($species) {
                 padding: 1rem;
             }
 
-            .mobile-menu-toggle {
-                display: block;
-            }
-
             .page-header {
                 flex-direction: column;
                 align-items: start;
@@ -566,11 +562,7 @@ function getPetEmoji($species) {
     <div class="dashboard-layout">
         <!-- Include Sidebar -->
         <?php include '../../includes/sidebar-client.php'; ?>
-
-        <!-- Mobile Menu Toggle -->
-        <button class="mobile-menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
-            ☰
-        </button>
+        <?php include '../../includes/navbar.php'; ?>
 
         <!-- Main Content -->
         <main class="main-content">
