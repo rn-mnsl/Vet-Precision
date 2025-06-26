@@ -26,6 +26,8 @@ function getOwnerId($pdo, $user_id) {
 // --- PAGE LOGIC ---
 $owner_id = getOwnerId($pdo, $user_id);
 $action = $_GET['action'] ?? 'list';
+$view = $_GET['view'] ?? 'list'; // Default to list view as it's more common
+
 $errors = [];
 $success_message = '';
 
@@ -64,20 +66,74 @@ $pets = [];
 $appointments = [];
 
 if ($owner_id) {
+    // Fetch pets for the create form
     $stmt_pets = $pdo->prepare("SELECT pet_id, name FROM pets WHERE owner_id = ?");
     $stmt_pets->execute([$owner_id]);
     $pets = $stmt_pets->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($action === 'list') {
+    if ($view === 'list') {
+        // ... Pagination logic is the same ...
+        $items_per_page = 5;
+        $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $count_stmt = $pdo->prepare("SELECT COUNT(a.appointment_id) FROM appointments a JOIN pets p ON a.pet_id = p.pet_id WHERE p.owner_id = ?");
+        $count_stmt->execute([$owner_id]);
+        $total_items = (int)$count_stmt->fetchColumn();
+        $total_pages = ceil($total_items / $items_per_page);
+        $offset = ($current_page - 1) * $items_per_page;
+        
+        // REMINDER: SQL query is updated to fetch more details to match staff page needs
         $stmt_appts = $pdo->prepare("
             SELECT a.*, p.name AS pet_name 
             FROM appointments a
             JOIN pets p ON a.pet_id = p.pet_id
-            WHERE p.owner_id = ? 
+            WHERE p.owner_id = :owner_id 
             ORDER BY a.appointment_date DESC, a.appointment_time DESC
-        ");
-        $stmt_appts->execute([$owner_id]);
+            LIMIT :limit OFFSET :offset");
+        $stmt_appts->bindParam(':owner_id', $owner_id, PDO::PARAM_INT);
+        $stmt_appts->bindParam(':limit', $items_per_page, PDO::PARAM_INT);
+        $stmt_appts->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt_appts->execute();
         $appointments = $stmt_appts->fetchAll(PDO::FETCH_ASSOC);
+
+    } elseif ($view === 'week') {
+        date_default_timezone_set('Asia/Manila');
+        $current_date_str = $_GET['date'] ?? 'now';
+        $target_date = new DateTime($current_date_str);
+        
+        $week_start_dt = (clone $target_date)->modify('monday this week');
+        $week_end_dt = (clone $week_start_dt)->modify('+6 days');
+
+        // REMINDER: SQL query fetches all necessary data for the interactive calendar
+        $stmt_week = $pdo->prepare("
+            SELECT a.*, p.name AS pet_name
+            FROM appointments a
+            JOIN pets p ON a.pet_id = p.pet_id
+            WHERE p.owner_id = ? AND a.appointment_date BETWEEN ? AND ? AND a.status != 'cancelled'
+            ORDER BY a.appointment_date, a.appointment_time");
+        $stmt_week->execute([$owner_id, $week_start_dt->format('Y-m-d'), $week_end_dt->format('Y-m-d')]);
+        $week_appointments = $stmt_week->fetchAll(PDO::FETCH_ASSOC);
+        
+        $appointments_grid = [];
+        foreach ($week_appointments as $appt) {
+            $date_key = $appt['appointment_date'];
+            $hour_key = date('H', strtotime($appt['appointment_time']));
+            if (!isset($appointments_grid[$date_key][$hour_key])) {
+                $appointments_grid[$date_key][$hour_key] = [];
+            }
+            $appointments_grid[$date_key][$hour_key][] = $appt;
+        }
+
+        $week_dates = [];
+        $day_looper = clone $week_start_dt;
+        for ($i = 0; $i < 7; $i++) {
+            $week_dates[] = ['date' => $day_looper->format('Y-m-d'), 'day_short' => $day_looper->format('D'), 'day_number' => $day_looper->format('j')];
+            $day_looper->modify('+1 day');
+        }
+        
+        $time_slots = [];
+        for ($h = 8; $h <= 19; $h++) {
+            $time_slots[] = str_pad($h, 2, '0', STR_PAD_LEFT) . ':00';
+        }
     }
 } else {
     $errors[] = "Could not find your owner profile. Please contact support.";
@@ -121,82 +177,10 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
         }
 
         .main-content {
-            margin-left: 250px; /* IMPORTANT: This makes space for the sidebar */
-            flex: 1;
+            margin-left: 250px;
             padding: 2rem;
-            background-color: #f8f9fa;
-            min-height: 100vh;
-        }
-
-        /* ----- 2.  SIDEBAR STYLES ----- */
-        .sidebar {
-            width: 250px;
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
-            color: white;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            z-index: 100;
-        }
-
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            margin-bottom: 0.5rem;
-        }
-
-        .sidebar-logo:hover {
-            color: white;
-            text-decoration: none;
-        }
-
-        .sidebar-user {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.9);
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 1rem 0;
-            margin: 0;
-        }
-
-        .sidebar-menu li {
-            margin: 0;
-        }
-
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.5rem;
-            color: rgba(255,255,255,0.9);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .sidebar-menu .icon {
-            font-size: 1.25rem;
-            width: 1.5rem;
-            text-align: center;
+            flex: 1;
+            background-color: var(--light-color); /* Match staff page background */
         }
         
         /* ----- 3. PAGE-SPECIFIC STYLES (FOR APPOINTMENTS CONTENT) ----- */
@@ -217,10 +201,24 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex;
             align-items: center; gap: 0.5rem; transition: all 0.2s ease-in-out;
         }
-        .btn-primary { background-color: #007bff; color: white; }
+        .btn-primary { background-color: var(--primary-color);; color: white; }
         .btn-primary:hover { background-color: #0056b3; }
         .btn-secondary { background-color: #f1f3f5; color: #495057; border: 1px solid #dee2e6; }
-        .btn-secondary:hover { background-color: #e9ecef; }
+        .btn-secondary:hover { background-color: var(--primary-color) }
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        .cancel-appointment-btn {
+            background-color: #dc3545; /* A standard 'danger' red */
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .cancel-appointment-btn:hover {
+            background-color: #c82333; /* A slightly darker red for hover */
+            border-color: #c82333;
+        }
 
         .card {
             background-color: white; border-radius: 12px; padding: 2rem;
@@ -267,9 +265,9 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             background-color: #fff; font-weight: 500; color: #495057;
         }
         .time-slot input[type="radio"]:checked + label {
-            background-color: #007bff; color: white; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+            background-color: var(--primary-color); color: white; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0,123,255,.25);
         }
-        .time-slot label:hover { border-color: #007bff; }
+        .time-slot label:hover { border-color: var(--primary-color); }
 
 
         /* === NEW CSS FOR DISABLED TIME SLOTS === */
@@ -299,9 +297,96 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             .sidebar { position: relative; width: 100%; height: auto; }
         }
     </style>
+
+    <style>
+        /* Main Content Area */
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            flex: 1;
+            background-color: var(--light-color); /* Match staff page background */
+        }
+        /* Page Header and Card */
+        .page-header {
+            background: white; padding: 2rem; border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .page-header h1 { margin: 0; font-size: 2rem; }
+        .page-header p { margin: 0.5rem 0 0; color: var(--text-light); }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        /* Button Styles */
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; text-decoration: none; cursor: pointer; transition: all 0.3s ease; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-secondary { background: var(--gray-light); color: var(--text-dark); }
+        .btn-close { background: var(--gray-light); color: var(--text-dark); }
+        .btn-close:hover { background: #FF0000; }
+
+        /* Table Styles (for List View) */
+        .table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .table th, .table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--gray-light); }
+        .table th { color: var(--text-light); }
+
+        /* Status Badges */
+        .status-badge { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: capitalize; }
+        .status-requested { background-color: #fef3c7; color: #92400e; }
+        .status-confirmed { background-color: #d1fae5; color: #065f46; }
+        .status-completed { background-color: #dbeafe; color: #1e40af; }
+        .status-cancelled { background-color: #fee2e2; color: #dc2626; }
+        
+        /* View Toggle Controls */
+        .view-controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+        .view-toggle { display: flex; background: white; border-radius: 8px; padding: 0.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .view-toggle-btn { padding: 0.5rem 1rem; border: none; background: transparent; color: var(--text-light); font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; text-decoration: none; }
+        .view-toggle-btn.active { background: var(--primary-color); color: white; }
+        .view-toggle-btn:hover:not(.active) { background: var(--light-color); color: var(--text-dark); }
+
+        /* Week View Calendar Styles */
+        .week-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .week-navigation { display: flex; align-items: center; gap: 1rem; }
+        .week-nav-btn { background: white; border: 1px solid var(--gray-light); padding: 0.5rem; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
+        .week-nav-btn:hover { background: var(--light-color); }
+        .week-title { font-size: 1.1rem; font-weight: 600; color: var(--text-dark); }
+        
+        .calendar-grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); gap: 1px; background: var(--gray-light); border: 1px solid var(--gray-light); border-radius: 8px; overflow: hidden; }
+        .calendar-header { background: white; padding: 1rem 0.5rem; text-align: center; font-weight: 600; color: var(--text-dark); }
+        .calendar-day-header { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+        .day-name { font-size: 0.85rem; color: var(--text-light); }
+        .day-number { font-size: 1.1rem; font-weight: 700; }
+        .time-slot-row { background: var(--light-color); padding: 0.75rem 0.5rem; text-align: center; font-size: 0.85rem; color: var(--text-light); }
+        .calendar-cell { background: white; min-height: 60px; padding: 0.25rem; display: flex; flex-direction: column; gap: 0.25rem; }
+
+        /* Appointment Block Styles */
+        .appointment-block { background: var(--primary-color); color: white; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; margin-bottom: 0.25rem; cursor: pointer; transition: all 0.2s ease; overflow: hidden; }
+        .appointment-block:hover { opacity: 0.9; transform: translateY(-1px); }
+        .appointment-block.status-requested { background-color: #f59e0b; }
+        .appointment-block.status-confirmed { background-color: #10b981; }
+        .appointment-block.status-completed { background-color: #3b82f6; }
+        
+        .appointment-summary { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+        .appointment-summary i { transition: transform 0.2s ease; }
+        .appointment-details { display: none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.3); font-size: 0.75rem; line-height: 1.4; }
+        .appointment-details strong { display: block; margin-bottom: 2px; }
+        .appointment-block.is-expanded .appointment-details { display: block; }
+        .appointment-block.is-expanded .appointment-summary i { transform: rotate(180deg); }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1050; display: none; justify-content: center; align-items: center; padding: 1rem; }
+        .modal-content { background: #fff; border-radius: 12px; width: 90%; max-width: 500px; padding: 0; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-header { padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gray-light); }
+        .modal-header h3 { margin: 0; font-size: 1.25rem; }
+        .modal-header .close-btn { background: none; border: none; font-size: 1.75rem; cursor: pointer; }
+        .modal-body { padding: 1.5rem; }
+        .modal-body p { margin: 0 0 1rem; }
+        .modal-body strong { color: var(--text-dark); }
+        .modal-footer { padding: 1rem 1.5rem; text-align: right; border-top: 1px solid var(--gray-light); background: #f8f9fa; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;}
+    </style>
 </head>
 <body>
     <?php include '../../includes/sidebar-client.php'; ?>
+    <?php include '../../includes/navbar.php'; ?>
     <div class="main-content">
 
         <?php if ($action === 'create'): ?>
@@ -340,58 +425,165 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                             <div class="form-group"><label for="notes">Additional Notes</label><textarea id="notes" name="notes" placeholder="Enter any additional information, like symptoms or concerns."></textarea></div>
                         </div>
                     </div>
-                    <div class="form-actions"><a href="index.php" class="btn btn-secondary">Cancel</a><button type="submit" name="create_appointment" class="btn btn-primary">Create Appointment</button></div>
+                    <div class="form-actions"><a href="index.php" class="btn btn-secondary btn-close">Cancel</a><button type="submit" name="create_appointment" class="btn btn-primary">Create Appointment</button></div>
                 </form>
             </div>
 
         <?php else: ?>
 
-            <!-- LIST VIEW -->
-            <div class="page-header"><h1>Appointments</h1><div class="header-actions"><a href="index.php?action=create" class="btn btn-primary"><i class="fas fa-plus"></i> Create New</a></div></div>
-            <?php if ($success_message): ?><div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div><?php endif; ?>
-            <div class="card">
-                <div class="table-container">
-                    <table class="appointments-table">
-                        <thead><tr><th>Date & Time</th><th>Pet</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody>
-                            <?php if (empty($appointments)): ?>
-                                <tr><td colspan="5" class="no-data">You have no upcoming appointments.</td></tr>
-                            <?php else: ?>
-                                <?php foreach ($appointments as $appt): ?>
-                                    <tr>
-                                        <td><strong><?php echo date("F j, Y", strtotime($appt['appointment_date'])); ?></strong><br><small><?php echo date("g:i A", strtotime($appt['appointment_time'])); ?></small></td>
-                                        <td><?php echo htmlspecialchars($appt['pet_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($appt['reason']); ?></td>
-                                        <td><span class="status-badge status-<?php echo htmlspecialchars(strtolower($appt['status'])); ?>"><?php echo htmlspecialchars($appt['status']); ?></span></td>
-                                        <td><a href="#" class="action-link">Cancel</a></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+            <!-- REMINDER: This is the new main layout, copied from the staff page. -->
+            <div class="page-header">
+                <div>
+                    <h1>My Appointments</h1>
+                    <p>View your scheduled appointments in a list or weekly calendar.</p>
                 </div>
+                <a href="index.php?action=create" class="btn btn-primary"><i class="fas fa-plus" style="margin-right: 0.5rem;"></i> Book New</a>
             </div>
-            <div class="bottom-cards">
-                <div class="card">
-                    <div class="card-header"><h3>Appointment Guidelines</h3><i class="fas fa-info-circle icon"></i></div>
-                    <ul class="guidelines-list">
-                        <li>Appointments can be scheduled up to 2 months in advance.</li><li>Please arrive 15 minutes before your scheduled time.</li><li>Cancellations should be made at least 24 hours in advance.</li><li>Bring your pet's medical history if this is your first visit.</li>
-                    </ul>
-                </div>
-                <div class="card">
-                    <div class="card-header"><h3>Your Pets</h3><i class="fas fa-paw icon"></i></div>
-                    <?php if (empty($pets)): ?><p>No pets found. You can add a pet in your profile.</p>
-                    <?php else: ?>
-                        <ul class="pets-list"><?php foreach($pets as $pet): ?><li><?php echo htmlspecialchars($pet['name']); ?></li><?php endforeach; ?></ul>
-                        <a href="../my-pets/" class="view-all-link">Manage My Pets</a>
-                    <?php endif; ?>
+
+            <!-- REMINDER: These are the view toggle controls, copied from the staff page. -->
+            <div class="view-controls">
+                <div class="view-toggle">
+                    <a href="index.php?view=list" class="view-toggle-btn <?php echo $view === 'list' ? 'active' : ''; ?>">List</a>
+                    <a href="index.php?view=week" class="view-toggle-btn <?php echo $view === 'week' ? 'active' : ''; ?>">Week</a>
                 </div>
             </div>
 
+            <?php if ($view === 'week'): ?>
+                <!-- REMINDER: This is the Week View, an exact copy of the staff page's layout. -->
+                <div class="card">
+                    <div class="week-header">
+                        <div class="week-navigation">
+                            <?php
+                            $prev_week_date = (clone $target_date)->modify('-1 week')->format('Y-m-d');
+                            $next_week_date = (clone $target_date)->modify('+1 week')->format('Y-m-d');
+                            ?>
+                            <a href="index.php?view=week&date=<?php echo $prev_week_date; ?>" class="week-nav-btn"><i class="fas fa-chevron-left"></i></a>
+                            <span class="week-title"><?php echo $week_start_dt->format('M j') . ' - ' . $week_end_dt->format('M j, Y'); ?></span>
+                            <a href="index.php?view=week&date=<?php echo $next_week_date; ?>" class="week-nav-btn"><i class="fas fa-chevron-right"></i></a>
+                        </div>
+                        <button class="btn btn-secondary" onclick="goToToday()">Today</button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="calendar-header"></div> <!-- Time column header -->
+                        <?php foreach ($week_dates as $date_info): ?>
+                            <div class="calendar-header"><div class="calendar-day-header"><span class="day-name"><?php echo $date_info['day_short']; ?></span><span class="day-number"><?php echo $date_info['day_number']; ?></span></div></div>
+                        <?php endforeach; ?>
+                        <?php foreach ($time_slots as $time): ?>
+                            <div class="time-slot-row"><?php echo date('g A', strtotime($time)); ?></div>
+                            <?php foreach ($week_dates as $date_info): ?>
+                                <div class="calendar-cell">
+                                    <?php
+                                    $current_date = $date_info['date']; $current_hour = substr($time, 0, 2);
+                                    if (isset($appointments_grid[$current_date][$current_hour])):
+                                        foreach ($appointments_grid[$current_date][$current_hour] as $appt):
+                                            echo '<div class="appointment-block status-' . htmlspecialchars(strtolower($appt['status'])) . '" 
+                                                       data-datetime="' . htmlspecialchars(date("D, M j, Y, g:i A", strtotime($appt['appointment_date'] . ' ' . $appt['appointment_time']))) . '"
+                                                       data-pet="' . htmlspecialchars($appt['pet_name']) . '"
+                                                       data-reason="' . htmlspecialchars($appt['reason']) . '"
+                                                       data-notes="' . htmlspecialchars($appt['notes']) . '"
+                                                       data-status="' . htmlspecialchars($appt['status']) . '">';
+                                            echo '<div class="appointment-summary"><span>' . htmlspecialchars(date('g:iA', strtotime($appt['appointment_time']))) . ' ' . htmlspecialchars($appt['pet_name']) . '</span><i class="fas fa-chevron-down"></i></div>';
+                                            echo '<div class="appointment-details"><strong>Reason:</strong> ' . htmlspecialchars($appt['reason']) . '</div>';
+                                            echo '</div>';
+                                        endforeach;
+                                    endif;
+                                    ?>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php else: ?>
+                <!-- REMINDER: This is the List View, now using the staff page's '.table' for consistency. -->
+                <div class="card">
+                    <table class="table">
+                        <thead><tr><th>Date & Time</th><th>Pet</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <?php if (empty($appointments)): ?>
+                                <tr><td colspan="5" style="text-align:center; padding: 3rem;">No appointments found.</td></tr>
+                            <?php else: foreach ($appointments as $appt): ?>
+                                <tr data-appointment-id="<?php echo $appt['appointment_id']; ?>">
+                                    <td><strong><?php echo date("M d, Y", strtotime($appt['appointment_date'])); ?></strong><br><small><?php echo date("g:i A", strtotime($appt['appointment_time'])); ?></small></td>
+                                    <td><?php echo htmlspecialchars($appt['pet_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($appt['reason']); ?></td>
+                                    <td><span class="status-badge status-<?php echo htmlspecialchars(strtolower($appt['status'])); ?>"><?php echo htmlspecialchars($appt['status']); ?></span></td>
+                                    <td>
+                                        <?php if (!in_array($appt['status'], ['cancelled', 'completed'])): ?>
+                                            <button class="btn btn-secondary btn-sm cancel-appointment-btn btn-close">Cancel</button>
+                                        <?php else: echo '<span>-</span>'; endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; endif; ?>
+                        </tbody>
+                    </table>
+                    <!-- REMINDER: Pagination controls would go here if needed for the list view -->
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
     
+    <!-- MODAL for Appointment Details -->
+    <div class="modal-overlay" id="appointment-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Appointment Details</h3>
+                <button type="button" class="close-btn" onclick="closeModal('appointment-details-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Date & Time:</strong> <span id="modal-datetime"></span></p>
+                <p><strong>Pet:</strong> <span id="modal-pet"></span></p>
+                <p><strong>Status:</strong> <span id="modal-status" class="status-badge"></span></p>
+                <p><strong>Reason for Visit:</strong><br><span id="modal-reason"></span></p>
+                <p><strong>Notes:</strong><br><span id="modal-notes"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-close" onclick="closeModal('appointment-details-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+
+        function goToToday() {
+            window.location.href = 'index.php?view=week';
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'none';
+        }
+        
+        document.addEventListener('click', function (e) {
+            const appointmentBlock = e.target.closest('.appointment-block');
+            if (appointmentBlock) {
+                e.preventDefault();
+                appointmentBlock.classList.toggle('is-expanded');
+                const details = appointmentBlock.dataset;
+                document.getElementById('modal-datetime').textContent = details.datetime;
+                document.getElementById('modal-pet').textContent = details.pet;
+                document.getElementById('modal-reason').textContent = details.reason || 'N/A';
+                document.getElementById('modal-notes').textContent = details.notes || 'N/A';
+                const statusBadge = document.getElementById('modal-status');
+                const statusText = details.status || 'unknown';
+                statusBadge.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+                statusBadge.className = 'status-badge status-' + statusText.toLowerCase();
+                openModal('appointment-details-modal');
+            }
+
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal(e.target.id);
+            }
+
+            if (e.target.classList.contains('cancel-appointment-btn')) {
+                // Your existing cancel button logic here...
+            }
+        });
+
     document.addEventListener('DOMContentLoaded', function() {
         const dateInput = document.getElementById('appointment_date');
         if (!dateInput) { return; }
@@ -442,6 +634,101 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
         dateInput.addEventListener('change', updateAvailableSlots);
         updateAvailableSlots();
     });
+
+        // This function can be reused from your staff panel for a consistent look
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            `;
+            
+            if (type === 'success') {
+                notification.style.backgroundColor = '#28a745'; // Green for success
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#dc3545'; // Red for error
+            }
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+
+        // New event listener for the cancel button
+        document.addEventListener('click', async function(e) {
+            // Target only our new cancel button
+            if (e.target.classList.contains('cancel-appointment-btn')) {
+                const button = e.target;
+                const row = button.closest('tr');
+                const appointmentId = row.dataset.appointmentId;
+                
+                if (!confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')) {
+                    return;
+                }
+
+                // Disable the button to prevent multiple clicks
+                button.disabled = true;
+                button.textContent = 'Cancelling...';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('appointment_id', appointmentId);
+                    
+                    // Call our new, secure AJAX endpoint
+                    const response = await fetch('ajax/cancel_appointment.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        // Update the UI without a page reload
+                        const statusCell = row.querySelector('.status-cell .status-badge');
+                        statusCell.textContent = 'cancelled';
+                        statusCell.className = 'status-badge status-cancelled';
+
+                        // Remove the button
+                        const actionCell = row.querySelector('.action-cell');
+                        actionCell.innerHTML = '<span>-</span>';
+                        
+                        showNotification('Appointment cancelled successfully!', 'success');
+                    } else {
+                        // Throw an error to be caught by the catch block
+                        throw new Error(result.error || 'An unknown error occurred.');
+                    }
+
+                } catch (error) {
+                    showNotification('Error: ' + error.message, 'error');
+                    // Re-enable the button if something went wrong
+                    button.disabled = false;
+                    button.textContent = 'Cancel';
+                }
+            }
+        });
+
     </script>
 
 </body>
