@@ -339,11 +339,9 @@ $pageTitle = 'Patients - ' . SITE_NAME;
                         <div class="search-box">
                             <input type="text" placeholder="Search..." id="searchInput">
                         </div>
-                        <button class="filter-btn" onclick="toggleFilters()">🔽 Filters</button>
                     </div>
                     <div class="action-buttons">
                         <button class="btn btn-primary" onclick="createClient()">Create Client</button>
-                        <button class="btn btn-secondary" onclick="importData()">📤 Import</button>
                     </div>
                 </div>
 
@@ -690,8 +688,7 @@ $pageTitle = 'Patients - ' . SITE_NAME;
         });
 
         // --- INITIALIZATION ---
-        function importData() { alert('Import Data functionality triggered.'); }
-        function toggleFilters() { alert('Filters toggle triggered.'); }
+
         
         document.addEventListener('DOMContentLoaded', () => {
             fetchPatients();
