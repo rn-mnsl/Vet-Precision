@@ -705,7 +705,6 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             grid.innerHTML = '';
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             const speciesFilter = document.getElementById('speciesFilter').value.toLowerCase();
-            // REMINDER: Field name in DB is is_active, but your UI uses active/inactive. Let's adapt.
             const statusFilter = document.getElementById('statusFilter').value;
 
             const filteredPets = pets.filter(pet => {
@@ -729,7 +728,6 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                 const age = calculateAge(pet.date_of_birth);
                 const card = document.createElement('div');
                 card.className = 'pet-card';
-                // REMINDER: Using real data fields from the database now.
                 card.innerHTML = `
                     <div class="pet-header">
                         <div class="pet-avatar">${getPetEmoji(pet.species)}</div>
@@ -742,7 +740,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                                 <div class="info-label">Owner</div>
                                 <div class="info-value">${pet.owner_name || 'N/A'}</div>
                             </div>
-                             <div class="info-item">
+                            <div class="info-item">
                                 <div class="info-label">Age</div>
                                 <div class="info-value">${age} years</div>
                             </div>
@@ -756,7 +754,8 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                             </div>
                         </div>
                         <div class="pet-actions">
-                            <button class="btn btn-primary" onclick="bookAppointment(${pet.pet_id})">Book Appointment</button>
+                            <!-- CHANGE: The link now includes both owner_id and pet_id -->
+                            <a href="../appointments/index.php?action=create&owner_id=${pet.owner_id}&pet_id=${pet.pet_id}" class="btn btn-primary">Book Appointment</a>
                             <button class="btn btn-outline" onclick="editPet(${pet.pet_id})">Edit Info</button>
                             <button class="btn btn-danger" onclick="deletePet(${pet.pet_id})">Delete</button>
                         </div>
@@ -764,11 +763,6 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                 `;
                 grid.appendChild(card);
             });
-        }
-        
-        function bookAppointment(petId) {
-            // You can make this more specific later if needed
-            window.location.href = '../appointments/index.php';
         }
 
         function editPet(id) {
