@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vet Precision - Your Pet's Health Partner</title>
+    <?php include 'includes/favicon.php'; ?>
     <style>
         /* ===== CSS Variables - Updated Color Palette ===== */
         :root {

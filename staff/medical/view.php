@@ -215,6 +215,7 @@ $pageTitle = 'View Medical Record - ' . SITE_NAME;
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="../../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <?php include '../../includes/favicon.php'; ?>
     <style>
         * {
             box-sizing: border-box;
@@ -470,37 +471,122 @@ $pageTitle = 'View Medical Record - ' . SITE_NAME;
         .prescription-modal {
             display: none;
             position: fixed;
-            z-index: 1000;
+            z-index: 10000;
             left: 0;
             top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.9);
             justify-content: center;
             align-items: center;
+            padding: 60px 20px 20px 20px; /* Extra top padding for close button */
+            box-sizing: border-box;
+        }
+
+        .prescription-modal.show {
+            display: flex !important;
         }
 
         .prescription-modal-content {
             position: relative;
-            max-width: 90%;
-            max-height: 90%;
+            max-width: calc(100vw - 40px);
+            max-height: calc(100vh - 80px); /* Account for close button space */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
         }
 
         .prescription-modal img {
-            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
             height: auto;
+            object-fit: contain;
             border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            background: white;
+            padding: 4px;
+            /* Ensure image never exceeds viewport */
+            max-width: calc(100vw - 40px);
+            max-height: calc(100vh - 120px);
         }
 
         .prescription-modal-close {
-            position: absolute;
-            top: -40px;
-            right: 0;
+            position: fixed;
+            top: 20px;
+            right: 20px;
             color: white;
-            font-size: 2rem;
+            font-size: 2.5rem;
             cursor: pointer;
-            background: none;
-            border: none;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid rgba(255,255,255,0.3);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            z-index: 10001;
+            line-height: 1;
+        }
+
+        .prescription-modal-close:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.6);
+            transform: scale(1.1);
+        }
+
+        .prescription-modal-close:focus {
+            outline: 3px solid white;
+            outline-offset: 2px;
+        }
+
+        /* Add zoom info indicator */
+        .zoom-info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            z-index: 10001;
+        }
+
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+            .prescription-modal {
+                padding: 70px 10px 10px 10px;
+            }
+            
+            .prescription-modal-close {
+                top: 15px;
+                right: 15px;
+                font-size: 2rem;
+                width: 50px;
+                height: 50px;
+            }
+            
+            .prescription-modal-content {
+                max-width: calc(100vw - 20px);
+                max-height: calc(100vh - 100px);
+            }
+
+            .prescription-modal img {
+                max-width: calc(100vw - 20px);
+                max-height: calc(100vh - 130px);
+            }
+
+            .zoom-info {
+                font-size: 0.8rem;
+                padding: 8px 16px;
+            }
         }
 
         .btn {
@@ -864,9 +950,9 @@ $pageTitle = 'View Medical Record - ' . SITE_NAME;
     <!-- Prescription Photo Modal -->
     <div id="prescriptionModal" class="prescription-modal">
         <div class="prescription-modal-content">
-            <button class="prescription-modal-close" onclick="closePrescriptionModal()">&times;</button>
-            <img id="prescriptionModalImg" src="" alt="Prescription Photo">
+            <img id="prescriptionModalImg" src="" alt="Prescription Photo Full Size" style="cursor: zoom-in;">
         </div>
+        <button class="prescription-modal-close" onclick="closePrescriptionModal()" aria-label="Close modal">&times;</button>
     </div>
 
     <script>
@@ -929,31 +1015,162 @@ $pageTitle = 'View Medical Record - ' . SITE_NAME;
             }
         });
 
-        // Prescription modal functions
+        // Prescription modal functions - Enhanced version with better sizing
         function openPrescriptionModal() {
+            console.log('Opening prescription modal...'); // Debug log
+            
             const modal = document.getElementById('prescriptionModal');
             const modalImg = document.getElementById('prescriptionModalImg');
             const prescriptionImg = document.getElementById('prescription-preview');
             
-            if (prescriptionImg.src) {
+            if (!modal || !modalImg || !prescriptionImg) {
+                console.error('Modal elements not found');
+                return;
+            }
+            
+            if (prescriptionImg.src && prescriptionImg.src !== window.location.href) {
+                console.log('Setting modal image source:', prescriptionImg.src); // Debug log
                 modalImg.src = prescriptionImg.src;
+                modal.classList.add('show');
                 modal.style.display = 'flex';
+                
+                // Prevent body scroll when modal is open
+                document.body.style.overflow = 'hidden';
+                
+                // Add zoom info
+                addZoomInfo();
+                
+                // Focus on close button for accessibility
+                setTimeout(() => {
+                    document.querySelector('.prescription-modal-close')?.focus();
+                }, 100);
+                
+                // Add click-to-zoom functionality
+                modalImg.addEventListener('click', toggleImageZoom);
+                
+            } else {
+                console.error('No valid image source found');
             }
         }
 
         function closePrescriptionModal() {
-            document.getElementById('prescriptionModal').style.display = 'none';
+            console.log('Closing prescription modal...'); // Debug log
+            
+            const modal = document.getElementById('prescriptionModal');
+            const modalImg = document.getElementById('prescriptionModalImg');
+            
+            if (modal) {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+                
+                // Restore body scroll
+                document.body.style.overflow = '';
+                
+                // Remove zoom info
+                removeZoomInfo();
+                
+                // Reset image zoom
+                if (modalImg) {
+                    modalImg.style.transform = '';
+                    modalImg.style.cursor = 'zoom-in';
+                    modalImg.removeEventListener('click', toggleImageZoom);
+                }
+            }
         }
 
-        // Close modal when clicking outside of it
-        document.getElementById('prescriptionModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closePrescriptionModal();
-            }
-        });
+        function addZoomInfo() {
+            // Remove existing zoom info if present
+            removeZoomInfo();
+            
+            const zoomInfo = document.createElement('div');
+            zoomInfo.className = 'zoom-info';
+            zoomInfo.id = 'zoomInfo';
+            zoomInfo.innerHTML = 'Click image to zoom • Press ESC to close';
+            document.body.appendChild(zoomInfo);
+        }
 
-        // Initialize on page load
+        function removeZoomInfo() {
+            const existing = document.getElementById('zoomInfo');
+            if (existing) {
+                existing.remove();
+            }
+        }
+
+        let isZoomed = false;
+        function toggleImageZoom(e) {
+            e.stopPropagation();
+            const img = e.target;
+            
+            if (!isZoomed) {
+                // Zoom in
+                img.style.transform = 'scale(1.5)';
+                img.style.cursor = 'zoom-out';
+                isZoomed = true;
+                
+                // Update zoom info
+                const zoomInfo = document.getElementById('zoomInfo');
+                if (zoomInfo) {
+                    zoomInfo.innerHTML = 'Click image to zoom out • Press ESC to close';
+                }
+            } else {
+                // Zoom out
+                img.style.transform = '';
+                img.style.cursor = 'zoom-in';
+                isZoomed = false;
+                
+                // Update zoom info
+                const zoomInfo = document.getElementById('zoomInfo');
+                if (zoomInfo) {
+                    zoomInfo.innerHTML = 'Click image to zoom • Press ESC to close';
+                }
+            }
+        }
+
+        // Enhanced modal event listeners
         document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('prescriptionModal');
+            const closeBtn = document.querySelector('.prescription-modal-close');
+            const prescriptionImg = document.getElementById('prescription-preview');
+            
+            // Close modal when clicking outside of image
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closePrescriptionModal();
+                    }
+                });
+            }
+            
+            // Close modal with close button
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closePrescriptionModal();
+                });
+            }
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePrescriptionModal();
+                }
+            });
+            
+            // Add click event to prescription image
+            if (prescriptionImg) {
+                prescriptionImg.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Prescription image clicked'); // Debug log
+                    openPrescriptionModal();
+                });
+                
+                // Add visual feedback
+                prescriptionImg.style.cursor = 'pointer';
+                prescriptionImg.title = 'Click to view full size';
+            }
+            
+            // Initialize other functions
             toggleFollowUpDate();
         });
     </script>
