@@ -35,6 +35,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
+    <?php include 'includes/favicon.php'; ?>
     <style>
         /* ===== CSS Variables - Updated Color Palette ===== */
         :root {
@@ -955,6 +956,49 @@ $pageTitle = 'Login - ' . SITE_NAME;
         .animate-fadeInLeft {
             animation: fadeInLeft 0.6s ease-out;
         }
+
+        /* ===== Password Input Container ===== */
+        .password-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input-container .form-control {
+            padding-right: 3rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--gray-400);
+            transition: color 0.2s ease;
+            padding: 0.25rem;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: var(--gray-600);
+        }
+
+        .password-toggle:focus {
+            outline: none;
+            color: var(--primary-teal);
+        }
+
+        .eye-icon {
+            width: 20px;
+            height: 20px;
+            transition: all 0.2s ease;
+        }
     </style>
 </head>
 <body>
@@ -1024,14 +1068,26 @@ $pageTitle = 'Login - ' . SITE_NAME;
 
                     <div class="form-group">
                         <label for="password" class="form-label">Password</label>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="form-control <?php echo isset($errors['password']) ? 'is-invalid' : ''; ?>"
-                            placeholder="Enter your password"
-                            required
-                        >
+                        <div class="password-input-container">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                class="form-control <?php echo isset($errors['password']) ? 'is-invalid' : ''; ?>"
+                                placeholder="Enter your password"
+                                required
+                            >
+                            <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                                <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle class="eye-open" cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path class="eye-closed" d="m1 1 22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"/>
+                                    <path class="eye-closed" d="M6.71 6.71a9.5 9.5 0 0 0-4.71 5.29s4 8 11 8a9.5 9.5 0 0 0 5.29-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"/>
+                                    <path class="eye-closed" d="M12 7a5 5 0 0 1 5 5 4.64 4.64 0 0 1-.39 1.61" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"/>
+                                    <path class="eye-closed" d="M12 17a5 5 0 0 1-5-5 4.64 4.64 0 0 1 .39-1.61" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"/>
+                                </svg>
+                            </button>
+                        </div>
                         <?php if (isset($errors['password'])): ?>
                             <div class="invalid-feedback"><?php echo sanitize($errors['password']); ?></div>
                         <?php endif; ?>
@@ -1152,6 +1208,28 @@ $pageTitle = 'Login - ' . SITE_NAME;
                         document.getElementById('password').value = passwordMatch[1];
                     }
                 });
+            });
+
+            // Password visibility toggle functionality
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            const eyeOpenElements = document.querySelectorAll('.eye-open');
+            const eyeClosedElements = document.querySelectorAll('.eye-closed');
+
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                // Toggle eye icon
+                if (type === 'text') {
+                    // Show "eye closed" icon
+                    eyeOpenElements.forEach(el => el.style.display = 'none');
+                    eyeClosedElements.forEach(el => el.style.display = 'block');
+                } else {
+                    // Show "eye open" icon
+                    eyeOpenElements.forEach(el => el.style.display = 'block');
+                    eyeClosedElements.forEach(el => el.style.display = 'none');
+                }
             });
         });
 

@@ -174,6 +174,7 @@ $pageTitle = 'Create Medical Record - ' . SITE_NAME;
     <title><?php echo $pageTitle; ?></title>
     <link rel="stylesheet" href="../../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <?php include '../../includes/favicon.php'; ?>
     <style>
         * {
             box-sizing: border-box;
@@ -375,18 +376,26 @@ $pageTitle = 'Create Medical Record - ' . SITE_NAME;
             background-color: rgba(0,0,0,0.8);
             justify-content: center;
             align-items: center;
+            padding: 20px;
         }
 
         .prescription-modal-content {
             position: relative;
-            max-width: 90%;
-            max-height: 90%;
+            max-width: 95%;
+            max-height: 95%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .prescription-modal img {
-            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
             height: auto;
+            object-fit: contain;
             border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
         .prescription-modal-close {
@@ -396,8 +405,19 @@ $pageTitle = 'Create Medical Record - ' . SITE_NAME;
             color: white;
             font-size: 2rem;
             cursor: pointer;
-            background: none;
+            background: rgba(0,0,0,0.7);
             border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .prescription-modal-close:hover {
+            background: rgba(0,0,0,0.9);
         }
 
         .btn {

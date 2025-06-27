@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle ?? 'Vet Precision'; ?></title>
+    <?php include 'favicon.php'; ?>
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/responsive.css">
     <?php if (isset($extraCSS)) echo $extraCSS; ?>
@@ -16,4 +17,4 @@
     <div class="alert alert-<?php echo $flash['type']; ?>">
         <?php echo sanitize($flash['message']); ?>
     </div>
-    <?php endif; ?> 
+    <?php endif; ?>
