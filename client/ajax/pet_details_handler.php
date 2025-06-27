@@ -27,6 +27,38 @@ try {
         exit();
     }
 
+    // =========================================================================
+    // --- START: NEW SERVER-SIDE VALIDATION FOR PET PHOTO ---
+    // This is the same logic from your main page, now applied to the AJAX data.
+    // =========================================================================
+
+    // First, check if the database even has a photo_url value.
+    if (!empty($petDetails['photo_url'])) {
+        
+        // The path in your DB is like '../../uploads/pets/image.jpg'.
+        // This path is relative to the file that originally saved it.
+        // We need to build a reliable server path from the location of *this* handler file.
+        // __DIR__ is the directory of this file: /.../client/ajax/
+        // So, we go up two directories to the root, then down to 'uploads/pets/'.
+        
+        // Clean the stored path to get just the filename. This is safer.
+        $filename = basename($petDetails['photo_url']);
+
+        // Construct the full, absolute server path to the image file.
+        $absolute_path_to_image = __DIR__ . '/../../uploads/pets/' . $filename;
+        
+        // Now, check if that file ACTUALLY exists on the server's hard drive.
+        if (!file_exists($absolute_path_to_image)) {
+            // The file path is in the DB, but the file is missing!
+            // Set the photo_url to null so the JavaScript knows to use the default emoji.
+            $petDetails['photo_url'] = null; 
+        }
+    }
+    // =========================================================================
+    // --- END: NEW SERVER-SIDE VALIDATION FOR PET PHOTO ---
+    // =========================================================================
+
+
     // --- 2. Fetch Upcoming Appointments ---
     $stmt = $pdo->prepare("
         SELECT * FROM appointments 
@@ -50,7 +82,7 @@ try {
     
     // --- 4. Combine all data and send as a JSON response ---
     $responseData = [
-        'details' => $petDetails,
+        'details' => $petDetails, // This now contains the validated photo_url
         'upcoming_appointments' => $upcomingAppointments,
         'medical_history' => $medicalHistory
     ];
@@ -61,6 +93,7 @@ try {
 } catch (PDOException $e) {
     http_response_code(500); // Internal Server Error
     // In production, log the error instead of echoing it.
+    // error_log($e->getMessage());
     echo json_encode(['success' => false, 'message' => 'A database error occurred.']);
 }
 ?>

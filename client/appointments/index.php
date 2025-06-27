@@ -28,6 +28,9 @@ $owner_id = getOwnerId($pdo, $user_id);
 $action = $_GET['action'] ?? 'list';
 $view = $_GET['view'] ?? 'list'; // Default to list view as it's more common
 
+// ADD THIS LINE
+$preselected_pet_id = isset($_GET['pet_id']) ? (int)$_GET['pet_id'] : null;
+
 $errors = [];
 $success_message = '';
 
@@ -455,7 +458,15 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                                 <label for="pet_id">Pet <span>*</span></label>
                                 <select id="pet_id" name="pet_id" required>
                                     <option value="">Select a pet</option>
-                                    <?php foreach ($pets as $pet): ?><option value="<?php echo htmlspecialchars($pet['pet_id']); ?>"><?php echo htmlspecialchars($pet['name']); ?></option><?php endforeach; ?>
+                                    <?php foreach ($pets as $pet): ?>
+                                        <?php
+                                        // Check if the current pet's ID matches the one from the URL
+                                        $is_selected = ($preselected_pet_id && $pet['pet_id'] == $preselected_pet_id) ? 'selected' : '';
+                                        ?>
+                                        <option value="<?php echo htmlspecialchars($pet['pet_id']); ?>" <?php echo $is_selected; ?>>
+                                            <?php echo htmlspecialchars($pet['name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <br>

@@ -602,13 +602,13 @@ $past_appointments = $stmt->fetchAll();
                 <div class="welcome-content">
                     <h1>Welcome back, <?php echo sanitize($_SESSION['first_name']); ?>!</h1>
                     <p>Manage your pets' health and appointments all in one place</p>
-                    <a href="appointments/book.php" class="btn btn-primary">Book New Appointment</a>
+                    <a href="appointments/index.php?action=create" class="btn btn-primary">Book New Appointment</a>
                 </div>
             </div>
 
             <!-- Quick Actions -->
             <div class="quick-actions">
-                <a href="appointments/book.php" class="quick-action-card">
+                <a href="appointments/index.php?action=create" class="quick-action-card">
                     <span class="quick-action-icon">📅</span>
                     <h4>Book Appointment</h4>
                     <p class="text-muted small">Schedule a visit</p>
@@ -738,7 +738,7 @@ $past_appointments = $stmt->fetchAll();
                                 </div>
                                 <div class="pet-card-footer">
                                     <button onclick="viewPetDetails(<?php echo $pet['pet_id']; ?>)" class="btn btn-sm btn-primary">View Details</button>
-                                    <a href="appointments/book.php?pet_id=<?php echo $pet['pet_id']; ?>" class="btn btn-sm btn-secondary">Book Appointment</a>
+                                    <a href="appointments/index.php?action=create&pet_id=<?php echo $pet['pet_id']; ?>" class="btn btn-sm btn-secondary">Book Appointment</a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -921,17 +921,25 @@ function renderModalContent(data) {
     const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A';
     const formatTime = (timeStr) => timeStr ? new Date(`1970-01-01T${timeStr}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
 
-    // Determine avatar path
-    let avatarPath = '../assets/images/default-generic.png'; // Fallback
+    let avatarHtml = '';
+    // This simple check now works perfectly!
     if (pet.photo_url) {
+        // This block only runs if the server confirmed the file exists.
         const cleanedPath = pet.photo_url.replace('../../', '');
-        avatarPath = `../${cleanedPath}`;
+        const avatarPath = `../../${cleanedPath}`;
+        avatarHtml = `<div class="modal-pet-avatar" style="background-image: url('${avatarPath}')"></div>`;
+    } else {
+        // This block will now correctly run for pets with no photo or a broken photo link.
+        const emoji = getPetEmojiJS(pet.species); // Remember to have getPetEmojiJS() in your script
+        avatarHtml = `<div class="modal-pet-avatar" style="display: flex; align-items: center; justify-content: center; font-size: 4rem; background-color: white;">
+                        ${emoji}
+                    </div>`;
     }
     
     // Build the HTML using template literals
     const html = `
         <div class="modal-header">
-            <div class="modal-pet-avatar" style="background-image: url('${avatarPath}')"></div>
+            ${avatarHtml}
             <div class="modal-pet-title">
                 <h2>${sanitize(pet.name)}</h2>
                 <p>${sanitize(pet.species)} - ${sanitize(pet.breed)}</p>
@@ -991,6 +999,7 @@ function renderModalContent(data) {
     `;
 
     petDetailModalBody.innerHTML = html;
+    switchTab(document.querySelector('.tab-link'), 'info');
 }
 
 function switchTab(btn, tabName) {
@@ -1001,6 +1010,21 @@ function switchTab(btn, tabName) {
     // Activate the clicked tab and corresponding content
     btn.classList.add('active');
     document.getElementById(`tab-${tabName}`).classList.add('active');
+}
+
+function getPetEmojiJS(species) {
+    if (!species) return '🐾'; // Handle null/undefined cases
+    const s = species.toLowerCase(); // Use .toLowerCase() in JS
+
+    if (s.includes('dog')) return '🐕';   // Use .includes() in JS
+    if (s.includes('cat')) return '🐈';
+    if (s.includes('bird')) return '🦜';
+    if (s.includes('rabbit')) return '🐰';
+    if (s.includes('hamster')) return '🐹';
+    if (s.includes('fish')) return '🐠';
+    if (s.includes('turtle')) return '🐢';
+
+    return '🐾'; // Fallback
 }
 </script>
 </html>
