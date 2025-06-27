@@ -229,6 +229,7 @@ $past_appointments = $stmt->fetchAll();
             box-shadow: 0 2px 4px rgba(0,0,0,0.08);
             overflow: hidden;
             transition: all 0.3s ease;
+            position: relative;
         }
 
         .pet-card:hover {
@@ -238,21 +239,26 @@ $past_appointments = $stmt->fetchAll();
 
         .pet-card-header {
             background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
-            padding: 1.5rem;
+            padding: 2rem 1.5rem;
             text-align: center;
             color: white;
+            position: relative;
         }
-
+        
         .pet-avatar {
-            width: 80px;
-            height: 80px;
-            background: white;
+            width: 100px;
+            height: 100px;
+            background-color: white; /* Use background-color for fallback */
+            background-size: cover;    /* This is for the uploaded photo */
+            background-position: center; /* This is for the uploaded photo */
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 1rem;
-            font-size: 2.5rem;
+            font-size: 4.5rem; /* Increased size for a better look */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            line-height: 1; /* Ensures perfect vertical centering for emojis */
         }
 
         .pet-card-header h3 {
@@ -424,6 +430,131 @@ $past_appointments = $stmt->fetchAll();
             margin-bottom: 1.5rem;
         }
 
+
+        /* --- Modal Styles --- */
+        .modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .modal-container.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+        }
+
+        .modal-content {
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: scale(1);
+            transition: transform 0.3s;
+        }
+
+        .modal-container.hidden .modal-content {
+            transform: scale(0.9);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-loader {
+            text-align: center;
+            padding: 5rem;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        /* --- Modal Content Specific Styles --- */
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .modal-pet-avatar {
+            width: 120px;
+            height: 120px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 5px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .modal-pet-title h2 { font-size: 2rem; margin: 0 0 0.25rem 0; }
+        .modal-pet-title p { color: #666; margin: 0; }
+
+        .modal-body { padding: 0; }
+
+        .modal-tabs {
+            display: flex;
+            background: #e9ecef;
+            padding: 0 2rem;
+        }
+        .tab-link {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-link.active {
+            color: var(--primary-color, #FF6B6B);
+            border-bottom-color: var(--primary-color, #FF6B6B);
+        }
+        .tab-content { display: none; padding: 2rem; background: white; }
+        .tab-content.active { display: block; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .info-item { background: #f8f9fa; padding: 1rem; border-radius: 8px; }
+        .info-item label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 0.25rem; }
+        .info-item span { font-size: 1rem; font-weight: 500; }
+
+        .history-item { border-bottom: 1px solid #e9ecef; padding: 1rem 0; }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { font-weight: 600; margin-bottom: 0.5rem; }
+        .history-details p { margin: 0.25rem 0; font-size: 0.9rem; }
+        .history-details strong { color: #333; }
+
+        .no-records { text-align: center; padding: 2rem; color: #666; }
+
         @media (max-width: 768px) {
             .main-content {
                 margin-left: 0;
@@ -518,18 +649,63 @@ $past_appointments = $stmt->fetchAll();
                 <?php else: ?>
                     <div class="pet-cards">
                         <?php foreach ($pets as $pet): ?>
+                            <?php
+                            // --- START OF NEW LOGIC ---
+
+                            // 1. Initialize variables for the avatar's content and style
+                            $avatar_style = '';   // Will hold the 'background-image' style if a photo exists
+                            $avatar_content = ''; // Will hold the emoji character if no photo exists
+
+                            // 2. CHECK FOR A USER-UPLOADED PHOTO (HIGHEST PRIORITY)
+                            if (!empty($pet['photo_url'])) {
+                                // Clean the incorrect relative path from the database
+                                $cleaned_path = str_replace('../../', '', $pet['photo_url']);
+                                // Build the correct path relative to this dashboard file
+                                $user_photo_path = '../' . $cleaned_path;
+
+                                // If the custom photo file actually exists...
+                                if (file_exists($user_photo_path)) {
+                                    // ...set the inline style for the background image.
+                                    $avatar_style = "background-image: url('{$user_photo_path}');";
+                                    // The content remains empty because the background will be used.
+                                }
+                            }
+                            
+                            // 3. IF NO PHOTO WAS SET, GET THE FALLBACK EMOJI
+                            // This runs if $avatar_style is still empty, meaning no valid photo was found.
+                            if (empty($avatar_style)) {
+                                // Get the correct emoji using our new helper function
+                                $avatar_content = getPetEmoji($pet['species']);
+                                $avatar_style = "width: 100px;
+                                                height: 100px;
+                                                background: white;
+                                                border-radius: 50%;
+                                                display: flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                                margin: 0 auto 1rem;
+                                                font-size: 3rem;
+                                                box-shadow: 0 4px 8px rgba(0,0,0,0.1);";
+                            }
+
+                            // --- END OF NEW LOGIC ---
+                            ?>
                             <div class="pet-card">
                                 <div class="pet-card-header">
-                                    <div class="pet-avatar">
-                                        <?php 
-                                        $emoji = '🐾';
-                                        if (stripos($pet['species'], 'dog') !== false) $emoji = '🐕';
-                                        elseif (stripos($pet['species'], 'cat') !== false) $emoji = '🐈';
-                                        elseif (stripos($pet['species'], 'bird') !== false) $emoji = '🦜';
-                                        elseif (stripos($pet['species'], 'rabbit') !== false) $emoji = '🐰';
-                                        echo $emoji;
-                                        ?>
-                                    </div>
+                                    <!-- 
+                                        This div now handles both cases perfectly:
+                                        - If a photo exists: $avatar_style is set, $avatar_content is empty.
+                                        - If no photo: $avatar_style is empty, $avatar_content is the emoji.
+                                    -->
+
+                                    <!-- No photo --> 
+                                    <?php if (empty($avatar_style)): ?>
+                                        <div style="<?php echo $avatar_style; ?>"><?php echo $avatar_content; ?></div>
+                                    <!-- With photo --> 
+                                    <?php else: ?>
+                                        <div class="pet-avatar" style="<?php echo $avatar_style; ?>"><?php echo $avatar_content; ?></div>
+                                    <?php endif; ?>
+
                                     <h3><?php echo sanitize($pet['name']); ?></h3>
                                 </div>
                                 <div class="pet-card-body">
@@ -561,7 +737,7 @@ $past_appointments = $stmt->fetchAll();
                                     <?php endif; ?>
                                 </div>
                                 <div class="pet-card-footer">
-                                    <a href="pets/view.php?id=<?php echo $pet['pet_id']; ?>" class="btn btn-sm btn-primary">View Details</a>
+                                    <button onclick="viewPetDetails(<?php echo $pet['pet_id']; ?>)" class="btn btn-sm btn-primary">View Details</button>
                                     <a href="appointments/book.php?pet_id=<?php echo $pet['pet_id']; ?>" class="btn btn-sm btn-secondary">Book Appointment</a>
                                 </div>
                             </div>
@@ -656,7 +832,34 @@ $past_appointments = $stmt->fetchAll();
         </main>
     </div>
 
+    <!-- Pet Detail Modal -->
+    <div id="petDetailModal" class="modal-container hidden">
+        <div class="modal-overlay" onclick="closePetModal()"></div>
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closePetModal()">×</button>
+            <div id="petDetailModalBody">
+                <!-- Content will be loaded here by JavaScript -->
+                <div class="modal-loader">Loading...</div>
+            </div>
+        </div>
+    </div>
+
     <?php
+
+    function getPetEmoji($species) {
+        $species = strtolower($species); // Make comparison case-insensitive
+
+        if (strpos($species, 'dog') !== false) return '🐕';
+        if (strpos($species, 'cat') !== false) return '🐈';
+        if (strpos($species, 'bird') !== false) return '🦜';
+        if (strpos($species, 'rabbit') !== false) return '🐰';
+        if (strpos($species, 'hamster') !== false) return '🐹';
+        if (strpos($species, 'fish') !== false) return '🐠';
+        if (strpos($species, 'turtle') !== false) return '🐢';
+
+        return '🐾'; // A generic fallback emoji
+    }
+
     // Helper function to calculate age
     function calculateAge($birthDate) {
         $birthDate = new DateTime($birthDate);
@@ -671,6 +874,133 @@ $past_appointments = $stmt->fetchAll();
             return $age->d . ' day' . ($age->d > 1 ? 's' : '');
         }
     }
+    
     ?>
 </body>
+
+<script>
+// --- MODAL SCRIPT ---
+const petDetailModal = document.getElementById('petDetailModal');
+const petDetailModalBody = document.getElementById('petDetailModalBody');
+const API_URL = 'ajax/pet_details_handler.php';
+
+function openPetModal() {
+    petDetailModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closePetModal() {
+    petDetailModal.classList.add('hidden');
+    document.body.style.overflow = ''; // Restore scrolling
+    petDetailModalBody.innerHTML = '<div class="modal-loader">Loading...</div>'; // Reset for next time
+}
+
+async function viewPetDetails(petId) {
+    openPetModal(); // Show modal with loader immediately
+
+    try {
+        const response = await fetch(`${API_URL}?id=${petId}`);
+        const result = await response.json();
+
+        if (result.success) {
+            renderModalContent(result.data);
+        } else {
+            petDetailModalBody.innerHTML = `<div class="no-records">${result.message}</div>`;
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+        petDetailModalBody.innerHTML = '<div class="no-records">Failed to load details. Please try again.</div>';
+    }
+}
+
+function renderModalContent(data) {
+    const pet = data.details;
+
+    // Helper for cleaning and formatting
+    const sanitize = (str) => str || 'N/A';
+    const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A';
+    const formatTime = (timeStr) => timeStr ? new Date(`1970-01-01T${timeStr}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+
+    // Determine avatar path
+    let avatarPath = '../assets/images/default-generic.png'; // Fallback
+    if (pet.photo_url) {
+        const cleanedPath = pet.photo_url.replace('../../', '');
+        avatarPath = `../${cleanedPath}`;
+    }
+    
+    // Build the HTML using template literals
+    const html = `
+        <div class="modal-header">
+            <div class="modal-pet-avatar" style="background-image: url('${avatarPath}')"></div>
+            <div class="modal-pet-title">
+                <h2>${sanitize(pet.name)}</h2>
+                <p>${sanitize(pet.species)} - ${sanitize(pet.breed)}</p>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div class="modal-tabs">
+                <button class="tab-link active" onclick="switchTab(this, 'info')">Details</button>
+                <button class="tab-link" onclick="switchTab(this, 'appointments')">Appointments</button>
+                <button class="tab-link" onclick="switchTab(this, 'history')">Medical History</button>
+            </div>
+
+            <!-- Details Tab -->
+            <div id="tab-info" class="tab-content active">
+                <div class="info-grid">
+                    <div class="info-item"><label>Gender</label> <span>${sanitize(pet.gender)}</span></div>
+                    <div class="info-item"><label>Date of Birth</label> <span>${formatDate(pet.date_of_birth)}</span></div>
+                    <div class="info-item"><label>Color</label> <span>${sanitize(pet.color)}</span></div>
+                    <div class="info-item"><label>Weight</label> <span>${pet.weight ? pet.weight + ' kg' : 'N/A'}</span></div>
+                    <div class="info-item"><label>Microchip ID</label> <span>${sanitize(pet.microchip_id)}</span></div>
+                </div>
+                <div class="info-item" style="margin-top: 1rem;">
+                    <label>Notes / Allergies</label>
+                    <span>${sanitize(pet.notes)}</span>
+                </div>
+            </div>
+
+            <!-- Appointments Tab -->
+            <div id="tab-appointments" class="tab-content">
+                ${data.upcoming_appointments.length > 0 ? data.upcoming_appointments.map(app => `
+                    <div class="history-item">
+                        <div class="history-date">${formatDate(app.appointment_date)} at ${formatTime(app.appointment_time)}</div>
+                        <div class="history-details">
+                            <p><strong>Type:</strong> ${sanitize(app.type)}</p>
+                            <p><strong>Reason:</strong> ${sanitize(app.reason)}</p>
+                            <p><strong>Status:</strong> <span class="status-badge status-${app.status}">${app.status}</span></p>
+                        </div>
+                    </div>
+                `).join('') : '<div class="no-records">No upcoming appointments scheduled.</div>'}
+            </div>
+
+            <!-- History Tab -->
+            <div id="tab-history" class="tab-content">
+                ${data.medical_history.length > 0 ? data.medical_history.map(rec => `
+                    <div class="history-item">
+                        <div class="history-date">${formatDate(rec.visit_date)}</div>
+                        <div class="history-details">
+                            <p><strong>Visit Type:</strong> ${sanitize(rec.visit_type)}</p>
+                            <p><strong>Symptoms:</strong> ${sanitize(rec.symptoms)}</p>
+                            <p><strong>Diagnosis:</strong> ${sanitize(rec.diagnosis)}</p>
+                            <p><strong>Treatment:</strong> ${sanitize(rec.treatment)}</p>
+                        </div>
+                    </div>
+                `).join('') : '<div class="no-records">No medical history found.</div>'}
+            </div>
+        </div>
+    `;
+
+    petDetailModalBody.innerHTML = html;
+}
+
+function switchTab(btn, tabName) {
+    // Deactivate all tabs and content
+    document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    // Activate the clicked tab and corresponding content
+    btn.classList.add('active');
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+}
+</script>
 </html>
