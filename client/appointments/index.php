@@ -568,8 +568,10 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                                     <td><strong><?php echo date("M d, Y", strtotime($appt['appointment_date'])); ?></strong><br><small><?php echo date("g:i A", strtotime($appt['appointment_time'])); ?></small></td>
                                     <td><?php echo htmlspecialchars($appt['pet_name']); ?></td>
                                     <td><?php echo htmlspecialchars($appt['reason']); ?></td>
-                                    <td><span class="status-badge status-<?php echo htmlspecialchars(strtolower($appt['status'])); ?>"><?php echo htmlspecialchars($appt['status']); ?></span></td>
-                                    <td>
+                                    <td class="status-cell"> <!-- MODIFICATION #1 -->
+                                        <span class="status-badge status-<?php echo htmlspecialchars(strtolower($appt['status'])); ?>"><?php echo htmlspecialchars($appt['status']); ?></span>
+                                    </td>
+                                    <td class="action-cell"> <!-- MODIFICATION #2 -->
                                         <?php if (!in_array($appt['status'], ['cancelled', 'completed'])): ?>
                                             <button class="btn btn-secondary btn-sm cancel-appointment-btn btn-close">Cancel</button>
                                         <?php else: echo '<span>-</span>'; endif; ?>
