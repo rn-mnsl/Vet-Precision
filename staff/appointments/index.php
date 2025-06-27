@@ -15,6 +15,35 @@ $view = $_GET['view'] ?? 'list'; // New view parameter
 $errors = [];
 $success_message = '';
 
+// --- MODIFICATION: HANDLE PRE-SELECTION FROM URL ---
+$preselected_owner_id = null;
+$preselected_pet_id = null;
+$preselected_owner_name = 'Select a client';
+$preselected_pet_name = 'Select a client first';
+
+if ($action === 'create' && isset($_GET['owner_id']) && isset($_GET['pet_id'])) {
+    try {
+        $stmt_preselect = $pdo->prepare("
+            SELECT o.owner_id, p.pet_id, CONCAT(u.first_name, ' ', u.last_name) as owner_name, p.name as pet_name
+            FROM pets p
+            JOIN owners o ON p.owner_id = o.owner_id
+            JOIN users u ON o.user_id = u.user_id
+            WHERE p.pet_id = ? AND o.owner_id = ?
+        ");
+        $stmt_preselect->execute([$_GET['pet_id'], $_GET['owner_id']]);
+        $preselect_data = $stmt_preselect->fetch(PDO::FETCH_ASSOC);
+
+        if ($preselect_data) {
+            $preselected_owner_id = $preselect_data['owner_id'];
+            $preselected_pet_id = $preselect_data['pet_id'];
+            $preselected_owner_name = $preselect_data['owner_name'];
+            $preselected_pet_name = $preselect_data['pet_name'];
+        }
+    } catch (PDOException $e) {
+        $errors[] = "Could not load pre-selected data.";
+    }
+}
+
 // Get current week dates for week view
 $current_date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 $week_start = date('Y-m-d', strtotime('monday this week', strtotime($current_date)));
@@ -739,8 +768,26 @@ for ($i = 0; $i < 7; $i++) {
                 <div class="card">
                     <form action="index.php?action=create&view=<?php echo $view; ?>" method="POST">
                         <div class="form-grid">
-                            <div class="form-group"><label>Client*</label><button type="button" class="selector-button" id="select-client-btn"><span class="selector-placeholder" id="client-name-display">Select a client</span><i class="fas fa-chevron-down"></i></button></div>
-                            <div class="form-group"><label>Pet*</label><button type="button" class="selector-button" id="select-pet-btn" disabled><span class="selector-placeholder" id="pet-name-display">Select a client first</span><i class="fas fa-chevron-down"></i></button></div>
+                            <!-- --- MODIFICATION: Pre-populate Client Button --- -->
+                            <div class="form-group">
+                                <label>Client*</label>
+                                <button type="button" class="selector-button" id="select-client-btn">
+                                    <span class="<?php echo $preselected_owner_id ? '' : 'selector-placeholder'; ?>" id="client-name-display">
+                                        <?php echo htmlspecialchars($preselected_owner_name); ?>
+                                    </span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            <!-- --- MODIFICATION: Pre-populate Pet Button and handle 'disabled' state --- -->
+                            <div class="form-group">
+                                <label>Pet*</label>
+                                <button type="button" class="selector-button" id="select-pet-btn" <?php echo $preselected_owner_id ? '' : 'disabled'; ?>>
+                                    <span class="<?php echo $preselected_pet_id ? '' : 'selector-placeholder'; ?>" id="pet-name-display">
+                                        <?php echo htmlspecialchars($preselected_pet_name); ?>
+                                    </span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="form-grid" style="margin-top: 1.5rem;">
                             <div class="form-group"><label for="appointment_date">Select Date*</label><input type="date" id="appointment_date" name="appointment_date" required min="<?php echo date('Y-m-d'); ?>"></div>
@@ -749,7 +796,9 @@ for ($i = 0; $i < 7; $i++) {
                             <div class="form-group"><label for="notes">Additional Notes</label><textarea id="notes" name="notes"></textarea></div>
                         </div>
                         <div class="form-actions"><a href="index.php?view=<?php echo $view; ?>" class="btn btn-close">Cancel</a><button type="submit" name="create_appointment" class="btn btn-primary">Create Appointment</button></div>
-                        <input type="hidden" id="selected_owner_id" name="owner_id"><input type="hidden" id="selected_pet_id" name="pet_id">
+                        <!-- --- MODIFICATION: Pre-populate hidden inputs --- -->
+                        <input type="hidden" id="selected_owner_id" name="owner_id" value="<?php echo htmlspecialchars($preselected_owner_id); ?>">
+                        <input type="hidden" id="selected_pet_id" name="pet_id" value="<?php echo htmlspecialchars($preselected_pet_id); ?>">
                     </form>
                 </div>
             <?php else: ?>

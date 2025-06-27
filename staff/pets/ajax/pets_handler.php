@@ -16,7 +16,6 @@ $action = $_POST['action'] ?? $_GET['action'] ?? null;
 try {
     switch ($action) {
         case 'fetch_all':
-            // REMINDER: This query joins all three tables to get the owner's name.
             $stmt = $pdo->query("
                 SELECT p.*, CONCAT(u.first_name, ' ', u.last_name) AS owner_name
                 FROM pets p
@@ -24,7 +23,30 @@ try {
                 JOIN users u ON o.user_id = u.user_id
                 ORDER BY p.name ASC
             ");
-            $response['data'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // =========================================================================
+            // --- START: NEW SERVER-SIDE VALIDATION FOR PET PHOTOS ---
+            // =========================================================================
+            foreach ($pets as $key => $pet) {
+                if (!empty($pet['photo_url'])) {
+                    // Clean the stored path to get just the filename.
+                    $filename = basename($pet['photo_url']);
+                    // Construct the full server path to the image file.
+                    // This assumes the handler is in /staff/pets/ajax/ and images are in /uploads/pets/
+                    $absolute_path_to_image = dirname(__FILE__) . '/../../../uploads/pets/' . $filename;
+                    
+                    // If the file does not exist, set photo_url to null.
+                    if (!file_exists($absolute_path_to_image)) {
+                        $pets[$key]['photo_url'] = null;
+                    }
+                }
+            }
+            // =========================================================================
+            // --- END: NEW SERVER-SIDE VALIDATION FOR PET PHOTOS ---
+            // =========================================================================
+
+            $response['data'] = $pets; // Send the validated pet data
             $response['success'] = true;
             break;
 

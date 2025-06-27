@@ -566,10 +566,128 @@ function timeAgo($timestamp) {
             color: white;
         }
 
-        .btn-primary:hover {
+        /* .btn-primary:hover {
             background: var(--primary-dark);
-            color: white;
+            color: black;
             text-decoration: none;
+        } */
+
+        /* MODIFICATION START: Added styles for secondary button */
+        .btn-secondary {
+            background-color: #f8f9fa; /* Light gray background */
+            color: #343a40; /* Dark text */
+            border: 1px solid #dee2e6; /* Gray border */
+        }
+
+        .btn-secondary:hover {
+            background-color: #dc3545; /* Red background on hover */
+            color: #fff; /* White text on hover */
+            border-color: #dc3545; /* Red border on hover */
+        }
+        /* MODIFICATION END */
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1050; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; /* 10% from the top and centered */
+            border-radius: var(--radius-lg);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 80%;
+            max-width: 700px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        .close-modal {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            background-color: var(--light-color);
+            border-top: 1px solid var(--gray-light);
+            text-align: right;
+            border-bottom-left-radius: var(--radius-lg);
+            border-bottom-right-radius: var(--radius-lg);
+        }
+
+        .modal-footer .btn {
+            margin-left: 0.5rem;
+        }
+
+        /* Detail grid inside modal */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .detail-group {
+            margin-bottom: 1rem;
+        }
+        .detail-group h4 {
+            font-size: 1rem;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--light-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .detail-item {
+            margin-bottom: 0.5rem;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-light);
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+        .detail-value {
+            color: var(--text-dark);
         }
 
         /* Mobile Responsive */
@@ -787,8 +905,11 @@ function timeAgo($timestamp) {
                                             </span>
                                         </td>
                                         <td>
-                                            <a href="appointments/view.php?id=<?php echo $appointment['appointment_id']; ?>" 
-                                               class="btn btn-sm btn-primary">View</a>
+                                            <button 
+                                                class="btn btn-sm btn-primary view-appointment-btn" 
+                                                data-id="<?php echo $appointment['appointment_id']; ?>">
+                                                View
+                                            </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -829,5 +950,179 @@ function timeAgo($timestamp) {
             </div>
         </main>
     </div>
+
+
+    <!-- Appointment Details Modal -->
+    <div id="appointmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Appointment Details</h3>
+                <span class="close-modal close-modal-btn">×</span>
+            </div>
+            <form id="editAppointmentForm">
+                <div class="modal-body" id="modalBody">
+                    <p>Loading details...</p>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="modalAppointmentId" name="appointment_id">
+                    <button type="button" id="editModeBtn" class="btn btn-primary">Edit</button>
+                    <button type="submit" id="saveChangesBtn" class="btn btn-primary" style="display:none;">Save Changes</button>
+                    <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;">Cancel</button>
+                    <button type="button" class="btn btn-secondary close-modal-btn">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal elements
+            const modal = document.getElementById('appointmentModal');
+            const modalBody = document.getElementById('modalBody');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('editAppointmentForm');
+            const modalAppointmentIdInput = document.getElementById('modalAppointmentId');
+            
+            // Buttons
+            const editModeBtn = document.getElementById('editModeBtn');
+            const saveChangesBtn = document.getElementById('saveChangesBtn');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            const closeButtons = document.querySelectorAll('.close-modal-btn');
+
+            let currentAppointmentDetails = null;
+
+            // --- Helper to render VIEW mode ---
+            function renderViewMode(details) {
+                const apptDate = new Date(details.appointment_date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                const apptTime = new Date('1970-01-01T' + details.appointment_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                modalTitle.textContent = `Appointment for ${details.pet_name || 'N/A'}`;
+                modalBody.innerHTML = `
+                    <div class="detail-grid">
+                        <div class="detail-group">
+                            <h4>Appointment Info</h4>
+                            <div class="detail-item"><span class="detail-label">Date & Time</span> <span class="detail-value">${apptDate} at ${apptTime}</span></div>
+                            <div class="detail-item"><span class="detail-label">Status</span> <span class="detail-value status-badge status-${details.status}">${details.status}</span></div>
+                            <div class="detail-item"><span class="detail-label">Type</span> <span class="detail-value">${details.type || 'N/A'}</span></div>
+                            <div class="detail-item"><span class="detail-label">Reason</span> <span class="detail-value">${details.reason || 'N/A'}</span></div>
+                            <div class="detail-item"><span class="detail-label">Staff Notes</span> <span class="detail-value">${details.notes || 'None'}</span></div>
+                        </div>
+                        <div class="detail-group">
+                            <h4>Pet & Owner</h4>
+                            <div class="detail-item"><span class="detail-label">Pet Name</span> <span class="detail-value">${details.pet_name || 'N/A'}</span></div>
+                            <div class="detail-item"><span class="detail-label">Owner Name</span> <span class="detail-value">${details.owner_name || 'N/A'}</span></div>
+                            <div class="detail-item"><span class="detail-label">Owner Phone</span> <span class="detail-value">${details.owner_phone || 'N/A'}</span></div>
+                        </div>
+                    </div>`;
+
+                editModeBtn.style.display = 'inline-block';
+                saveChangesBtn.style.display = 'none';
+                cancelEditBtn.style.display = 'none';
+            }
+
+            // --- Helper to render EDIT form ---
+            function renderEditForm(details) {
+                modalTitle.textContent = `Editing Appointment for ${details.pet_name || 'N/A'}`;
+                
+                const statusOptions = ['requested', 'confirmed', 'completed', 'cancelled'];
+                const typeOptions = ['Checkup', 'Vaccination', 'Grooming', 'Surgery', 'Consultation', 'Emergency', 'Testing visit'];
+                
+                const generateOptions = (options, selectedValue) => 
+                    options.map(opt => `<option value="${opt}" ${opt.toLowerCase() === selectedValue.toLowerCase() ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`).join('');
+
+                modalBody.innerHTML = `
+                    <div id="modal-error-message" class="alert-danger" style="display:none; margin-bottom: 1rem;"></div>
+                    <div class="form-grid">
+                        <div class="form-group"><label for="appointment_date">Date</label><input type="date" id="appointment_date" name="appointment_date" class="form-control" value="${details.appointment_date || ''}" required></div>
+                        <div class="form-group"><label for="appointment_time">Time</label><input type="time" id="appointment_time" name="appointment_time" class="form-control" value="${details.appointment_time || ''}" required></div>
+                        <div class="form-group"><label for="status">Status</label><select id="status" name="status" class="form-control" required>${generateOptions(statusOptions, details.status)}</select></div>
+                        <div class="form-group form-group-full"><label for="type">Type</label><select id="type" name="type" class="form-control" required>${generateOptions(typeOptions, details.type)}</select></div>
+                        <div class="form-group form-group-full"><label for="reason">Reason for Visit</label><input type="text" id="reason" name="reason" class="form-control" value="${details.reason || ''}"></div>
+                        <div class="form-group form-group-full"><label for="notes">Staff Notes</label><textarea id="notes" name="notes" class="form-control" rows="3">${details.notes || ''}</textarea></div>
+                    </div>
+                    <style>.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}.form-group-full{grid-column:1/-1;}.form-group{display:flex;flex-direction:column;}.form-group label{margin-bottom:0.5rem;font-weight:600;font-size:0.875rem;color:var(--text-light);}.form-control{width:100%;padding:0.75rem;border:1px solid var(--gray-light);border-radius:var(--radius-sm);font-size:1rem;}</style>
+                `;
+
+                editModeBtn.style.display = 'none';
+                saveChangesBtn.style.display = 'inline-block';
+                cancelEditBtn.style.display = 'inline-block';
+            }
+
+            // --- Modal Control ---
+            function openModal(appointmentId) {
+                if (!appointmentId) return;
+                modalBody.innerHTML = '<p>Loading details...</p>';
+                modal.style.display = 'block';
+                fetch(`ajax/get_appointment_details.php?id=${appointmentId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            currentAppointmentDetails = data.details;
+                            modalAppointmentIdInput.value = currentAppointmentDetails.appointment_id;
+                            renderViewMode(currentAppointmentDetails);
+                        } else {
+                            modalBody.innerHTML = `<p class="alert-danger">${data.message || 'Could not load details.'}</p>`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching details:', error);
+                        modalBody.innerHTML = '<p class="alert-danger">An error occurred.</p>';
+                    });
+            }
+
+            function closeModal() {
+                modal.style.display = 'none';
+                currentAppointmentDetails = null;
+            }
+
+            // --- Event Listeners ---
+            document.querySelector('.appointments-table tbody').addEventListener('click', e => {
+                if (e.target && e.target.classList.contains('view-appointment-btn')) {
+                    openModal(e.target.dataset.id);
+                }
+            });
+            
+            editModeBtn.addEventListener('click', () => {
+                if (currentAppointmentDetails) renderEditForm(currentAppointmentDetails);
+            });
+
+            cancelEditBtn.addEventListener('click', () => {
+                if (currentAppointmentDetails) renderViewMode(currentAppointmentDetails);
+            });
+
+            modalForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveChangesBtn.disabled = true;
+                saveChangesBtn.textContent = 'Saving...';
+                const errorMessageDiv = document.getElementById('modal-error-message');
+                if(errorMessageDiv) errorMessageDiv.style.display = 'none';
+
+                fetch('ajax/update_appointment.php', { method: 'POST', body: new FormData(modalForm) })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload(); // Easiest way to show updated data
+                    } else {
+                        errorMessageDiv.textContent = data.message || 'An unknown error occurred.';
+                        errorMessageDiv.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating:', error);
+                    errorMessageDiv.textContent = 'A network error occurred.';
+                    errorMessageDiv.style.display = 'block';
+                })
+                .finally(() => {
+                    saveChangesBtn.disabled = false;
+                    saveChangesBtn.textContent = 'Save Changes';
+                });
+            });
+
+            closeButtons.forEach(btn => btn.addEventListener('click', closeModal));
+            window.addEventListener('click', e => { if (e.target == modal) closeModal(); });
+        });
+    </script>
 </body>
 </html>

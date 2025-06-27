@@ -706,13 +706,12 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             grid.innerHTML = '';
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             const speciesFilter = document.getElementById('speciesFilter').value.toLowerCase();
-            // REMINDER: Field name in DB is is_active, but your UI uses active/inactive. Let's adapt.
             const statusFilter = document.getElementById('statusFilter').value;
 
             const filteredPets = pets.filter(pet => {
                 const isActive = pet.is_active == 1;
-                const searchMatch = pet.name.toLowerCase().includes(searchQuery) || 
-                                    pet.breed.toLowerCase().includes(searchQuery) || 
+                const searchMatch = pet.name.toLowerCase().includes(searchQuery) ||
+                                    pet.breed.toLowerCase().includes(searchQuery) ||
                                     (pet.owner_name && pet.owner_name.toLowerCase().includes(searchQuery));
 
                 const speciesMatch = speciesFilter === '' || pet.species.toLowerCase() === speciesFilter;
@@ -728,12 +727,31 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             
             filteredPets.forEach(pet => {
                 const age = calculateAge(pet.date_of_birth);
+
+                // --- START: NEW AVATAR LOGIC ---
+                let avatarHtml = '';
+                
+                // This simple 'if' works because the PHP handler now sends 'null' for missing photos.
+                if (pet.photo_url) {
+                    // A valid photo exists. Use it as a background image.
+                    // The path from the DB is relative, but we need it relative to the main HTML page.
+                    // e.g., ../../uploads/pets/image.jpg
+                    const imagePath = pet.photo_url
+                    console.log(imagePath);
+                    avatarHtml = `<div class="pet-avatar" style="background-image: url('${imagePath}'); background-size: cover; background-position: center;"></div>`;
+                } else {
+                    // No valid photo. Use the emoji as the content.
+                    const emoji = getPetEmoji(pet.species);
+                    avatarHtml = `<div class="pet-avatar">${emoji}</div>`;
+                }
+                // --- END: NEW AVATAR LOGIC ---
+
                 const card = document.createElement('div');
                 card.className = 'pet-card';
-                // REMINDER: Using real data fields from the database now.
+                // We use the `avatarHtml` variable here
                 card.innerHTML = `
                     <div class="pet-header">
-                        <div class="pet-avatar">${getPetEmoji(pet.species)}</div>
+                        ${avatarHtml} 
                         <div class="pet-name">${pet.name}</div>
                         <div class="pet-breed">${pet.breed}</div>
                     </div>
@@ -743,7 +761,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                                 <div class="info-label">Owner</div>
                                 <div class="info-value">${pet.owner_name || 'N/A'}</div>
                             </div>
-                             <div class="info-item">
+                            <div class="info-item">
                                 <div class="info-label">Age</div>
                                 <div class="info-value">${age} years</div>
                             </div>
@@ -757,7 +775,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                             </div>
                         </div>
                         <div class="pet-actions">
-                            <button class="btn btn-primary" onclick="bookAppointment(${pet.pet_id})">Book Appointment</button>
+                            <a href="../appointments/index.php?action=create&owner_id=${pet.owner_id}&pet_id=${pet.pet_id}" class="btn btn-primary">Book Appointment</a>
                             <button class="btn btn-outline" onclick="editPet(${pet.pet_id})">Edit Info</button>
                             <button class="btn btn-danger" onclick="deletePet(${pet.pet_id})">Delete</button>
                         </div>
@@ -765,11 +783,6 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                 `;
                 grid.appendChild(card);
             });
-        }
-        
-        function bookAppointment(petId) {
-            // You can make this more specific later if needed
-            window.location.href = '../appointments/index.php';
         }
 
         function editPet(id) {
