@@ -927,7 +927,7 @@ function renderModalContent(data) {
     if (pet.photo_url) {
         // This block only runs if the server confirmed the file exists.
         const cleanedPath = pet.photo_url.replace('../../', '');
-        const avatarPath = `../../${cleanedPath}`;
+        const avatarPath = `../${cleanedPath}`;
         avatarHtml = `<div class="modal-pet-avatar" style="background-image: url('${avatarPath}')"></div>`;
     } else {
         // This block will now correctly run for pets with no photo or a broken photo link.
