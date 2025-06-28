@@ -456,6 +456,104 @@ $pageTitle = 'Login - ' . SITE_NAME;
             border-color: rgba(59, 130, 246, 0.2);
         }
 
+        .alert-enhanced {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-md);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            position: relative;
+            border-left-width: 5px;
+            border-left-style: solid;
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--spacing-lg);
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .alert-enhanced .alert-icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+        }
+
+        .alert-enhanced .alert-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .alert-enhanced .alert-content {
+            flex-grow: 1;
+            padding-right: var(--spacing-lg); /* Space for the close button */
+        }
+        
+        .alert-enhanced .alert-content strong {
+            display: block;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .alert-enhanced .alert-content p {
+            margin: 0;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .alert-enhanced .alert-close {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+            padding: 0;
+        }
+        .alert-enhanced .alert-close:hover {
+            opacity: 1;
+        }
+
+        /* Success Variant */
+        .alert-enhanced.alert-success {
+            background-color: #F0FDF4; /* Lighter green */
+            border-left-color: var(--success);
+        }
+        .alert-enhanced.alert-success .alert-icon {
+            background-color: var(--success);
+        }
+        .alert-enhanced.alert-success .alert-content strong {
+            color: #059669; /* Darker green */
+        }
+        .alert-enhanced.alert-success .alert-content p,
+        .alert-enhanced.alert-success .alert-close {
+            color: #047857; /* Mid green */
+        }
+        
+        /* Danger Variant (for future use) */
+        .alert-enhanced.alert-danger {
+            background-color: #FEF2F2; /* Lighter red */
+            border-left-color: var(--error);
+        }
+        .alert-enhanced.alert-danger .alert-icon {
+            background-color: var(--error);
+        }
+        .alert-enhanced.alert-danger .alert-content strong {
+            color: #B91C1C; /* Darker red */
+        }
+        .alert-enhanced.alert-danger .alert-content p,
+        .alert-enhanced.alert-danger .alert-close {
+            color: #991B1B; /* Mid red */
+        }
+
+
         /* ===== Footer Links ===== */
         .login-footer {
             text-align: center;
@@ -1033,11 +1131,49 @@ $pageTitle = 'Login - ' . SITE_NAME;
                     <p class="login-subtitle">Prioritize the Health of your pets</p>
                 </div>
 
-                <!-- Flash Messages -->
-                <?php if ($flash = getFlash()): ?>
-                    <div class="alert alert-<?php echo $flash['type']; ?>">
-                        <?php echo sanitize($flash['message']); ?>
-                    </div>
+                <!-- Flash Messages from other pages (like password reset) -->
+                <?php if ($flash = getFlash()):
+    
+                    // --- Determine the message format ---
+                    $flash_content = $flash['message'] ?? '';
+                    $is_enhanced = is_array($flash_content);
+                    
+                    // --- Set variables safely based on the format ---
+                    if ($is_enhanced) {
+                        // It's our new, structured message
+                        $title = $flash_content['title'] ?? 'Success!';
+                        $message = $flash_content['message'] ?? '';
+                    } else {
+                        // It's an old, simple string message
+                        $title = ucfirst($flash['type']); // e.g., "Success" or "Error"
+                        $message = (string) $flash_content;
+                    }
+
+                ?>
+                    <!-- --- Render the correct alert --- -->
+                    <?php if ($is_enhanced): ?>
+                        <!-- RENDER THE NEW, PRETTY ALERT -->
+                        <div class="alert-enhanced alert-<?php echo sanitize($flash['type']); ?>" role="alert">
+                            <div class="alert-icon">
+                                <!-- Checkmark Icon for Success -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                </svg>
+                            </div>
+                            <div class="alert-content">
+                                <strong><?php echo sanitize($title); ?></strong>
+                                <p><?php echo sanitize($message); ?></p>
+                            </div>
+                            <button type="button" class="alert-close" onclick="this.parentElement.style.display='none'" aria-label="Close">×</button>
+                        </div>
+
+                    <?php else: ?>
+                        <!-- FALLBACK: Render the old, simple alert for other messages -->
+                        <div class="alert alert-<?php echo sanitize($flash['type']); ?>">
+                            <strong><?php echo sanitize($title); ?>:</strong> <?php echo sanitize($message); ?>
+                        </div>
+                    <?php endif; ?>
+
                 <?php endif; ?>
 
                 <!-- General Error -->
@@ -1098,7 +1234,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
                             <input type="checkbox" id="remember" name="remember" value="1">
                             <label for="remember">Remember me</label>
                         </div>
-                        <a href="#" class="forgot-password">Forgot Password?</a>
+                        <a href="forgot-password.php" class="forgot-password">Forgot Password?</a>
                     </div>
 
                     <button type="submit" class="btn btn-primary" id="loginBtn">
