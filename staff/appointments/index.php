@@ -1375,14 +1375,16 @@ for ($i = 0; $i < 7; $i++) {
                                             <span class="status-badge status-<?php echo $appt['status']; ?>"><?php echo ucfirst(htmlspecialchars($appt['status'])); ?></span>
                                         </td>
                                         <td data-label="Actions">
-                                            <select class="action-select" data-appointment-id="<?php echo $appt['appointment_id']; ?>">
-                                                <option value="">Select Action</option>
-                                                <option value="requested" <?php echo $appt['status']==='requested' ? 'disabled' : ''; ?>>Mark Requested</option>
-                                                <option value="confirmed" <?php echo $appt['status']==='confirmed' ? 'disabled' : ''; ?>>Mark Confirmed</option>
-                                                <option value="completed" <?php echo $appt['status']==='completed' ? 'disabled' : ''; ?>>Mark Completed</option>
-                                                <option value="cancelled" <?php echo $appt['status']==='cancelled' ? 'disabled' : ''; ?>>Mark Cancelled</option>
-                                                <option value="reminder">Send Reminder</option>
-                                            </select>
+                                            <div class="action-buttons">
+                                                <select class="action-select" data-appointment-id="<?php echo $appt['appointment_id']; ?>">
+                                                    <option value="">Select Action</option>
+                                                    <option value="requested" <?php echo $appt['status']==='requested' ? 'disabled' : ''; ?>>Mark Requested</option>
+                                                    <option value="confirmed" <?php echo $appt['status']==='confirmed' ? 'disabled' : ''; ?>>Mark Confirmed</option>
+                                                    <option value="completed" <?php echo $appt['status']==='completed' ? 'disabled' : ''; ?>>Mark Completed</option>
+                                                    <option value="cancelled" <?php echo $appt['status']==='cancelled' ? 'disabled' : ''; ?>>Mark Cancelled</option>
+                                                </select>
+                                                <button class="btn btn-secondary send-reminder-btn" data-appointment-id="<?php echo $appt['appointment_id']; ?>">Send Reminder</button>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; endif; ?>
@@ -1695,14 +1697,14 @@ for ($i = 0; $i < 7; $i++) {
             dateInput.addEventListener('change', updateAvailableSlots);
         });
 
-        // Status update and reminder functionality
+        // --- Status update dropdown ---
         document.addEventListener('change', async function(e) {
             if (e.target.classList.contains('action-select')) {
                 const select = e.target;
                 const row = select.closest('tr');
                 const appointmentId = select.dataset.appointmentId;
-                const action = select.value;
-                if (!action) return;
+                const newStatus = select.value;
+                if (!newStatus) return;
 
                 const statusNames = {
                     'requested': 'Requested',
@@ -1711,51 +1713,64 @@ for ($i = 0; $i < 7; $i++) {
                     'cancelled': 'Cancelled'
                 };
 
-                if (action === 'reminder') {
-                    if (!confirm('Send reminder to client?')) { select.value = ''; return; }
-                } else {
-                    if (!confirm(`Are you sure you want to mark this appointment as ${statusNames[action]}?`)) {
-                        select.value = '';
-                        return;
-                    }
+                if (!confirm(`Are you sure you want to mark this appointment as ${statusNames[newStatus]}?`)) {
+                    select.value = '';
+                    return;
                 }
 
                 try {
                     const formData = new FormData();
                     formData.append('appointment_id', appointmentId);
-                    if (action === 'reminder') {
-                        const response = await fetch('ajax/send_reminder.php', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        const result = await response.json();
-                        if (response.ok && result.success) {
-                            showNotification('Reminder sent!', 'success');
-                        } else {
-                            throw new Error(result.error || 'Failed to send reminder');
-                        }
-                    } else {
-                        formData.append('status', action);
-                        const response = await fetch('ajax/update_appointment_status.php', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        const result = await response.json();
-                        if (response.ok && result.success) {
-                            const statusBadge = row.querySelector('.status-badge');
-                            statusBadge.textContent = statusNames[action];
-                            statusBadge.className = `status-badge status-${action}`;
-                            showNotification('Status updated successfully!', 'success');
-                        } else {
-                            throw new Error(result.error || 'Failed to update status');
-                        }
-                    }
-                    select.value = '';
+                    formData.append('status', newStatus);
 
+                    const response = await fetch('ajax/update_appointment_status.php', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin'
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        const badge = row.querySelector('.status-badge');
+                        badge.textContent = statusNames[newStatus];
+                        badge.className = `status-badge status-${newStatus}`;
+                        showNotification('Status updated successfully!', 'success');
+                    } else {
+                        throw new Error(result.error || 'Failed to update status');
+                    }
                 } catch (error) {
                     console.error('Error updating status:', error);
                     alert('Action failed. Please try again.');
-                    select.value = '';
+                }
+
+                select.value = '';
+            }
+        });
+
+        // --- Send reminder button ---
+        document.addEventListener('click', async function(e) {
+            if (e.target.classList.contains('send-reminder-btn')) {
+                e.preventDefault();
+                const btn = e.target;
+                const appointmentId = btn.dataset.appointmentId;
+                if (!confirm('Send reminder to client?')) return;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('appointment_id', appointmentId);
+                    const response = await fetch('ajax/send_reminder.php', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin'
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        showNotification('Reminder sent!', 'success');
+                    } else {
+                        throw new Error(result.error || 'Failed to send reminder');
+                    }
+                } catch (error) {
+                    console.error('Error sending reminder:', error);
+                    alert('Failed to send reminder.');
                 }
             }
         });
