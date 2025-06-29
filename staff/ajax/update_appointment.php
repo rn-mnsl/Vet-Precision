@@ -2,7 +2,12 @@
 // File: ajax/update_appointment.php
 
 require_once '../../config/init.php';
-requireStaff(); // Security check
+// Allow both staff and admin roles to update appointments
+if (!isLoggedIn() || !in_array($_SESSION['role'], ['staff', 'admin'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit();
+}
 
 header('Content-Type: application/json');
 
