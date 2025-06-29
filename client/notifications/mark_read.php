@@ -11,4 +11,3 @@ if (!isLoggedIn()) {
 markNotificationsRead(getCurrentUserId());
 
 echo json_encode(['success' => true]);
->

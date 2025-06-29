@@ -82,6 +82,8 @@ try {
 
         // Send the email using our reusable function from init.php
         sendAdminNotification($subject, $email_body, $alt_body);
+        $msg = "Appointment for {$appointment_details['pet_name']} on {$formatted_date} at {$formatted_time} was cancelled by {$appointment_details['client_name']}.";
+        notifyStaff($msg, 'appointment', $appointment_id);
         // --- END OF EMAIL CODE ---
 
         echo json_encode(['success' => true, 'message' => 'Appointment cancelled successfully.']);

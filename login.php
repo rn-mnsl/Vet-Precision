@@ -76,7 +76,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
             
             /* Gradients */
             --gradient-primary: linear-gradient(135deg, var(--primary-teal) 0%, var(--primary-teal-light) 100%);
-            --gradient-overlay: linear-gradient(135deg, rgba(29, 186, 168, 0.2) 0%, rgba(45, 212, 196, 0.2) 50%);
+            --gradient-overlay: linear-gradient(135deg, rgba(29, 186, 168, 0.15) 0%, rgba(45, 212, 196, 0.15) 50%);
             
             /* Spacing */
             --spacing-xs: 0.25rem;
@@ -135,17 +135,14 @@ $pageTitle = 'Login - ' . SITE_NAME;
             justify-content: center;
             padding: var(--spacing-md);
             overflow: hidden;
-            text-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            text-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
         }
 
         .login-left::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: url('https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
+            inset: 0;
+            background: linear-gradient(rgba(0,0,0,0.20), rgba(0,0,0,0.20)), url('https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -239,7 +236,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: var(--spacing-2xl);
+            padding: var(--spacing-lg);
             position: relative;
         }
 
@@ -250,7 +247,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
 
         .login-header {
             text-align: center;
-            margin-bottom: var(--spacing-2xl);
+            margin-bottom: var(--spacing-md);
         }
 
         .user-type-toggle {
@@ -258,7 +255,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
             background: var(--gray-100);
             border-radius: var(--radius-full);
             padding: 4px;
-            margin-bottom: var(--spacing-xl);
+            margin-bottom: var(--spacing-md);
             position: relative;
         }
 
@@ -627,6 +624,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
     .login-left-content {
         max-width: 600px; /* Wider on tablet */
         width: 100%;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.6);
     }
 
     .welcome-text h1 {

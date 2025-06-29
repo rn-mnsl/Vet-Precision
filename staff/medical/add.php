@@ -153,6 +153,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_record'])) {
                     $_SESSION['user_id']
                 ]);
 
+                $info = $pdo->prepare(
+                    "SELECT u.user_id, p.name AS pet_name FROM pets p JOIN owners o ON p.owner_id = o.owner_id JOIN users u ON o.user_id = u.user_id WHERE p.pet_id = ?"
+                );
+                $info->execute([$pet_id]);
+                $row = $info->fetch(PDO::FETCH_ASSOC);
+                if ($row) {
+                    $msg = 'A new medical record has been added for ' . $row['pet_name'] . '.';
+                    addNotification($row['user_id'], $msg, 'medical', $appointment_id);
+                }
+
                 $_SESSION['success_message'] = "Medical record created successfully!";
                 header('Location: index.php');
                 exit();
