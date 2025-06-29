@@ -432,7 +432,7 @@ switch ($reportType) {
         .stat-card {
             background: white;
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             transition: all 0.3s ease;
         }
@@ -713,35 +713,18 @@ switch ($reportType) {
                         <div class="stat-label">Total Appointments</div>
                         <div class="stat-value"><?php echo $reportData['appointments']['total_appointments']; ?></div>
                         <div class="stat-change">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                                <polyline points="17 6 23 6 23 12"/>
-                            </svg>
-                            <?php echo $reportData['appointments']['completed_appointments']; ?> completed
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">New Patients</div>
                         <div class="stat-value"><?php echo $reportData['new_patients']; ?></div>
                         <div class="stat-change">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <line x1="19" y1="8" x2="19" y2="14"/>
-                                <line x1="22" y1="11" x2="16" y2="11"/>
-                            </svg>
-                            This period
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Active Clients</div>
                         <div class="stat-value"><?php echo $reportData['active_clients']; ?></div>
                         <div class="stat-change">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                            </svg>
-                            With appointments
                         </div>
                     </div>
                     <div class="stat-card">
@@ -753,18 +736,6 @@ switch ($reportType) {
                                     : 0;
                                 echo $cancellationRate . '%';
                             ?>
-                        </div>
-                        <div class="stat-change <?php echo $cancellationRate > 10 ? 'negative' : ''; ?>">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <?php if ($cancellationRate > 10): ?>
-                                    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
-                                    <polyline points="17 18 23 18 23 12"/>
-                                <?php else: ?>
-                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                                    <polyline points="17 6 23 6 23 12"/>
-                                <?php endif; ?>
-                            </svg>
-                            <?php echo $reportData['appointments']['cancelled_appointments']; ?> cancelled
                         </div>
                     </div>
                 </div>

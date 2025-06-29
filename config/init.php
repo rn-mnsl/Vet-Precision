@@ -214,10 +214,6 @@ if (isLoggedIn()) {
     $_SESSION['last_activity'] = time();
 }
 
-
-
-
-
 // ADD THIS NEW FUNCTION TO config/init.php
 
 /**

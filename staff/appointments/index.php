@@ -9,29 +9,11 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'staf
 }
 $logged_in_staff_id = $_SESSION['user_id'];
 
-// Send automatic reminders for tomorrow's appointments
-sendAutomaticAppointmentReminders();
-
 // --- PAGE LOGIC ---
 $action = $_GET['action'] ?? 'list';
 $view = $_GET['view'] ?? 'list'; // New view parameter
 $errors = [];
 $success_message = '';
-
-// Filter by appointment type
-$type_filter = $_GET['type'] ?? '';
-// Filter by appointment status
-$status_filter = $_GET['status'] ?? '';
-$valid_statuses = ['requested', 'confirmed', 'completed', 'cancelled'];
-if (!in_array($status_filter, $valid_statuses)) {
-    $status_filter = '';
-}
-try {
-    $types_stmt = $pdo->query("SELECT DISTINCT type FROM appointments ORDER BY type");
-    $appointment_types = $types_stmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {
-    $appointment_types = [];
-}
 
 // --- MODIFICATION: HANDLE PRE-SELECTION FROM URL ---
 $preselected_owner_id = null;
@@ -84,64 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_appointment'])
 
     if (empty($errors)) {
         try {
-            // 1. This part remains the same: Insert the new appointment
-            $sql = "INSERT INTO appointments (pet_id, appointment_date, appointment_time, duration_minutes, status, type, reason, notes, created_by) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO appointments (pet_id, appointment_date, appointment_time, duration_minutes, status, type, reason, notes, created_by, created_at, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             $stmt = $pdo->prepare($sql);
-            // Note: I removed the NOW() placeholders as your table likely handles them automatically. If not, add them back.
             $stmt->execute([$pet_id, $appointment_date, $appointment_time, 30, 'confirmed', 'Checkup', $reason, $notes, $logged_in_staff_id]);
             
-            // --- 2. [NEW] ADD THIS BLOCK TO FETCH DETAILS AND SEND THE EMAIL ---
-            // We need the client's email and name, and the pet's name for the notification.
-            // The $owner_id is from the form post, which we get from the hidden input.
-            $stmt_details = $pdo->prepare("
-                SELECT u.email, u.first_name, p.name as pet_name
-                FROM users u
-                JOIN owners o ON u.user_id = o.user_id
-                JOIN pets p ON p.owner_id = o.owner_id
-                WHERE o.owner_id = :owner_id AND p.pet_id = :pet_id
-            ");
-            $stmt_details->execute([':owner_id' => $owner_id, ':pet_id' => $pet_id]);
-            $details = $stmt_details->fetch(PDO::FETCH_ASSOC);
-
-            // 3. Check if we found the details, then construct and send the email
-            if ($details) {
-                $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
-                $subject = "New Appointment Scheduled: " . htmlspecialchars($details['pet_name']);
-                $formatted_date = date("l, F j, Y", strtotime($appointment_date));
-                $formatted_time = date("g:i A", strtotime($appointment_time));
-                
-                $email_body = "<html><body>
-                    <p>Dear " . htmlspecialchars($details['first_name']) . ",</p>
-                    <p>Our staff has scheduled and confirmed a new appointment for your pet, <strong>" . htmlspecialchars($details['pet_name']) . "</strong>.</p>
-                    <p><strong>Date:</strong> " . $formatted_date . "</p>
-                    <p><strong>Time:</strong> " . $formatted_time . "</p>
-                    <p>If this time does not work for you or if you have any questions, please contact our clinic.</p>
-                    <p>Sincerely,<br>The " . $site_name . " Team</p>
-                </body></html>";
-                $alt_body = "A new appointment has been scheduled for {$details['pet_name']} on {$formatted_date} at {$formatted_time}.";
-                
-                // Use the function from init.php
-                sendClientNotification($details['email'], $subject, $email_body, $alt_body);
-
-                // Update the success message to reflect that the email was sent
-                $_SESSION['success_message'] = 'Appointment created successfully and the client has been notified.';
-
-            } else {
-                // This is a fallback in case the email details couldn't be found
-                $_SESSION['success_message'] = 'Appointment created, but the email notification failed to send. Please check logs.';
-                error_log("Staff Create Appointment Email Failed: Could not fetch details for owner_id {$owner_id} or pet_id {$pet_id}.");
-            }
-            // --- END OF NEW EMAIL BLOCK ---
-
-            // 4. Redirect after everything is done
+            $_SESSION['success_message'] = "Appointment created successfully!";
             header('Location: index.php?view=' . $view);
             exit();
 
-        } catch (PDOException $e) { 
-            error_log("Staff Create Appointment DB Error: " . $e->getMessage());
-            $errors[] = "A database error occurred. Could not create the appointment."; 
-        }
+        } catch (PDOException $e) { $errors[] = "Database error: " . $e->getMessage(); }
     }
 }
 
@@ -155,23 +89,8 @@ if ($view === 'list') {
 
     // 1. Get the total number of appointments for calculating total pages
     try {
-        $count_sql = "SELECT COUNT(appointment_id) FROM appointments";
-        $count_conditions = [];
-        $count_params = [];
-        if (!empty($type_filter)) {
-            $count_conditions[] = "type = :type";
-            $count_params[':type'] = $type_filter;
-        }
-        if (!empty($status_filter)) {
-            $count_conditions[] = "status = :status";
-            $count_params[':status'] = $status_filter;
-        }
-        if ($count_conditions) {
-            $count_sql .= ' WHERE ' . implode(' AND ', $count_conditions);
-        }
-        $count_stmt = $pdo->prepare($count_sql);
-        $count_stmt->execute($count_params);
-        $total_items = (int)($count_stmt->fetchColumn());
+        $count_stmt = $pdo->query("SELECT COUNT(appointment_id) FROM appointments");
+        $total_items = (int)$count_stmt->fetchColumn();
         $total_pages = ceil($total_items / $items_per_page);
     } catch (PDOException $e) {
         $errors[] = "Could not count appointments.";
@@ -185,35 +104,19 @@ if ($view === 'list') {
 
     try {
         // 3. Modify the main query to use LIMIT and OFFSET
-        $sql = "SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status, a.reason, a.type, p.name AS pet_name,
-                       u_owner.first_name AS owner_first_name, u_owner.last_name AS owner_last_name
-                FROM appointments a
-                JOIN pets p ON a.pet_id = p.pet_id
-                JOIN owners o ON p.owner_id = o.owner_id
-                JOIN users u_owner ON o.user_id = u_owner.user_id";
-        $conditions = [];
-        if (!empty($type_filter)) {
-            $conditions[] = "a.type = :type";
-        }
-        if (!empty($status_filter)) {
-            $conditions[] = "a.status = :status";
-        }
-        if ($conditions) {
-            $sql .= ' WHERE ' . implode(' AND ', $conditions);
-        }
-        $sql .= " ORDER BY a.appointment_date DESC, a.appointment_time DESC
-                  LIMIT :limit OFFSET :offset";
-        $stmt_appts = $pdo->prepare($sql);
+        $stmt_appts = $pdo->prepare("
+            SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status, a.reason, p.name AS pet_name,
+                   u_owner.first_name AS owner_first_name, u_owner.last_name AS owner_last_name
+            FROM appointments a
+            JOIN pets p ON a.pet_id = p.pet_id
+            JOIN owners o ON p.owner_id = o.owner_id
+            JOIN users u_owner ON o.user_id = u_owner.user_id
+            ORDER BY a.appointment_date DESC, a.appointment_time DESC
+            LIMIT :limit OFFSET :offset"); // <-- Added LIMIT and OFFSET
 
         // 4. Bind the new parameters
         $stmt_appts->bindParam(':limit', $items_per_page, PDO::PARAM_INT);
         $stmt_appts->bindParam(':offset', $offset, PDO::PARAM_INT);
-        if (!empty($type_filter)) {
-            $stmt_appts->bindParam(':type', $type_filter, PDO::PARAM_STR);
-        }
-        if (!empty($status_filter)) {
-            $stmt_appts->bindParam(':status', $status_filter, PDO::PARAM_STR);
-        }
         $stmt_appts->execute();
         
         $appointments = $stmt_appts->fetchAll(PDO::FETCH_ASSOC);
@@ -235,33 +138,16 @@ if ($view === 'list') {
     
     // Fetch appointments for the calculated week
     try {
-        $week_sql = "
+        $stmt_week = $pdo->prepare("
             SELECT a.*, p.name AS pet_name, u_owner.first_name AS owner_first_name, u_owner.last_name AS owner_last_name,
                    p.species, p.breed, p.date_of_birth
             FROM appointments a
             JOIN pets p ON a.pet_id = p.pet_id
             JOIN owners o ON p.owner_id = o.owner_id
             JOIN users u_owner ON o.user_id = u_owner.user_id
-            WHERE a.appointment_date BETWEEN :start AND :end";
-        if (!empty($status_filter)) {
-            $week_sql .= " AND a.status = :status";
-        } else {
-            $week_sql .= " AND a.status != 'cancelled'";
-        }
-        if (!empty($type_filter)) {
-            $week_sql .= " AND a.type = :type";
-        }
-        $week_sql .= " ORDER BY a.appointment_date, a.appointment_time";
-        $stmt_week = $pdo->prepare($week_sql);
-        $stmt_week->bindValue(':start', $week_start_dt->format('Y-m-d'));
-        $stmt_week->bindValue(':end', $week_end_dt->format('Y-m-d'));
-        if (!empty($status_filter)) {
-            $stmt_week->bindValue(':status', $status_filter);
-        }
-        if (!empty($type_filter)) {
-            $stmt_week->bindValue(':type', $type_filter);
-        }
-        $stmt_week->execute();
+            WHERE a.appointment_date BETWEEN ? AND ? AND a.status != 'cancelled'
+            ORDER BY a.appointment_date, a.appointment_time");
+        $stmt_week->execute([$week_start_dt->format('Y-m-d'), $week_end_dt->format('Y-m-d')]);
         $week_appointments = $stmt_week->fetchAll(PDO::FETCH_ASSOC);
         
         $appointments_grid = [];
@@ -451,17 +337,6 @@ for ($i = 0; $i < 7; $i++) {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
-        }
-
-        .filter-form select {
-            padding: 0.4rem 0.6rem;
-            border-radius: 6px;
-        }
-
-        .action-select {
-            padding: 0.4rem 0.6rem;
-            font-size: 0.9rem;
-            border-radius: 6px;
         }
 
         /* Status action buttons */
@@ -1146,6 +1021,185 @@ for ($i = 0; $i < 7; $i++) {
             filter: brightness(95%);    /* Slightly darken the existing color */
             -webkit-filter: brightness(95%);
         }
+
+        .action-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-button {
+    background: white;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-dark, #2d3748);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    min-width: 120px;
+    justify-content: space-between;
+}
+
+.dropdown-button:hover {
+    background: var(--light-color, #f8f9fa);
+    border-color: var(--text-light, #6c757d);
+}
+
+.dropdown-button:focus {
+    outline: none;
+    border-color: var(--primary-color, #ff6b6b);
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.1);
+}
+
+.dropdown-button.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s ease;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-dark, #2d3748);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.dropdown-item:hover {
+    background: var(--light-color, #f8f9fa);
+}
+
+.dropdown-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: none;
+}
+
+.dropdown-item.current {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color, #10b981);
+    font-weight: 600;
+}
+
+.dropdown-item.current:hover {
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.dropdown-item .icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown-item .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot.requested { background: #f59e0b; }
+.status-dot.confirmed { background: #10b981; }
+.status-dot.completed { background: #3b82f6; }
+.status-dot.cancelled { background: #ef4444; }
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border-color, #dee2e6);
+    margin: 0.5rem 0;
+}
+
+/* Send Reminder Button */
+.send-reminder-btn {
+    background: var(--secondary-color, #6c757d);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.5rem;
+}
+
+.send-reminder-btn:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+.send-reminder-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.send-reminder-btn.success {
+    background: var(--success-color, #10b981);
+}
+
+/* Mobile responsiveness for dropdowns */
+@media (max-width: 768px) {
+    .table td[data-label="Actions"] {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .action-dropdown {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dropdown-button {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .send-reminder-btn {
+        width: 100%;
+        margin-left: 0;
+        justify-content: center;
+    }
+}
     </style>
 </head>
 <body>
@@ -1328,68 +1382,106 @@ for ($i = 0; $i < 7; $i++) {
                 <?php else: ?>
                     <!-- LIST VIEW -->
                     <div class="card">
-                        <form method="get" class="filter-form" style="margin-bottom:1rem;">
-                            <input type="hidden" name="view" value="list" />
-                            <label for="type-filter">Filter by Type:</label>
-                            <select id="type-filter" name="type" onchange="this.form.submit()">
-                                <option value="">All Types</option>
-                                <?php foreach ($appointment_types as $type): ?>
-                                    <option value="<?php echo htmlspecialchars($type); ?>" <?php echo ($type === $type_filter) ? 'selected' : ''; ?>><?php echo htmlspecialchars($type); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <label for="status-filter" style="margin-left:1rem;">Status:</label>
-                            <select id="status-filter" name="status" onchange="this.form.submit()">
-                                <option value="">All Statuses</option>
-                                <?php foreach ($valid_statuses as $status): ?>
-                                    <option value="<?php echo $status; ?>" <?php echo ($status === $status_filter) ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </form>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Date & Time</th>
-                                    <th>Client</th>
-                                    <th>Pet</th>
-                                    <th>Type</th>
-                                    <th>Reason</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($appointments)): ?>
-                                    <tr><td colspan="7" style="text-align:center; padding: 3rem;">No appointments found.</td></tr>
-                                <?php else: foreach ($appointments as $appt): ?>
-                                    <tr data-appointment-id="<?php echo $appt['appointment_id']; ?>">
-                                        <!-- MODIFICATION: Add data-label attributes for mobile view -->
-                                        <td data-label="Date & Time">
-                                            <strong><?php echo date("M d, Y", strtotime($appt['appointment_date'])); ?></strong><br>
-                                            <small><?php echo date("g:i A", strtotime($appt['appointment_time'])); ?></small>
-                                        </td>
-                                        <td data-label="Client"><?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?></td>
-                                        <td data-label="Pet"><?php echo htmlspecialchars($appt['pet_name']); ?></td>
-                                        <td data-label="Type"><?php echo htmlspecialchars($appt['type']); ?></td>
-                                        <td data-label="Reason"><?php echo htmlspecialchars($appt['reason']); ?></td>
-                                        <td data-label="Status">
-                                            <span class="status-badge status-<?php echo $appt['status']; ?>"><?php echo ucfirst(htmlspecialchars($appt['status'])); ?></span>
-                                        </td>
-                                        <td data-label="Actions">
-                                            <div class="action-buttons">
-                                                <select class="action-select" data-appointment-id="<?php echo $appt['appointment_id']; ?>">
-                                                    <option value="">Select Action</option>
-                                                    <option value="requested" <?php echo $appt['status']==='requested' ? 'disabled' : ''; ?>>Mark Requested</option>
-                                                    <option value="confirmed" <?php echo $appt['status']==='confirmed' ? 'disabled' : ''; ?>>Mark Confirmed</option>
-                                                    <option value="completed" <?php echo $appt['status']==='completed' ? 'disabled' : ''; ?>>Mark Completed</option>
-                                                    <option value="cancelled" <?php echo $appt['status']==='cancelled' ? 'disabled' : ''; ?>>Mark Cancelled</option>
-                                                </select>
-                                                <button class="btn btn-secondary send-reminder-btn" data-appointment-id="<?php echo $appt['appointment_id']; ?>">Send Reminder</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; endif; ?>
-                            </tbody>
-                        </table>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Client</th>
+                    <th>Pet</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($appointments)): ?>
+                    <tr><td colspan="6" style="text-align:center; padding: 3rem;">No appointments found.</td></tr>
+                <?php else: foreach ($appointments as $appt): ?>
+                    <tr data-appointment-id="<?php echo $appt['appointment_id']; ?>">
+                        <td data-label="Date & Time">
+                            <strong><?php echo date("M d, Y", strtotime($appt['appointment_date'])); ?></strong><br>
+                            <small><?php echo date("g:i A", strtotime($appt['appointment_time'])); ?></small>
+                        </td>
+                        <td data-label="Client"><?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?></td>
+                        <td data-label="Pet"><?php echo htmlspecialchars($appt['pet_name']); ?></td>
+                        <td data-label="Reason"><?php echo htmlspecialchars($appt['reason']); ?></td>
+                        <td data-label="Status">
+                            <span class="status-badge status-<?php echo $appt['status']; ?>"><?php echo ucfirst(htmlspecialchars($appt['status'])); ?></span>
+                        </td>
+                        <td data-label="Actions">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <!-- Status Dropdown -->
+                                <div class="action-dropdown">
+                                    <button class="dropdown-button action-select" 
+                                            data-appointment-id="<?php echo $appt['appointment_id']; ?>"
+                                            data-current-status="<?php echo $appt['status']; ?>"
+                                            aria-haspopup="true"
+                                            aria-expanded="false">
+                                        <span class="dropdown-text">
+                                            <span class="status-dot <?php echo $appt['status']; ?>"></span>
+                                            Change Status
+                                        </span>
+                                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                                    </button>
+                                    
+                                    <div class="dropdown-menu">
+                                        <button class="dropdown-item <?php echo $appt['status'] === 'requested' ? 'current' : ''; ?>" 
+                                                data-status="requested"
+                                                <?php echo $appt['status'] === 'requested' ? 'disabled' : ''; ?>>
+                                            <span class="status-dot requested"></span>
+                                            <span>Requested</span>
+                                            <?php if ($appt['status'] === 'requested'): ?>
+                                                <i class="fas fa-check" style="margin-left: auto; color: var(--success-color);"></i>
+                                            <?php endif; ?>
+                                        </button>
+                                        
+                                        <button class="dropdown-item <?php echo $appt['status'] === 'confirmed' ? 'current' : ''; ?>" 
+                                                data-status="confirmed"
+                                                <?php echo $appt['status'] === 'confirmed' ? 'disabled' : ''; ?>>
+                                            <span class="status-dot confirmed"></span>
+                                            <span>Confirmed</span>
+                                            <?php if ($appt['status'] === 'confirmed'): ?>
+                                                <i class="fas fa-check" style="margin-left: auto; color: var(--success-color);"></i>
+                                            <?php endif; ?>
+                                        </button>
+                                        
+                                        <button class="dropdown-item <?php echo $appt['status'] === 'completed' ? 'current' : ''; ?>" 
+                                                data-status="completed"
+                                                <?php echo $appt['status'] === 'completed' ? 'disabled' : ''; ?>>
+                                            <span class="status-dot completed"></span>
+                                            <span>Completed</span>
+                                            <?php if ($appt['status'] === 'completed'): ?>
+                                                <i class="fas fa-check" style="margin-left: auto; color: var(--success-color);"></i>
+                                            <?php endif; ?>
+                                        </button>
+                                        
+                                        <div class="dropdown-divider"></div>
+                                        
+                                        <button class="dropdown-item <?php echo $appt['status'] === 'cancelled' ? 'current' : ''; ?>" 
+                                                data-status="cancelled"
+                                                <?php echo $appt['status'] === 'cancelled' ? 'disabled' : ''; ?>>
+                                            <span class="status-dot cancelled"></span>
+                                            <span>Cancelled</span>
+                                            <?php if ($appt['status'] === 'cancelled'): ?>
+                                                <i class="fas fa-check" style="margin-left: auto; color: var(--success-color);"></i>
+                                            <?php endif; ?>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Send Reminder Button -->
+                                <button class="send-reminder-btn" 
+                                        data-appointment-id="<?php echo $appt['appointment_id']; ?>"
+                                        title="Send appointment reminder to client">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <span>Send Reminder</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; endif; ?>
+            </tbody>
+        </table>
                             <!-- PAGINATION CONTROLS START -->
                             <div class="pagination-controls">
                                 <?php if ($total_pages > 1): ?>
@@ -1679,7 +1771,7 @@ for ($i = 0; $i < 7; $i++) {
                     const bookedSlots = await response.json();
                     timeSlotsContainer.innerHTML = '';
                     
-                    ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','14:30','15:00','15:30','16:00','16:00'].forEach(slot => {
+                    ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','14:30','15:00','15:30','16:00','16:30'].forEach(slot => {
                         const time24h = slot + ':00';
                         const isBooked = bookedSlots.includes(time24h);
                         const slotId = `time_${slot.replace(':', '')}`;
@@ -1697,80 +1789,62 @@ for ($i = 0; $i < 7; $i++) {
             dateInput.addEventListener('change', updateAvailableSlots);
         });
 
-        // --- Status update dropdown ---
-        document.addEventListener('change', async function(e) {
-            if (e.target.classList.contains('action-select')) {
-                const select = e.target;
-                const row = select.closest('tr');
-                const appointmentId = select.dataset.appointmentId;
-                const newStatus = select.value;
-                if (!newStatus) return;
-
+        // Status update functionality
+        document.addEventListener('click', async function(e) {
+            if (e.target.classList.contains('btn-status') && !e.target.disabled) {
+                const button = e.target;
+                const row = button.closest('tr');
+                const appointmentId = row.dataset.appointmentId;
+                const newStatus = button.dataset.status;
+                
                 const statusNames = {
                     'requested': 'Requested',
-                    'confirmed': 'Confirmed',
+                    'confirmed': 'Confirmed', 
                     'completed': 'Completed',
                     'cancelled': 'Cancelled'
                 };
-
+                
                 if (!confirm(`Are you sure you want to mark this appointment as ${statusNames[newStatus]}?`)) {
-                    select.value = '';
                     return;
                 }
-
+                
+                const allButtons = row.querySelectorAll('.btn-status');
+                allButtons.forEach(btn => btn.disabled = true);
+                
                 try {
                     const formData = new FormData();
                     formData.append('appointment_id', appointmentId);
                     formData.append('status', newStatus);
-
+                    
                     const response = await fetch('ajax/update_appointment_status.php', {
                         method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'
+                        body: formData
                     });
+                    
                     const result = await response.json();
+                    
                     if (response.ok && result.success) {
-                        const badge = row.querySelector('.status-badge');
-                        badge.textContent = statusNames[newStatus];
-                        badge.className = `status-badge status-${newStatus}`;
+                        const statusBadge = row.querySelector('.status-badge');
+                        statusBadge.textContent = statusNames[newStatus];
+                        statusBadge.className = `status-badge status-${newStatus}`;
+                        
+                        allButtons.forEach(btn => {
+                            btn.disabled = (btn.dataset.status === newStatus);
+                        });
+                        
                         showNotification('Status updated successfully!', 'success');
+                        
                     } else {
                         throw new Error(result.error || 'Failed to update status');
                     }
+                    
                 } catch (error) {
                     console.error('Error updating status:', error);
-                    alert('Action failed. Please try again.');
-                }
-
-                select.value = '';
-            }
-        });
-
-        // --- Send reminder button ---
-        document.addEventListener('click', async function(e) {
-            if (e.target.classList.contains('send-reminder-btn')) {
-                e.preventDefault();
-                const btn = e.target;
-                const appointmentId = btn.dataset.appointmentId;
-                if (!confirm('Send reminder to client?')) return;
-
-                try {
-                    const formData = new FormData();
-                    formData.append('appointment_id', appointmentId);
-                    const response = await fetch('ajax/send_reminder.php', {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'
+                    alert('Failed to update appointment status. Please try again.');
+                    
+                    allButtons.forEach(btn => {
+                        btn.disabled = false;
                     });
-                    const result = await response.json();
-                    if (response.ok && result.success) {
-                        showNotification('Reminder sent!', 'success');
-                    } else {
-                        throw new Error(result.error || 'Failed to send reminder');
-                    }
-                } catch (error) {
-                    console.error('Error sending reminder:', error);
-                    alert('Failed to send reminder.');
                 }
             }
         });
@@ -1832,6 +1906,223 @@ for ($i = 0; $i < 7; $i++) {
                 });
             }
         });
+
+            // Updated dropdown and status management
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dropdown functionality
+        function initializeDropdowns() {
+            document.addEventListener('click', function(e) {
+                // Handle dropdown button clicks
+                if (e.target.closest('.dropdown-button')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const button = e.target.closest('.dropdown-button');
+                    const dropdown = button.closest('.action-dropdown');
+                    const menu = dropdown.querySelector('.dropdown-menu');
+                    const isOpen = menu.classList.contains('show');
+                    
+                    // Close all other dropdowns
+                    document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+                        if (m !== menu) {
+                            m.classList.remove('show');
+                            m.closest('.action-dropdown').querySelector('.dropdown-button').setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                    
+                    // Toggle current dropdown
+                    if (isOpen) {
+                        menu.classList.remove('show');
+                        button.setAttribute('aria-expanded', 'false');
+                    } else {
+                        menu.classList.add('show');
+                        button.setAttribute('aria-expanded', 'true');
+                    }
+                }
+                
+                // Handle dropdown item clicks
+                else if (e.target.closest('.dropdown-item') && !e.target.closest('.dropdown-item').disabled) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const item = e.target.closest('.dropdown-item');
+                    const dropdown = item.closest('.action-dropdown');
+                    const button = dropdown.querySelector('.dropdown-button');
+                    const menu = dropdown.querySelector('.dropdown-menu');
+                    const appointmentId = button.dataset.appointmentId;
+                    const newStatus = item.dataset.status;
+                    
+                    if (newStatus && appointmentId) {
+                        updateAppointmentStatus(appointmentId, newStatus, button, item);
+                    }
+                    
+                    // Close dropdown
+                    menu.classList.remove('show');
+                    button.setAttribute('aria-expanded', 'false');
+                }
+                
+                // Close dropdowns when clicking outside
+                else if (!e.target.closest('.action-dropdown')) {
+                    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                        menu.classList.remove('show');
+                        menu.closest('.action-dropdown').querySelector('.dropdown-button').setAttribute('aria-expanded', 'false');
+                    });
+                }
+            });
+        }
+
+        // Initialize dropdown functionality
+        initializeDropdowns();
+
+        // Status update function
+        async function updateAppointmentStatus(appointmentId, newStatus, button, clickedItem) {
+            const statusNames = {
+                'requested': 'Requested',
+                'confirmed': 'Confirmed', 
+                'completed': 'Completed',
+                'cancelled': 'Cancelled'
+            };
+
+            if (!confirm(`Are you sure you want to mark this appointment as ${statusNames[newStatus]}?`)) {
+                return;
+            }
+
+            // Show loading state
+            const originalText = button.querySelector('.dropdown-text').innerHTML;
+            const dropdownIcon = button.querySelector('.dropdown-icon');
+            
+            button.classList.add('loading');
+            button.disabled = true;
+            button.querySelector('.dropdown-text').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            dropdownIcon.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('appointment_id', appointmentId);
+                formData.append('status', newStatus);
+
+                const response = await fetch('ajax/update_appointment_status.php', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Update the status badge in the table
+                    const row = button.closest('tr');
+                    const badge = row.querySelector('.status-badge');
+                    if (badge) {
+                        badge.textContent = statusNames[newStatus];
+                        badge.className = `status-badge status-${newStatus}`;
+                    }
+
+                    // Update dropdown button
+                    button.querySelector('.dropdown-text').innerHTML = `
+                        <span class="status-dot ${newStatus}"></span>
+                        Change Status
+                    `;
+                    button.dataset.currentStatus = newStatus;
+
+                    // Update dropdown menu items
+                    const dropdown = button.closest('.action-dropdown');
+                    const allItems = dropdown.querySelectorAll('.dropdown-item');
+                    
+                    allItems.forEach(item => {
+                        const itemStatus = item.dataset.status;
+                        const checkIcon = item.querySelector('.fas.fa-check');
+                        
+                        if (itemStatus === newStatus) {
+                            item.classList.add('current');
+                            item.disabled = true;
+                            if (!checkIcon) {
+                                item.innerHTML += '<i class="fas fa-check" style="margin-left: auto; color: var(--success-color);"></i>';
+                            }
+                        } else {
+                            item.classList.remove('current');
+                            item.disabled = false;
+                            if (checkIcon) {
+                                checkIcon.remove();
+                            }
+                        }
+                    });
+
+                    showNotification(`Appointment status updated to ${statusNames[newStatus]}!`, 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to update status');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showNotification('Failed to update appointment status. Please try again.', 'error');
+            } finally {
+                // Reset loading state
+                button.classList.remove('loading');
+                button.disabled = false;
+                dropdownIcon.style.display = '';
+                
+                if (button.querySelector('.dropdown-text').textContent.includes('Updating')) {
+                    button.querySelector('.dropdown-text').innerHTML = originalText;
+                }
+            }
+        }
+
+        // Send reminder functionality
+        document.addEventListener('click', async function(e) {
+            if (e.target.closest('.send-reminder-btn')) {
+                e.preventDefault();
+                const btn = e.target.closest('.send-reminder-btn');
+                const appointmentId = btn.dataset.appointmentId;
+                
+                if (!confirm('Send appointment reminder to the client?')) return;
+
+                // Show loading state
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                btn.disabled = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('appointment_id', appointmentId);
+
+                    const response = await fetch('ajax/send_reminder.php', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin'
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        showNotification('Reminder sent successfully!', 'success');
+                        
+                        // Show success state
+                        btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+                        btn.classList.add('success');
+                        
+                        // Reset after 2 seconds
+                        setTimeout(() => {
+                            btn.innerHTML = originalHTML;
+                            btn.classList.remove('success');
+                            btn.disabled = false;
+                        }, 2000);
+                    } else {
+                        throw new Error(result.error || 'Failed to send reminder');
+                    }
+                } catch (error) {
+                    console.error('Error sending reminder:', error);
+                    showNotification('Failed to send reminder. Please check your connection and try again.', 'error');
+                    
+                    // Reset button state
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }
+            }
+        });
+
+        // Make updateAppointmentStatus available globally
+        window.updateAppointmentStatus = updateAppointmentStatus;
+    });
         
     </script>
 </body>
