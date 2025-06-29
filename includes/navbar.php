@@ -22,6 +22,36 @@
     height: 70px;
 }
 
+/* --- NEW: HAMBURGER MENU --- */
+.hamburger-menu {
+    display: none; /* Hidden on desktop */
+    flex-direction: column;
+    justify-content: space-around;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 1rem;
+    z-index: 1002;
+}
+
+.hamburger-menu:focus {
+    outline: none;
+}
+
+.hamburger-menu span {
+    width: 28px;
+    height: 3px;
+    background: var(--dark-color, #333);
+    border-radius: 10px;
+    transition: all 0.3s linear;
+    position: relative;
+    transform-origin: 1px;
+}
+/* --- END NEW --- */
+
 /* Logo Section */
 .navbar-brand .brand-link {
     display: flex;
@@ -240,6 +270,16 @@ body {
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
+    /* --- NEW: Show the hamburger button on mobile --- */
+    .hamburger-menu {
+        display: flex;
+    }
+    .brand-logo {
+        margin-left: 0;
+    }
+    /* --- END NEW --- */
+
+
     .top-navbar {
         padding: 0.75rem 1rem;
     }
@@ -270,8 +310,8 @@ body {
 
 @media (max-width: 480px) {
     .brand-logo {
-        width: 32px;
-        height: 32px;
+        height: 80px; 
+        width: auto; 
     }
     
     .brand-text {
@@ -286,6 +326,13 @@ body {
 }
 </style>
 <nav class="top-navbar">
+    <!-- NEW: Hamburger Menu Button -->
+    <button class="hamburger-menu" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
     <!-- Logo Section -->
     <div class="navbar-brand">
         <a href="<?php echo SITE_URL; ?>/client/index.php" class="brand-link">
