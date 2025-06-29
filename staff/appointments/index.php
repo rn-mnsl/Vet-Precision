@@ -9,11 +9,23 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'staf
 }
 $logged_in_staff_id = $_SESSION['user_id'];
 
+// Send automatic reminders for tomorrow's appointments
+sendAutomaticAppointmentReminders();
+
 // --- PAGE LOGIC ---
 $action = $_GET['action'] ?? 'list';
 $view = $_GET['view'] ?? 'list'; // New view parameter
 $errors = [];
 $success_message = '';
+
+// Filter by appointment type
+$type_filter = $_GET['type'] ?? '';
+try {
+    $types_stmt = $pdo->query("SELECT DISTINCT type FROM appointments ORDER BY type");
+    $appointment_types = $types_stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    $appointment_types = [];
+}
 
 // --- MODIFICATION: HANDLE PRE-SELECTION FROM URL ---
 $preselected_owner_id = null;
@@ -137,8 +149,13 @@ if ($view === 'list') {
 
     // 1. Get the total number of appointments for calculating total pages
     try {
-        $count_stmt = $pdo->query("SELECT COUNT(appointment_id) FROM appointments");
-        $total_items = (int)$count_stmt->fetchColumn();
+        if (!empty($type_filter)) {
+            $count_stmt = $pdo->prepare("SELECT COUNT(appointment_id) FROM appointments WHERE type = :type");
+            $count_stmt->execute([':type' => $type_filter]);
+        } else {
+            $count_stmt = $pdo->query("SELECT COUNT(appointment_id) FROM appointments");
+        }
+        $total_items = (int)($count_stmt->fetchColumn());
         $total_pages = ceil($total_items / $items_per_page);
     } catch (PDOException $e) {
         $errors[] = "Could not count appointments.";
@@ -152,19 +169,25 @@ if ($view === 'list') {
 
     try {
         // 3. Modify the main query to use LIMIT and OFFSET
-        $stmt_appts = $pdo->prepare("
-            SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status, a.reason, p.name AS pet_name,
-                   u_owner.first_name AS owner_first_name, u_owner.last_name AS owner_last_name
-            FROM appointments a
-            JOIN pets p ON a.pet_id = p.pet_id
-            JOIN owners o ON p.owner_id = o.owner_id
-            JOIN users u_owner ON o.user_id = u_owner.user_id
-            ORDER BY a.appointment_date DESC, a.appointment_time DESC
-            LIMIT :limit OFFSET :offset"); // <-- Added LIMIT and OFFSET
+        $sql = "SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status, a.reason, a.type, p.name AS pet_name,
+                       u_owner.first_name AS owner_first_name, u_owner.last_name AS owner_last_name
+                FROM appointments a
+                JOIN pets p ON a.pet_id = p.pet_id
+                JOIN owners o ON p.owner_id = o.owner_id
+                JOIN users u_owner ON o.user_id = u_owner.user_id";
+        if (!empty($type_filter)) {
+            $sql .= " WHERE a.type = :type";
+        }
+        $sql .= " ORDER BY a.appointment_date DESC, a.appointment_time DESC
+                  LIMIT :limit OFFSET :offset";
+        $stmt_appts = $pdo->prepare($sql);
 
         // 4. Bind the new parameters
         $stmt_appts->bindParam(':limit', $items_per_page, PDO::PARAM_INT);
         $stmt_appts->bindParam(':offset', $offset, PDO::PARAM_INT);
+        if (!empty($type_filter)) {
+            $stmt_appts->bindParam(':type', $type_filter, PDO::PARAM_STR);
+        }
         $stmt_appts->execute();
         
         $appointments = $stmt_appts->fetchAll(PDO::FETCH_ASSOC);
@@ -385,6 +408,17 @@ for ($i = 0; $i < 7; $i++) {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
+        }
+
+        .filter-form select {
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        .action-select {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.9rem;
+            border-radius: 6px;
         }
 
         /* Status action buttons */
@@ -1251,12 +1285,23 @@ for ($i = 0; $i < 7; $i++) {
                 <?php else: ?>
                     <!-- LIST VIEW -->
                     <div class="card">
+                        <form method="get" class="filter-form" style="margin-bottom:1rem;">
+                            <input type="hidden" name="view" value="list" />
+                            <label for="type-filter">Filter by Type:</label>
+                            <select id="type-filter" name="type" onchange="this.form.submit()">
+                                <option value="">All Types</option>
+                                <?php foreach ($appointment_types as $type): ?>
+                                    <option value="<?php echo htmlspecialchars($type); ?>" <?php echo ($type === $type_filter) ? 'selected' : ''; ?>><?php echo htmlspecialchars($type); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </form>
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th>Date & Time</th>
                                     <th>Client</th>
                                     <th>Pet</th>
+                                    <th>Type</th>
                                     <th>Reason</th>
                                     <th>Status</th>
                                     <th>Actions</th>
@@ -1264,7 +1309,7 @@ for ($i = 0; $i < 7; $i++) {
                             </thead>
                             <tbody>
                                 <?php if (empty($appointments)): ?>
-                                    <tr><td colspan="6" style="text-align:center; padding: 3rem;">No appointments found.</td></tr>
+                                    <tr><td colspan="7" style="text-align:center; padding: 3rem;">No appointments found.</td></tr>
                                 <?php else: foreach ($appointments as $appt): ?>
                                     <tr data-appointment-id="<?php echo $appt['appointment_id']; ?>">
                                         <!-- MODIFICATION: Add data-label attributes for mobile view -->
@@ -1274,17 +1319,20 @@ for ($i = 0; $i < 7; $i++) {
                                         </td>
                                         <td data-label="Client"><?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?></td>
                                         <td data-label="Pet"><?php echo htmlspecialchars($appt['pet_name']); ?></td>
+                                        <td data-label="Type"><?php echo htmlspecialchars($appt['type']); ?></td>
                                         <td data-label="Reason"><?php echo htmlspecialchars($appt['reason']); ?></td>
                                         <td data-label="Status">
                                             <span class="status-badge status-<?php echo $appt['status']; ?>"><?php echo ucfirst(htmlspecialchars($appt['status'])); ?></span>
                                         </td>
                                         <td data-label="Actions">
-                                            <div class="action-buttons">
-                                                <button class="btn btn-status btn-requested" data-status="requested" <?php echo $appt['status'] === 'requested' ? 'disabled' : ''; ?>>Requested</button>
-                                                <button class="btn btn-status btn-confirmed" data-status="confirmed" <?php echo $appt['status'] === 'confirmed' ? 'disabled' : ''; ?>>Confirmed</button>
-                                                <button class="btn btn-status btn-completed" data-status="completed" <?php echo $appt['status'] === 'completed' ? 'disabled' : ''; ?>>Completed</button>
-                                                <button class="btn btn-status btn-cancelled" data-status="cancelled" <?php echo $appt['status'] === 'cancelled' ? 'disabled' : ''; ?>>Cancelled</button>
-                                            </div>
+                                            <select class="action-select" data-appointment-id="<?php echo $appt['appointment_id']; ?>">
+                                                <option value="">Select Action</option>
+                                                <option value="requested" <?php echo $appt['status']==='requested' ? 'disabled' : ''; ?>>Mark Requested</option>
+                                                <option value="confirmed" <?php echo $appt['status']==='confirmed' ? 'disabled' : ''; ?>>Mark Confirmed</option>
+                                                <option value="completed" <?php echo $appt['status']==='completed' ? 'disabled' : ''; ?>>Mark Completed</option>
+                                                <option value="cancelled" <?php echo $appt['status']==='cancelled' ? 'disabled' : ''; ?>>Mark Cancelled</option>
+                                                <option value="reminder">Send Reminder</option>
+                                            </select>
                                         </td>
                                     </tr>
                                 <?php endforeach; endif; ?>
@@ -1597,62 +1645,67 @@ for ($i = 0; $i < 7; $i++) {
             dateInput.addEventListener('change', updateAvailableSlots);
         });
 
-        // Status update functionality
-        document.addEventListener('click', async function(e) {
-            if (e.target.classList.contains('btn-status') && !e.target.disabled) {
-                const button = e.target;
-                const row = button.closest('tr');
-                const appointmentId = row.dataset.appointmentId;
-                const newStatus = button.dataset.status;
-                
+        // Status update and reminder functionality
+        document.addEventListener('change', async function(e) {
+            if (e.target.classList.contains('action-select')) {
+                const select = e.target;
+                const row = select.closest('tr');
+                const appointmentId = select.dataset.appointmentId;
+                const action = select.value;
+                if (!action) return;
+
                 const statusNames = {
                     'requested': 'Requested',
-                    'confirmed': 'Confirmed', 
+                    'confirmed': 'Confirmed',
                     'completed': 'Completed',
                     'cancelled': 'Cancelled'
                 };
-                
-                if (!confirm(`Are you sure you want to mark this appointment as ${statusNames[newStatus]}?`)) {
-                    return;
+
+                if (action === 'reminder') {
+                    if (!confirm('Send reminder to client?')) { select.value = ''; return; }
+                } else {
+                    if (!confirm(`Are you sure you want to mark this appointment as ${statusNames[action]}?`)) {
+                        select.value = '';
+                        return;
+                    }
                 }
-                
-                const allButtons = row.querySelectorAll('.btn-status');
-                allButtons.forEach(btn => btn.disabled = true);
-                
+
                 try {
                     const formData = new FormData();
                     formData.append('appointment_id', appointmentId);
-                    formData.append('status', newStatus);
-                    
-                    const response = await fetch('ajax/update_appointment_status.php', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (response.ok && result.success) {
-                        const statusBadge = row.querySelector('.status-badge');
-                        statusBadge.textContent = statusNames[newStatus];
-                        statusBadge.className = `status-badge status-${newStatus}`;
-                        
-                        allButtons.forEach(btn => {
-                            btn.disabled = (btn.dataset.status === newStatus);
+                    if (action === 'reminder') {
+                        const response = await fetch('ajax/send_reminder.php', {
+                            method: 'POST',
+                            body: formData
                         });
-                        
-                        showNotification('Status updated successfully!', 'success');
-                        
+                        const result = await response.json();
+                        if (response.ok && result.success) {
+                            showNotification('Reminder sent!', 'success');
+                        } else {
+                            throw new Error(result.error || 'Failed to send reminder');
+                        }
                     } else {
-                        throw new Error(result.error || 'Failed to update status');
+                        formData.append('status', action);
+                        const response = await fetch('ajax/update_appointment_status.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (response.ok && result.success) {
+                            const statusBadge = row.querySelector('.status-badge');
+                            statusBadge.textContent = statusNames[action];
+                            statusBadge.className = `status-badge status-${action}`;
+                            showNotification('Status updated successfully!', 'success');
+                        } else {
+                            throw new Error(result.error || 'Failed to update status');
+                        }
                     }
-                    
+                    select.value = '';
+
                 } catch (error) {
                     console.error('Error updating status:', error);
-                    alert('Failed to update appointment status. Please try again.');
-                    
-                    allButtons.forEach(btn => {
-                        btn.disabled = false;
-                    });
+                    alert('Action failed. Please try again.');
+                    select.value = '';
                 }
             }
         });
