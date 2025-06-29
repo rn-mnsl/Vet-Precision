@@ -8,15 +8,21 @@ if (isLoggedIn()) {
 
 $errors = [];
 
+$selectedType = 'staff';
+
 if (isPost()) {
     $email = sanitize($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    
+    $userType = sanitize($_POST['user_type'] ?? 'staff');
+    $selectedType = $userType;
+
     // Validate input
     $errors = validateLogin($_POST);
-    
+
     if (empty($errors)) {
-        $result = login($email, $password);
+        // Map user type to role in database
+        $role = $userType === 'owner' ? 'client' : 'staff';
+        $result = login($email, $password, $role);
         
         if ($result['success']) {
             // Redirect based on role
@@ -1121,8 +1127,8 @@ $pageTitle = 'Login - ' . SITE_NAME;
                 <div class="login-header">
                     <!-- User Type Toggle -->
                     <div class="user-type-toggle">
-                        <div class="toggle-option active" data-type="staff">Hospital Staff</div>
-                        <div class="toggle-option" data-type="owner">Pet Owner</div>
+                        <div class="toggle-option <?php echo $selectedType === 'staff' ? 'active' : ''; ?>" data-type="staff">Hospital Staff</div>
+                        <div class="toggle-option <?php echo $selectedType === 'owner' ? 'active' : ''; ?>" data-type="owner">Pet Owner</div>
                     </div>
                     
                     <h1 class="login-title">Welcome to Vet Precision</h1>
@@ -1183,6 +1189,7 @@ $pageTitle = 'Login - ' . SITE_NAME;
 
                 <!-- Login Form -->
                 <form method="POST" action="" id="loginForm">
+                    <input type="hidden" name="user_type" id="user_type" value="<?php echo sanitize($selectedType); ?>">
                     <div class="form-group">
                         <label for="email" class="form-label">Email Address</label>
                         <input 
@@ -1271,46 +1278,55 @@ $pageTitle = 'Login - ' . SITE_NAME;
             const featuresList = document.querySelector('.features-list');
             const loginTitle = document.querySelector('.login-title');
             const loginSubtitle = document.querySelector('.login-subtitle');
+            const hiddenInput = document.getElementById('user_type');
+
+            function applyUserType(userType) {
+                hiddenInput.value = userType;
+
+                if (userType === 'staff') {
+                    // Update left side content for staff
+                    welcomeText.textContent = 'Welcome Veterinary Professionals';
+                    welcomeDesc.textContent = 'Manage your practice, access patient records, and provide excellent care.';
+                    featuresList.innerHTML = `
+                        <li>Manage appointments and schedules</li>
+                        <li>Access complete patient records</li>
+                        <li>Streamline clinic operations</li>
+                    `;
+
+                    // Update right side content for staff
+                    loginTitle.textContent = 'Welcome to Vet Precision';
+                    loginSubtitle.textContent = 'Prioritize the Health of your pets';
+                } else {
+                    // Update left side content for pet owners
+                    welcomeText.textContent = 'Welcome Pet Owners';
+                    welcomeDesc.textContent = 'Book appointments, track your pets health, and connect with our veterinary team.';
+                    featuresList.innerHTML = `
+                        <li>Book and manage appointments</li>
+                        <li>Track vaccination schedules</li>
+                        <li>Access medical history</li>
+                    `;
+
+                    // Update right side content for pet owners
+                    loginTitle.textContent = 'Welcome Back';
+                    loginSubtitle.textContent = 'Access your pet\'s health dashboard';
+                }
+            }
 
             toggleOptions.forEach(option => {
                 option.addEventListener('click', function() {
                     // Remove active class from all options
                     toggleOptions.forEach(opt => opt.classList.remove('active'));
-                    
+
                     // Add active class to clicked option
                     this.classList.add('active');
-                    
+
                     const userType = this.getAttribute('data-type');
-                    
-                    if (userType === 'staff') {
-                        // Update left side content for staff
-                        welcomeText.textContent = 'Welcome Veterinary Professionals';
-                        welcomeDesc.textContent = 'Manage your practice, access patient records, and provide excellent care.';
-                        featuresList.innerHTML = `
-                            <li>Manage appointments and schedules</li>
-                            <li>Access complete patient records</li>
-                            <li>Streamline clinic operations</li>
-                        `;
-                        
-                        // Update right side content for staff
-                        loginTitle.textContent = 'Welcome to Vet Precision';
-                        loginSubtitle.textContent = 'Prioritize the Health of your pets';
-                    } else {
-                        // Update left side content for pet owners
-                        welcomeText.textContent = 'Welcome Pet Owners';
-                        welcomeDesc.textContent = 'Book appointments, track your pets health, and connect with our veterinary team.';
-                        featuresList.innerHTML = `
-                            <li>Book and manage appointments</li>
-                            <li>Track vaccination schedules</li>
-                            <li>Access medical history</li>
-                        `;
-                        
-                        // Update right side content for pet owners
-                        loginTitle.textContent = 'Welcome Back';
-                        loginSubtitle.textContent = 'Access your pet\'s health dashboard';
-                    }
+                    applyUserType(userType);
                 });
             });
+
+            // Apply initial state based on server value
+            applyUserType(hiddenInput.value);
 
             // Form submission with loading state
             const loginForm = document.getElementById('loginForm');

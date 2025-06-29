@@ -51,15 +51,20 @@ function validateRegistration($data) {
 // Validate login data
 function validateLogin($data) {
     $errors = [];
-    
+
     if (empty($data['email'])) {
         $errors['email'] = 'Email is required';
     }
-    
+
     if (empty($data['password'])) {
         $errors['password'] = 'Password is required';
     }
-    
+
+    // Check user type
+    if (empty($data['user_type']) || !in_array($data['user_type'], ['staff', 'owner'])) {
+        $errors['user_type'] = 'Invalid user type';
+    }
+
     return $errors;
 }
 
