@@ -2,17 +2,26 @@
 // Authentication functions
 
 // Login user
-function login($email, $password) {
+function login($email, $password, $role = null) {
     global $pdo;
     
-    // Get user by email
-    $stmt = $pdo->prepare("
-        SELECT u.*, o.owner_id 
+    // Get user by email and optional role
+    $query = "
+        SELECT u.*, o.owner_id
         FROM users u
         LEFT JOIN owners o ON u.user_id = o.user_id
-        WHERE u.email = :email AND u.is_active = 1
-    ");
-    $stmt->execute(['email' => $email]);
+        WHERE u.email = :email AND u.is_active = 1";
+
+    if ($role !== null) {
+        $query .= " AND u.role = :role";
+    }
+
+    $stmt = $pdo->prepare($query);
+    $params = ['email' => $email];
+    if ($role !== null) {
+        $params['role'] = $role;
+    }
+    $stmt->execute($params);
     $user = $stmt->fetch();
     
     if (!$user) {
