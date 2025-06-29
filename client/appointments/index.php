@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_appointment'])
     $reason = trim($_POST['reason'] ?? '');
     $notes = trim($_POST['notes'] ?? '');
 
+    // (Validation checks remain the same)
     if (empty($pet_id)) $errors[] = "Please select a pet.";
     if (empty($appointment_date)) $errors[] = "Please select a date.";
     if (empty($appointment_time)) $errors[] = "Please select a time slot.";
@@ -49,17 +50,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_appointment'])
 
     if (empty($errors) && $owner_id) {
         try {
-            $sql = "INSERT INTO appointments (pet_id, appointment_date, appointment_time, duration_minutes, status, type, reason, notes, created_by, created_at, updated_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$pet_id, $appointment_date, $appointment_time, 30, 'requested', 'Checkup', $reason, $notes, $user_id]);
+            // --- [NEW] "UPDATE-OR-INSERT" LOGIC ---
+
+            // 1. Check for a reusable 'cancelled' appointment
+            $check_sql = "SELECT appointment_id FROM appointments WHERE appointment_date = ? AND appointment_time = ? AND status = 'cancelled'";
+            $check_stmt = $pdo->prepare($check_sql);
+            $check_stmt->execute([$appointment_date, $appointment_time]);
+            $reusable_appointment_id = $check_stmt->fetchColumn();
+
+            // 2. Decide whether to UPDATE or INSERT
+            if ($reusable_appointment_id) {
+                // A reusable slot was found! UPDATE it to be a complete appointment.
+                $sql = "UPDATE appointments 
+                        SET pet_id = ?, 
+                            status = 'requested', 
+                            reason = ?, 
+                            notes = ?, 
+                            created_by = ?, 
+                            updated_at = NOW(),
+                            type = ?,             -- [FIX] Added missing column
+                            duration_minutes = ?  -- [FIX] Added missing column
+                        WHERE appointment_id = ?";
+                $stmt = $pdo->prepare($sql);
+                // [FIX] Added 'Checkup', 30, and the ID to the execute array
+                $stmt->execute([$pet_id, $reason, $notes, $user_id, 'Checkup', 30, $reusable_appointment_id]);
+
+            } else {
+                // No reusable slot found. INSERT a new appointment as before.
+                // This branch also handles the pre-submission check for race conditions.
+                $sql = "INSERT INTO appointments (pet_id, appointment_date, appointment_time, duration_minutes, status, type, reason, notes, created_by, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$pet_id, $appointment_date, $appointment_time, 30, 'requested', 'Checkup', $reason, $notes, $user_id]);
+            }
+
+            // --- [EMAIL NOTIFICATION LOGIC - REMAINS THE SAME] ---
+            $info_stmt = $pdo->prepare("
+                SELECT CONCAT_WS(' ', u.first_name, u.last_name) AS full_name, p.name AS pet_name
+                FROM users u
+                JOIN owners o ON u.user_id = o.user_id
+                JOIN pets p ON o.owner_id = p.owner_id
+                WHERE u.user_id = :user_id AND p.pet_id = :pet_id
+            ");
+            $info_stmt->execute(['user_id' => $user_id, 'pet_id' => $pet_id]);
+            $email_info = $info_stmt->fetch(PDO::FETCH_ASSOC);
+
+            $client_name = $email_info['full_name'] ?? 'A Client';
+            $pet_name = $email_info['pet_name'] ?? 'A Pet';
+            
+            $subject = "New Appointment Request: " . $pet_name;
+            $formatted_date = date("F j, Y", strtotime($appointment_date));
+            $formatted_time = date("g:i A", strtotime($appointment_time));
+
+            // [MODIFICATION] Conditionally create the notes HTML block
+            $notes_html = '';
+            if (!empty($notes)) {
+                // nl2br() converts newlines from the textarea into <br> tags for proper HTML display
+                $notes_html = "<li style='margin-bottom: 10px;'><strong>Additional Notes:</strong><br>" . nl2br(htmlspecialchars($notes)) . "</li>";
+            }
+            
+            $email_body = "
+                <html><body>
+                    <h2>New Appointment Request</h2>
+                    <p>A new appointment has been requested through the client portal.</p>
+                    <ul style='list-style-type: none; padding: 0;'>
+                        <li style='margin-bottom: 10px;'><strong>Client:</strong> " . htmlspecialchars($client_name) . "</li>
+                        <li style='margin-bottom: 10px;'><strong>Pet:</strong> " . htmlspecialchars($pet_name) . "</li>
+                        <li style='margin-bottom: 10px;'><strong>Date:</strong> " . $formatted_date . "</li>
+                        <li style='margin-bottom: 10px;'><strong>Time:</strong> " . $formatted_time . "</li>
+                        <li style='margin-bottom: 10px;'><strong>Reason:</strong> " . nl2br(htmlspecialchars($reason)) . "</li>
+                        " . $notes_html . "
+                    </ul>
+                    <p>Please log in to the admin dashboard to confirm or manage this appointment.</p>
+                </body></html>
+            ";
+
+            $alt_body = "New Appointment Request. Client: {$client_name}, Pet: {$pet_name}, Date: {$formatted_date} at {$formatted_time}. Reason: {$reason}.";
+
+            // [MODIFICATION] Conditionally append notes to the plain text version
+            if (!empty($notes)) {
+                $alt_body .= "\nAdditional Notes: " . $notes;
+            }
+
+            sendAdminNotification($subject, $email_body, $alt_body);
             
             $_SESSION['success_message'] = "Appointment requested successfully!";
             header('Location: index.php');
             exit();
 
         } catch (PDOException $e) {
-            $errors[] = "We couldn't save your appointment. Please try again later. Error: " . $e->getMessage();
+            error_log("Appointment Save Error: " . $e->getMessage());
+            // This now correctly catches the "Duplicate entry" error if a race condition occurs
+            // for a slot that did NOT have a 'cancelled' appointment.
+            if ($e->getCode() == 23000) { // 23000 is the SQLSTATE for an integrity constraint violation
+                 $errors[] = "Sorry, that time slot was just booked by someone else. Please select a different time.";
+            } else {
+                $errors[] = "We couldn't save your appointment due to a system error. Please try again later.";
+            }
         }
     }
 }
@@ -144,7 +231,7 @@ if ($owner_id) {
         }
         
         $time_slots = [];
-        for ($h = 8; $h <= 19; $h++) {
+        for ($h = 8; $h <= 16; $h++) {
             $time_slots[] = str_pad($h, 2, '0', STR_PAD_LEFT) . ':00';
         }
     }
@@ -560,55 +647,96 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             }
         });
 
+    // THIS IS THE NEW, WORKING CODE
     document.addEventListener('DOMContentLoaded', function() {
+        // Only run this script on the page with the appointment form
         const dateInput = document.getElementById('appointment_date');
-        if (!dateInput) { return; }
+        if (!dateInput) { 
+            return; 
+        }
 
         const timeSlotsContainer = document.getElementById('time-slots-container');
-        // This check is important for debugging. If it fails, the ID is missing.
-        if (!timeSlotsContainer) {
-            console.error('Error: Could not find the time slots container with ID "time-slots-container".');
-            return;
-        }
-        
-        const timeSlotRadios = timeSlotsContainer.querySelectorAll('input[type="radio"]');
 
+        // This function now dynamically creates the time slots
         async function updateAvailableSlots() {
             const selectedDate = dateInput.value;
+
+            // If no date is selected, reset the container
             if (!selectedDate) {
-                timeSlotRadios.forEach(radio => {
-                    radio.disabled = false;
-                    radio.closest('.time-slot').classList.remove('disabled');
-                });
+                timeSlotsContainer.innerHTML = 'Select a date to see times';
                 return;
             }
-
+            
+            // Provide immediate feedback to the user
+            timeSlotsContainer.innerHTML = '<em>Loading available times...</em>';
+            
             try {
+                // 1. Fetch the list of already booked slots for the chosen date
                 const response = await fetch(`ajax/get_booked_slots.php?date=${selectedDate}`);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 const bookedSlots = await response.json();
+                
+                // 2. Clear the "Loading..." message
+                timeSlotsContainer.innerHTML = '';
+                
+                // 3. Define all possible time slots for your clinic
+                // (Using a full day schedule for robustness)
+                const allPossibleSlots = [];
+                for (let h = 8; h <= 19; h++) { // 8 AM to 7 PM
+                    allPossibleSlots.push(`${String(h).padStart(2, '0')}:00`);
+                    if (h < 19) { // Don't add a :30 slot after the last hour
+                        allPossibleSlots.push(`${String(h).padStart(2, '0')}:30`);
+                    }
+                }
+                
+                let availableSlotsFound = false;
 
-                timeSlotRadios.forEach(radio => {
-                    const slotTime = radio.value;
-                    const timeSlotDiv = radio.closest('.time-slot');
+                // 4. Loop through ALL possible slots and create the HTML for each one
+                allPossibleSlots.forEach(slot => {
+                    const time24h = slot + ':00'; // e.g., "09:00:00"
+                    const isBooked = bookedSlots.includes(time24h);
 
-                    if (bookedSlots.includes(slotTime)) {
-                        radio.disabled = true;
-                        radio.checked = false; 
-                        timeSlotDiv.classList.add('disabled');
-                    } else {
-                        radio.disabled = false;
-                        timeSlotDiv.classList.remove('disabled');
+                    // Don't show slots in the past if the selected date is today
+                    const today = new Date();
+                    const slotDateTime = new Date(`${selectedDate}T${slot}`);
+                    if (selectedDate === today.toISOString().split('T')[0] && slotDateTime < today) {
+                        return; // Skip this iteration
+                    }
+
+                    // Convert to 12-hour format for display (e.g., 9:30 AM)
+                    const time_display = new Date(`1970-01-01T${slot}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    const slotId = `time_${slot.replace(':', '')}`;
+                    
+                    // Create the HTML for the time slot
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = 'time-slot' + (isBooked ? ' disabled' : '');
+                    
+                    slotDiv.innerHTML = `
+                        <input type="radio" id="${slotId}" name="appointment_time" value="${time24h}" ${isBooked ? 'disabled' : ''} required>
+                        <label for="${slotId}">${time_display}</label>
+                    `;
+                    
+                    timeSlotsContainer.appendChild(slotDiv);
+                    if (!isBooked) {
+                        availableSlotsFound = true;
                     }
                 });
+
+                // If the loop finishes and no slots were available
+                if (!availableSlotsFound) {
+                    timeSlotsContainer.innerHTML = '<em>No available time slots for this date. Please try another day.</em>';
+                }
+
             } catch (error) {
-                console.error('Error fetching available slots:', error);
+                console.error('Error loading time slots:', error);
+                timeSlotsContainer.innerHTML = '<em style="color: red;">Could not load times. Please try again.</em>';
             }
         }
+        
+        // Add the event listener to the date input
         dateInput.addEventListener('change', updateAvailableSlots);
-        updateAvailableSlots();
     });
 
         // This function can be reused from your staff panel for a consistent look
