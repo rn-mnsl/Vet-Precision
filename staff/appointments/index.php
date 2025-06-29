@@ -1469,13 +1469,13 @@ for ($i = 0; $i < 7; $i++) {
                                     </div>
                                 </div>
 
-                                <!-- Send Reminder Button -->
+                                <!-- Send Reminder Button
                                 <button class="send-reminder-btn" 
                                         data-appointment-id="<?php echo $appt['appointment_id']; ?>"
                                         title="Send appointment reminder to client">
                                     <i class="fas fa-paper-plane"></i>
                                     <span>Send Reminder</span>
-                                </button>
+                                </button> -->
                             </div>
                         </td>
                     </tr>
@@ -2068,57 +2068,82 @@ for ($i = 0; $i < 7; $i++) {
         }
 
         // Send reminder functionality
-        document.addEventListener('click', async function(e) {
-            if (e.target.closest('.send-reminder-btn')) {
-                e.preventDefault();
-                const btn = e.target.closest('.send-reminder-btn');
-                const appointmentId = btn.dataset.appointmentId;
-                
-                if (!confirm('Send appointment reminder to the client?')) return;
+document.addEventListener('click', async function(e) {
+    if (e.target.closest('.send-reminder-btn')) {
+        e.preventDefault();
+        const btn = e.target.closest('.send-reminder-btn');
+        const appointmentId = btn.dataset.appointmentId;
+        
+        if (!appointmentId) {
+            showNotification('Invalid appointment ID', 'error');
+            return;
+        }
+        
+        if (!confirm('Send appointment reminder to the client?')) return;
 
-                // Show loading state
-                const originalHTML = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-                btn.disabled = true;
+        // Show loading state
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
 
-                try {
-                    const formData = new FormData();
-                    formData.append('appointment_id', appointmentId);
+        try {
+            const formData = new FormData();
+            formData.append('appointment_id', appointmentId);
 
-                    const response = await fetch('ajax/send_reminder.php', {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'
-                    });
+            const response = await fetch('ajax/send_reminder.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
 
-                    const result = await response.json();
-
-                    if (response.ok && result.success) {
-                        showNotification('Reminder sent successfully!', 'success');
-                        
-                        // Show success state
-                        btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
-                        btn.classList.add('success');
-                        
-                        // Reset after 2 seconds
-                        setTimeout(() => {
-                            btn.innerHTML = originalHTML;
-                            btn.classList.remove('success');
-                            btn.disabled = false;
-                        }, 2000);
-                    } else {
-                        throw new Error(result.error || 'Failed to send reminder');
-                    }
-                } catch (error) {
-                    console.error('Error sending reminder:', error);
-                    showNotification('Failed to send reminder. Please check your connection and try again.', 'error');
-                    
-                    // Reset button state
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                }
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response');
             }
-        });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showNotification('Reminder sent successfully!', 'success');
+                
+                // Show success state
+                btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+                btn.classList.add('success');
+                btn.style.opacity = '1';
+                
+                // Reset after 3 seconds
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('success');
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                }, 3000);
+            } else {
+                throw new Error(result.error || 'Failed to send reminder');
+            }
+        } catch (error) {
+            console.error('Error sending reminder:', error);
+            
+            let errorMessage = 'Failed to send reminder. ';
+            if (error.message.includes('non-JSON')) {
+                errorMessage += 'Server configuration error.';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage += 'Network connection error.';
+            } else {
+                errorMessage += error.message;
+            }
+            
+            showNotification(errorMessage, 'error');
+            
+            // Reset button state
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+});
 
         // Make updateAppointmentStatus available globally
         window.updateAppointmentStatus = updateAppointmentStatus;

@@ -1259,13 +1259,6 @@ $pageTitle = 'Login - ' . SITE_NAME;
                         <a href="privacy-policy.php">Privacy Policy</a>
                     </div>
                 </div>
-
-                <!-- Test Credentials for Development -->
-                <div class="test-credentials">
-                    <h4>Test Accounts:</h4>
-                    <p><strong>Staff:</strong> manansalarin@gmail.com - password123</p>
-                    <p><strong>Client:</strong> ryan.percival@gmail.com - password1234</p>
-                </div>
             </div>
         </div>
     </div>

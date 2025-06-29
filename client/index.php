@@ -126,7 +126,7 @@ $past_appointments = $stmt->fetchAll();
 
         .welcome-content h1 {
             margin-bottom: 0.5rem;
-            color: #FF6B6B;
+            color: #1DBAA8;
             font-size: 2rem;
         }
 
@@ -149,7 +149,7 @@ $past_appointments = $stmt->fetchAll();
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            background: linear-gradient(135deg, #1DBAA8 0%, #2c3e50 100%);
             color: white;
             box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
         }
@@ -161,12 +161,12 @@ $past_appointments = $stmt->fetchAll();
 
         .btn-secondary {
             background: white;
-            color: #FF6B6B;
-            border: 2px solid #FF6B6B;
+            color: #1DBAA8;
+            border: 2px solid #1DBAA8;
         }
 
         .btn-secondary:hover {
-            background: #FF6B6B;
+            background: #1DBAA8;
             color: white;
         }
 
@@ -196,7 +196,7 @@ $past_appointments = $stmt->fetchAll();
         }
 
         .quick-action-card:hover {
-            border-color: #FF6B6B;
+            border-color: #1DBAA8;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             text-decoration: none;
@@ -362,7 +362,7 @@ $past_appointments = $stmt->fetchAll();
             flex-direction: column;
             align-items: center;
             padding: 0.5rem;
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            background: linear-gradient(135deg, #1DBAA8 0%, #2c3e50 100%);
             color: white;
             border-radius: 8px;
             min-width: 60px;
@@ -555,8 +555,8 @@ $past_appointments = $stmt->fetchAll();
             transition: all 0.2s;
         }
         .tab-link.active {
-            color: var(--primary-color, #FF6B6B);
-            border-bottom-color: var(--primary-color, #FF6B6B);
+            color: var(--primary-color, #1DBAA8);
+            border-bottom-color: var(--primary-color, #1DBAA8);
         }
         .tab-content { display: none; padding: 2rem; background: white; }
         .tab-content.active { display: block; }
@@ -639,7 +639,7 @@ $past_appointments = $stmt->fetchAll();
             display: block;
             font-size: 1.75rem;
             font-weight: 700;
-            color: #FF6B6B;
+            color: #1DBAA8;
         }
         .pet-stat-label {
             display: block;
@@ -687,18 +687,18 @@ $past_appointments = $stmt->fetchAll();
         }
         .pagination a {
             background-color: white;
-            color: #FF6B6B;
+            color: #1DBAA8;
             border: 1px solid #ddd;
         }
         .pagination a:hover {
-            background-color: #FF6B6B;
+            background-color: #1DBAA8;
             color: white;
-            border-color: #FF6B6B;
+            border-color: #1DBAA8;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .pagination span.current {
-            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            background: linear-gradient(135deg, #1DBAA8 0%, #2c3e50 100%);
             color: white;
             font-weight: 700;
             border: 1px solid transparent;
@@ -774,7 +774,7 @@ $past_appointments = $stmt->fetchAll();
 
         /* Utility Classes */
         .mb-4 { margin-bottom: 2rem; }
-        .text-primary { color: #FF6B6B; }
+        .text-primary { color: #1DBAA8; }
         .text-muted { color: #6c757d; }
         .small { font-size: 0.875rem; }
     </style>

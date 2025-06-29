@@ -171,7 +171,7 @@ $activePage = getActivePage();
         <li>
             <a href="<?php echo SITE_URL; ?>/staff/owners/index.php" class="<?php echo $activePage === 'owners' ? 'active' : ''; ?>">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="icon">
-                    <path fill="currentColor" d="M12 2l3 6l6-1l-1 6l6 3l-6 3l1 6l-6-1l-3 6l-3-6l-6 1l1-6l-6-3l6-3l-1-6l6 1z"/>
+                    <path fill="currentColor" d="M16 4c0-1.11.89-2 2-2s2 .89 2 2s-.89 2-2 2s-2-.89-2-2M4 18v-4.5c0-1.1.9-2 2-2s2 .9 2 2V18h2v-5.5c0-1.1.9-2 2-2s2 .9 2 2V18h2v-6h-3l1.5-1.5C13.6 9.4 14.6 9 15.7 9H18c1.1 0 2 .9 2 2v7h2v2H2v-2z"/>
                 </svg>
                 <span>Owners</span>
             </a>
@@ -181,7 +181,7 @@ $activePage = getActivePage();
         <li>
             <a href="<?php echo SITE_URL; ?>/staff/reports/index.php" class="<?php echo $activePage === 'reports' ? 'active' : ''; ?>">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="icon">
-                    <path fill="currentColor" d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57l-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/>
+                    <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm4 18H6V4h7v5h5zm-6.5-1H17v-2h-5.5zm0-4H17v-2h-5.5zM7 13h10v-2H7zm0-4h7V7H7z"/>
                 </svg>
                 <span>Reports</span>
             </a>

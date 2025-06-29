@@ -1,8 +1,15 @@
 <?php
 require_once '../../config/init.php';
-requireClient();
 
-$pageTitle = 'My Profile - ' . SITE_NAME;
+// This is a client-facing page, ensure they are logged in.
+// If not, redirect them to the login page.
+if (!isset($_SESSION['user_id'])) {
+    // You should replace 'login.php' with your actual login page URL
+    header('Location: ../../auth/login.php'); 
+    exit();
+}
+
+$pageTitle = 'Profile - ' . SITE_NAME;
 ?>
 
 <!DOCTYPE html>
@@ -14,24 +21,23 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
     <link rel="stylesheet" href="../../assets/css/style.css">
     <?php include '../../includes/favicon.php'; ?>
     <style>
-        /* Reset and Base */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Reset and Base Styles */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background-color: #f8f9fa; 
+            color: #333; 
             line-height: 1.6;
         }
-
-        /* Dashboard Layout */
-        .dashboard-layout {
-            display: flex;
-            min-height: 100vh;
+        
+        .dashboard-layout { 
+            display: flex; 
+            min-height: 100vh; 
             overflow-x: hidden;
         }
 
@@ -39,7 +45,7 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
         .main-content {
             display: flex;
             flex-direction: column;
-            margin-left: 250px;
+            margin-left: 250px; 
             flex: 1;
             padding: 2rem;
             min-height: 100vh;
@@ -64,21 +70,18 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
         }
 
         .breadcrumb a {
-            color: #ff6b6b;
+            color: var(--primary-color);
             text-decoration: none;
             transition: color 0.2s ease;
         }
 
         .breadcrumb a:hover {
-            color: #ff5252;
             text-decoration: underline;
         }
 
         .page-title {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
             gap: 1rem;
         }
 
@@ -87,49 +90,10 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
             font-weight: 600;
             color: var(--dark-color);
             margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
         }
 
         .page-icon {
             font-size: 2.5rem;
-        }
-
-        .edit-toggle-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.875rem 1.75rem;
-            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-        }
-
-        .edit-toggle-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
-            color: white;
-            text-decoration: none;
-        }
-
-        .edit-toggle-btn.cancel {
-            background: #6c757d;
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-        }
-
-        .edit-toggle-btn.cancel:hover {
-            background: #5a6268;
-            box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
         }
 
         /* Profile Container */
@@ -160,7 +124,7 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
         .profile-card h2 {
             font-size: 1.375rem;
             margin-bottom: 1.5rem;
-            border-bottom: 2px solid #ff6b6b;
+            border-bottom: 2px solid var(--primary-color);
             padding-bottom: 1rem;
             color: var(--dark-color);
             font-weight: 600;
@@ -170,7 +134,7 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
         }
 
         .profile-card h2 i {
-            color: #ff6b6b;
+            color: var(--primary-color);
             font-size: 1.25rem;
         }
 
@@ -216,8 +180,8 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
 
         .form-group input:focus {
             outline: none;
-            border-color: #ff6b6b;
-            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
         }
 
         .form-group input[readonly] {
@@ -227,26 +191,11 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
             border-color: #dee2e6;
         }
 
-        /* View Mode Styles */
-        .profile-view-mode .form-group input {
-            background-color: #f8f9fa;
-            border-color: #dee2e6;
-            cursor: default;
-            pointer-events: none;
-        }
-
-        .profile-view-mode .form-actions {
-            display: none;
-        }
-
-        /* Edit Mode Styles */
-        .profile-edit-mode .form-group input:not([readonly]) {
-            background-color: #fff;
-            border-color: #ced4da;
-        }
-
-        .profile-edit-mode .form-actions {
+        .form-hint {
             display: block;
+            margin-top: 0.25rem;
+            color: #666;
+            font-size: 0.813rem;
         }
 
         /* Form Actions */
@@ -255,7 +204,6 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
             text-align: right;
             padding-top: 1.5rem;
             border-top: 1px solid #e9ecef;
-            display: none; /* Hidden by default */
         }
 
         .btn {
@@ -269,32 +217,53 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
+            text-decoration: none;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            text-decoration: none;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            background: var(--primary-color);
             color: white;
-            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+            box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
-            color: white;
-            text-decoration: none;
+            box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.4);
+            opacity: 0.9;
         }
 
         .btn-primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
-            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+            box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.2);
         }
 
-        /* Notification */
+        /* User Info Section */
+        .user-info-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color, #28a745) 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .user-info-section h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .user-info-section p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.875rem;
+        }
+
+        /* Notification Styling */
         #notification {
             position: fixed;
             top: 100px;
@@ -316,11 +285,11 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
             transform: translateX(0);
         }
 
-        #notification.success {
+        #notification.success { 
             background: linear-gradient(135deg, #28a745, #20c997);
         }
-
-        #notification.error {
+        
+        #notification.error { 
             background: linear-gradient(135deg, #dc3545, #e74c3c);
         }
 
@@ -349,26 +318,27 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
             to { transform: rotate(360deg); }
         }
 
-        /* Account Info Styles */
-        .account-info {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 8px;
+        /* Security Info Box */
+        .security-info {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
             margin-bottom: 1.5rem;
-            text-align: center;
+            border-radius: 0 8px 8px 0;
         }
 
-        .account-info h3 {
+        .security-info h4 {
             margin: 0 0 0.5rem 0;
-            font-size: 1.125rem;
+            color: var(--dark-color);
+            font-size: 0.875rem;
             font-weight: 600;
         }
 
-        .account-info p {
+        .security-info p {
             margin: 0;
-            opacity: 0.9;
-            font-size: 0.875rem;
+            color: #666;
+            font-size: 0.813rem;
+            line-height: 1.5;
         }
 
         /* Responsive Design */
@@ -392,45 +362,38 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
                 gap: 1.5rem;
             }
             
-            .page-title {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            
-            .edit-toggle-btn {
-                width: 100%;
-                justify-content: center;
+            .page-header {
+                margin-bottom: 1.5rem;
             }
         }
 
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
-                z-index: 1100;
-                position: fixed;
-                top: 0;
-                height: 100vh;
-                margin-top: 0;
+            .sidebar { 
+                transform: translateX(-100%); 
+                transition: transform 0.3s ease-in-out; 
+                z-index: 1100; 
+                position: fixed; 
+                top: 0; 
+                height: 100vh; 
+                margin-top: 0; 
             }
             
-            .main-content {
-                margin-left: 0;
+            .main-content { 
+                margin-left: 0; 
                 width: 100%;
                 max-width: 100%;
                 padding: 1rem;
-                padding-top: 85px;
+                padding-top: 85px; 
             }
             
-            body.sidebar-is-open .sidebar {
-                transform: translateX(0);
-                box-shadow: 0 0 20px rgba(0,0,0,0.25);
+            body.sidebar-is-open .sidebar { 
+                transform: translateX(0); 
+                box-shadow: 0 0 20px rgba(0,0,0,0.25); 
             }
             
-            body.sidebar-is-open .sidebar-overlay {
-                opacity: 1;
-                visibility: visible;
+            body.sidebar-is-open .sidebar-overlay { 
+                opacity: 1; 
+                visibility: visible; 
             }
 
             .profile-card {
@@ -486,18 +449,12 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
                 <span>My Profile</span>
             </nav>
             <div class="page-title">
-                <h1>
-                    <span class="page-icon">👤</span>
-                    My Profile
-                </h1>
-                <button type="button" class="edit-toggle-btn" id="editToggleBtn">
-                    <i class="fas fa-edit"></i>
-                    Edit Profile
-                </button>
+                <span class="page-icon">👤</span>
+                <h1>My Profile</h1>
             </div>
         </div>
 
-        <div class="profile-container profile-view-mode" id="profileContainer">
+        <div class="profile-container">
             <!-- Personal Information Card -->
             <div class="profile-card">
                 <h2>
@@ -505,7 +462,7 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
                     Personal Information
                 </h2>
                 
-                <div class="account-info">
+                <div class="user-info-section" id="userInfoDisplay">
                     <h3 id="fullNameDisplay">Loading...</h3>
                     <p id="emailDisplay">Loading...</p>
                 </div>
@@ -514,33 +471,39 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
                     <div class="form-row">
                         <div class="form-group">
                             <label for="first_name">First Name <span class="required">*</span></label>
-                            <input type="text" id="first_name" name="first_name" placeholder="Enter your first name" readonly required>
+                            <input type="text" id="first_name" name="first_name" placeholder="Enter your first name" required>
+                            <span class="form-hint">Your legal first name</span>
                         </div>
                         <div class="form-group">
                             <label for="last_name">Last Name <span class="required">*</span></label>
-                            <input type="text" id="last_name" name="last_name" placeholder="Enter your last name" readonly required>
+                            <input type="text" id="last_name" name="last_name" placeholder="Enter your last name" required>
+                            <span class="form-hint">Your legal last name</span>
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label for="email">Email Address</label>
                         <input type="email" id="email" name="email" readonly>
+                        <span class="form-hint">Contact support to change your email address</span>
                     </div>
                     
                     <div class="form-row">
                         <div class="form-group">
                             <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone" placeholder="e.g., 09123456789" readonly>
+                            <input type="tel" id="phone" name="phone" placeholder="e.g., 09123456789">
+                            <span class="form-hint">For appointment reminders and updates</span>
                         </div>
                         <div class="form-group">
                             <label for="city">City</label>
-                            <input type="text" id="city" name="city" placeholder="e.g., Angeles City" readonly>
+                            <input type="text" id="city" name="city" placeholder="e.g., Angeles City">
+                            <span class="form-hint">Your current city of residence</span>
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label for="address">Complete Address</label>
-                        <input type="text" id="address" name="address" placeholder="e.g., 123 Main St, Brgy. Sample" readonly>
+                        <input type="text" id="address" name="address" placeholder="e.g., 123 Main St, Brgy. Sample">
+                        <span class="form-hint">Full address for home visits if needed</span>
                     </div>
                     
                     <div class="form-actions">
@@ -559,20 +522,28 @@ $pageTitle = 'My Profile - ' . SITE_NAME;
                     Security Settings
                 </h2>
                 
+                <div class="security-info">
+                    <h4><i class="fas fa-shield-alt"></i> Password Security</h4>
+                    <p>Keep your account secure by using a strong password that you don't use elsewhere. We recommend at least 8 characters with a mix of letters, numbers, and symbols.</p>
+                </div>
+
                 <form id="passwordForm">
                     <div class="form-group">
                         <label for="current_password">Current Password <span class="required">*</span></label>
-                        <input type="password" id="current_password" name="current_password" placeholder="Enter your current password" readonly required>
+                        <input type="password" id="current_password" name="current_password" placeholder="Enter your current password" required>
+                        <span class="form-hint">Verify your identity with your current password</span>
                     </div>
                     
                     <div class="form-row">
                         <div class="form-group">
                             <label for="new_password">New Password <span class="required">*</span></label>
-                            <input type="password" id="new_password" name="new_password" placeholder="Enter new password" readonly required minlength="8">
+                            <input type="password" id="new_password" name="new_password" placeholder="Enter new password" required minlength="8">
+                            <span class="form-hint">Minimum 8 characters</span>
                         </div>
                         <div class="form-group">
                             <label for="confirm_password">Confirm Password <span class="required">*</span></label>
-                            <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password" readonly required>
+                            <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password" required>
+                            <span class="form-hint">Must match your new password</span>
                         </div>
                     </div>
                     
@@ -599,63 +570,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordForm = document.getElementById('passwordForm');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     const savePasswordBtn = document.getElementById('savePasswordBtn');
-    const notification = document.getElementById('notification');
-    const editToggleBtn = document.getElementById('editToggleBtn');
-    const profileContainer = document.getElementById('profileContainer');
     const fullNameDisplay = document.getElementById('fullNameDisplay');
     const emailDisplay = document.getElementById('emailDisplay');
-    
-    let isEditMode = false;
+
+    // --- NOTIFICATION FUNCTION ---
+    const notification = document.getElementById('notification');
     let notificationTimeout;
-
-    // Edit Mode Toggle
-    function toggleEditMode() {
-        isEditMode = !isEditMode;
-        
-        if (isEditMode) {
-            profileContainer.classList.remove('profile-view-mode');
-            profileContainer.classList.add('profile-edit-mode');
-            editToggleBtn.innerHTML = '<i class="fas fa-times"></i> Cancel Edit';
-            editToggleBtn.classList.add('cancel');
-            
-            // Enable form inputs
-            document.querySelectorAll('#profileForm input:not([type="email"])').forEach(input => {
-                input.removeAttribute('readonly');
-            });
-            document.querySelectorAll('#passwordForm input').forEach(input => {
-                input.removeAttribute('readonly');
-            });
-            
-        } else {
-            profileContainer.classList.remove('profile-edit-mode');
-            profileContainer.classList.add('profile-view-mode');
-            editToggleBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Profile';
-            editToggleBtn.classList.remove('cancel');
-            
-            // Disable form inputs
-            document.querySelectorAll('#profileForm input').forEach(input => {
-                input.setAttribute('readonly', 'readonly');
-            });
-            document.querySelectorAll('#passwordForm input').forEach(input => {
-                input.setAttribute('readonly', 'readonly');
-            });
-            
-            // Reset password form
-            passwordForm.reset();
-        }
-    }
-
-    editToggleBtn.addEventListener('click', toggleEditMode);
 
     function showNotification(message, type = 'success') {
         clearTimeout(notificationTimeout);
         notification.textContent = message;
-        notification.className = type;
+        notification.className = type; // 'success' or 'error'
         notification.classList.add('show');
-        notificationTimeout = setTimeout(() => notification.classList.remove('show'), 4000);
+        notificationTimeout = setTimeout(() => {
+            notification.classList.remove('show');
+        }, 4000);
     }
 
-    // Fetch and populate profile data
+    // --- FETCH AND POPULATE PROFILE DATA ---
     async function fetchProfileData() {
         try {
             const response = await fetch(`${API_URL}?action=fetch`);
@@ -686,17 +618,10 @@ document.addEventListener('DOMContentLoaded', () => {
         emailDisplay.textContent = data.email || 'No email provided';
     }
 
-    // Handle profile form submission
+    // --- FORM SUBMISSION HANDLERS ---
     profileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        if (!isEditMode) {
-            showNotification('Please enable edit mode first.', 'error');
-            return;
-        }
-        
         saveProfileBtn.disabled = true;
-        saveProfileBtn.classList.add('loading');
         saveProfileBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
         const formData = new FormData(profileForm);
@@ -707,30 +632,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             showNotification(result.message, result.success ? 'success' : 'error');
             
-            if (result.success) {
-                // Update display and exit edit mode
+            if (result.success && result.data) {
                 populateForm(result.data);
-                toggleEditMode();
             }
         } catch (error) {
             console.error('Update error:', error);
             showNotification('An unexpected error occurred.', 'error');
         } finally {
             saveProfileBtn.disabled = false;
-            saveProfileBtn.classList.remove('loading');
             saveProfileBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
         }
     });
 
-    // Handle password form submission
     passwordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        if (!isEditMode) {
-            showNotification('Please enable edit mode first.', 'error');
-            return;
-        }
-        
         const newPassword = document.getElementById('new_password').value;
         const confirmPassword = document.getElementById('confirm_password').value;
 
@@ -740,7 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         savePasswordBtn.disabled = true;
-        savePasswordBtn.classList.add('loading');
         savePasswordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
 
         const formData = new FormData(passwordForm);
@@ -752,7 +666,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 passwordForm.reset();
-                toggleEditMode();
             }
             showNotification(result.message, result.success ? 'success' : 'error');
         } catch (error) {
@@ -760,12 +673,15 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('An unexpected error occurred.', 'error');
         } finally {
             savePasswordBtn.disabled = false;
-            savePasswordBtn.classList.remove('loading');
             savePasswordBtn.innerHTML = '<i class="fas fa-key"></i> Update Password';
         }
     });
 
-    // Mobile sidebar functionality
+    // Initial data load
+    fetchProfileData();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
     const hamburgerBtn = document.querySelector('.hamburger-menu');
     const overlay = document.querySelector('.sidebar-overlay');
     const body = document.body;
@@ -782,9 +698,6 @@ document.addEventListener('DOMContentLoaded', () => {
             body.classList.remove('sidebar-is-open');
         });
     }
-
-    // Initial data load
-    fetchProfileData();
 });
 </script>
 

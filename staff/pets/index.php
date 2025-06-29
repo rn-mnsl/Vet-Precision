@@ -721,11 +721,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                             <option value="cat">Cat</option>
                             <option value="bird">Bird</option>
                             <option value="rabbit">Rabbit</option>
-                            <option value="reptile">Reptile</option>
-                            <option value="fish">Fish</option>
-                            <option value="small mammal">Small Mammal</option>
-                            <option value="horse">Horse</option>
-                            <option value="farm">Farm Animal</option>
+                            <option value="others">Others</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -994,11 +990,6 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                         <option value="Cat" ${pet && pet.species === 'Cat' ? 'selected' : ''}>Cat</option>
                         <option value="Bird" ${pet && pet.species === 'Bird' ? 'selected' : ''}>Bird</option>
                         <option value="Rabbit" ${pet && pet.species === 'Rabbit' ? 'selected' : ''}>Rabbit</option>
-                        <option value="Reptile" ${pet && pet.species === 'Reptile' ? 'selected' : ''}>Reptile</option>
-                        <option value="Fish" ${pet && pet.species === 'Fish' ? 'selected' : ''}>Fish</option>
-                        <option value="Small Mammal" ${pet && pet.species === 'Small Mammal' ? 'selected' : ''}>Small Mammal</option>
-                        <option value="Horse" ${pet && pet.species === 'Horse' ? 'selected' : ''}>Horse</option>
-                        <option value="Farm Animal" ${pet && pet.species === 'Farm Animal' ? 'selected' : ''}>Farm Animal</option>
                         <option value="Other" ${pet && pet.species === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
                     <input type="text" name="breed" placeholder="Breed" value="${pet ? pet.breed : ''}" required>

@@ -309,6 +309,8 @@ function sendAdminNotification(string $subject, string $body, string $altBody) {
 
 
 
+// ADD THIS NEW FUNCTION TO config/init.phpAdd commentMore actions
+
 /**
  * Sends a notification email to a specific client.
  *
@@ -319,25 +321,15 @@ function sendAdminNotification(string $subject, string $body, string $altBody) {
  * @return bool           True on success, false on failure.
  */
 function sendClientNotification(string $clientEmail, string $subject, string $body, string $altBody) {
-    // Check if PHPMailer is available BEFORE creating instance
-    if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
-        $headers  = "MIME-Version: 1.0\r\n";
-        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-        $headers .= "From: no-reply@vetprecision.com\r\n";
-        $headers .= "Reply-To: no-reply@vetprecision.com\r\n";
-        
-        error_log("PHPMailer not available, using PHP mail() function for client: " . $clientEmail);
-        return mail($clientEmail, $subject, $body, $headers);
-    }
+    // This function assumes you have included PHPMailer at the top of init.php
+    // use PHPMailer\PHPMailer\PHPMailer;
+    // use PHPMailer\PHPMailer\Exception;
     
     $mail = new PHPMailer(true);
 
     try {
-        // Enable debug output for troubleshooting (remove in production)
+        // --- Server settings (Copied from your other functions) ---
         // $mail->SMTPDebug = 2;
-        // $mail->Debugoutput = 'error_log';
-        
-        // Server settings
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
@@ -345,58 +337,26 @@ function sendClientNotification(string $clientEmail, string $subject, string $bo
         $mail->Password   = 'yecs lggr egaf kiej';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
-        
-        // Additional SMTP settings for Gmail
-        $mail->SMTPOptions = array(
-            'ssl' => array(
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
-            )
-        );
 
-        // Recipients
+        // --- Recipients ---
         $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
-        $mail->setFrom('roljohn.frilles87@gmail.com', $site_name); // Use actual Gmail address
-        $mail->addReplyTo('no-reply@vetprecision.com', $site_name);
-        $mail->addAddress($clientEmail); // Client email
+        $mail->setFrom('no-reply@vetprecision.com', $site_name);
+        
+        // ** THE IMPORTANT PART: Use the provided client email **
+        $mail->addAddress($clientEmail); // Add the client as a recipient
 
-        // Content
+        // --- Content ---
         $mail->isHTML(true);
-        $mail->CharSet = 'UTF-8';
         $mail->Subject = $subject;
         $mail->Body    = $body;
         $mail->AltBody = $altBody;
 
-        // Send the email
-        $result = $mail->send();
+        $mail->send();
+        return true; // Email sent successfully
         
-        if ($result) {
-            error_log("Client notification sent successfully to: " . $clientEmail);
-            return true;
-        } else {
-            error_log("Failed to send client notification to: " . $clientEmail);
-            return false;
-        }
-
     } catch (Exception $e) {
-        // Log detailed error information
-        error_log("sendClientNotification PHPMailer Error for {$clientEmail}: " . $e->getMessage());
-        error_log("PHPMailer ErrorInfo: " . $mail->ErrorInfo);
-        
-        // Fallback to PHP mail() function on SMTP failure
-        try {
-            $headers  = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-            $headers .= "From: no-reply@vetprecision.com\r\n";
-            $headers .= "Reply-To: no-reply@vetprecision.com\r\n";
-            
-            error_log("Attempting fallback to PHP mail() for client: " . $clientEmail);
-            return mail($clientEmail, $subject, $body, $headers);
-        } catch (Exception $fallbackError) {
-            error_log("Fallback mail() also failed for client {$clientEmail}: " . $fallbackError->getMessage());
-            return false;
-        }
+        error_log("sendClientNotification PHPMailer Error for {$clientEmail}: {$mail->ErrorInfo}");
+        return false; // Email failed to send
     }
 }
 ?>
