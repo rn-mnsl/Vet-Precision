@@ -20,6 +20,12 @@ $success_message = '';
 
 // Filter by appointment type
 $type_filter = $_GET['type'] ?? '';
+// Filter by appointment status
+$status_filter = $_GET['status'] ?? '';
+$valid_statuses = ['requested', 'confirmed', 'completed', 'cancelled'];
+if (!in_array($status_filter, $valid_statuses)) {
+    $status_filter = '';
+}
 try {
     $types_stmt = $pdo->query("SELECT DISTINCT type FROM appointments ORDER BY type");
     $appointment_types = $types_stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -149,12 +155,22 @@ if ($view === 'list') {
 
     // 1. Get the total number of appointments for calculating total pages
     try {
+        $count_sql = "SELECT COUNT(appointment_id) FROM appointments";
+        $count_conditions = [];
+        $count_params = [];
         if (!empty($type_filter)) {
-            $count_stmt = $pdo->prepare("SELECT COUNT(appointment_id) FROM appointments WHERE type = :type");
-            $count_stmt->execute([':type' => $type_filter]);
-        } else {
-            $count_stmt = $pdo->query("SELECT COUNT(appointment_id) FROM appointments");
+            $count_conditions[] = "type = :type";
+            $count_params[':type'] = $type_filter;
         }
+        if (!empty($status_filter)) {
+            $count_conditions[] = "status = :status";
+            $count_params[':status'] = $status_filter;
+        }
+        if ($count_conditions) {
+            $count_sql .= ' WHERE ' . implode(' AND ', $count_conditions);
+        }
+        $count_stmt = $pdo->prepare($count_sql);
+        $count_stmt->execute($count_params);
         $total_items = (int)($count_stmt->fetchColumn());
         $total_pages = ceil($total_items / $items_per_page);
     } catch (PDOException $e) {
@@ -175,8 +191,15 @@ if ($view === 'list') {
                 JOIN pets p ON a.pet_id = p.pet_id
                 JOIN owners o ON p.owner_id = o.owner_id
                 JOIN users u_owner ON o.user_id = u_owner.user_id";
+        $conditions = [];
         if (!empty($type_filter)) {
-            $sql .= " WHERE a.type = :type";
+            $conditions[] = "a.type = :type";
+        }
+        if (!empty($status_filter)) {
+            $conditions[] = "a.status = :status";
+        }
+        if ($conditions) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
         }
         $sql .= " ORDER BY a.appointment_date DESC, a.appointment_time DESC
                   LIMIT :limit OFFSET :offset";
@@ -187,6 +210,9 @@ if ($view === 'list') {
         $stmt_appts->bindParam(':offset', $offset, PDO::PARAM_INT);
         if (!empty($type_filter)) {
             $stmt_appts->bindParam(':type', $type_filter, PDO::PARAM_STR);
+        }
+        if (!empty($status_filter)) {
+            $stmt_appts->bindParam(':status', $status_filter, PDO::PARAM_STR);
         }
         $stmt_appts->execute();
         
@@ -209,16 +235,33 @@ if ($view === 'list') {
     
     // Fetch appointments for the calculated week
     try {
-        $stmt_week = $pdo->prepare("
+        $week_sql = "
             SELECT a.*, p.name AS pet_name, u_owner.first_name AS owner_first_name, u_owner.last_name AS owner_last_name,
                    p.species, p.breed, p.date_of_birth
             FROM appointments a
             JOIN pets p ON a.pet_id = p.pet_id
             JOIN owners o ON p.owner_id = o.owner_id
             JOIN users u_owner ON o.user_id = u_owner.user_id
-            WHERE a.appointment_date BETWEEN ? AND ? AND a.status != 'cancelled'
-            ORDER BY a.appointment_date, a.appointment_time");
-        $stmt_week->execute([$week_start_dt->format('Y-m-d'), $week_end_dt->format('Y-m-d')]);
+            WHERE a.appointment_date BETWEEN :start AND :end";
+        if (!empty($status_filter)) {
+            $week_sql .= " AND a.status = :status";
+        } else {
+            $week_sql .= " AND a.status != 'cancelled'";
+        }
+        if (!empty($type_filter)) {
+            $week_sql .= " AND a.type = :type";
+        }
+        $week_sql .= " ORDER BY a.appointment_date, a.appointment_time";
+        $stmt_week = $pdo->prepare($week_sql);
+        $stmt_week->bindValue(':start', $week_start_dt->format('Y-m-d'));
+        $stmt_week->bindValue(':end', $week_end_dt->format('Y-m-d'));
+        if (!empty($status_filter)) {
+            $stmt_week->bindValue(':status', $status_filter);
+        }
+        if (!empty($type_filter)) {
+            $stmt_week->bindValue(':type', $type_filter);
+        }
+        $stmt_week->execute();
         $week_appointments = $stmt_week->fetchAll(PDO::FETCH_ASSOC);
         
         $appointments_grid = [];
@@ -1292,6 +1335,13 @@ for ($i = 0; $i < 7; $i++) {
                                 <option value="">All Types</option>
                                 <?php foreach ($appointment_types as $type): ?>
                                     <option value="<?php echo htmlspecialchars($type); ?>" <?php echo ($type === $type_filter) ? 'selected' : ''; ?>><?php echo htmlspecialchars($type); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <label for="status-filter" style="margin-left:1rem;">Status:</label>
+                            <select id="status-filter" name="status" onchange="this.form.submit()">
+                                <option value="">All Statuses</option>
+                                <?php foreach ($valid_statuses as $status): ?>
+                                    <option value="<?php echo $status; ?>" <?php echo ($status === $status_filter) ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </form>
