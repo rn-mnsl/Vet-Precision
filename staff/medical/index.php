@@ -528,9 +528,8 @@ $pageTitle = 'Medical Records - ' . SITE_NAME;
                                         <div class="date-info">Appt: <?php echo ucfirst($record['appointment_status']); ?></div>
                                     </td>
                                     <td>
-                                        <a href="view.php?id=<?php echo $record['record_id']; ?>" class="btn btn-sm btn-primary">
-                                            View
-                                        </a>
+                                        <a href="view.php?id=<?php echo $record['record_id']; ?>" class="btn btn-sm btn-primary">View</a>
+                                        <a href="delete.php?id=<?php echo $record['record_id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this record?');">Delete</a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

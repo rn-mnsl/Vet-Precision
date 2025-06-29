@@ -728,6 +728,9 @@ $pageTitle = 'View Medical Record - ' . SITE_NAME;
                 <button type="button" class="btn btn-primary" onclick="toggleEditMode()">
                     <i class="fas fa-edit"></i> Edit Record
                 </button>
+                <a href="delete.php?id=<?php echo $record_id; ?>" class="btn btn-danger" onclick="return confirm('Delete this record?');">
+                    <i class="fas fa-trash"></i> Delete
+                </a>
             </div>
         </div>
 
