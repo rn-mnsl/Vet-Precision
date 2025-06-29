@@ -794,43 +794,12 @@ $past_appointments = $stmt->fetchAll();
                     <p>Manage your pets' health and appointments all in one place</p>
                     <a href="appointments/index.php?action=create" class="btn btn-primary">Book New Appointment</a>
                 </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <a href="appointments/index.php?action=create" class="quick-action-card">
-                    <span class="quick-action-icon">📅</span>
-                    <h4>Book Appointment</h4>
-                    <!-- This line was mistakenly removed, now it's back! -->
-                    <p class="text-muted small">Schedule a visit</p>
-                </a>
-                <a href="pets/add.php" class="quick-action-card">
-                    <span class="quick-action-icon">➕</span>
-                    <h4>Add New Pet</h4>
-                    <!-- This line was mistakenly removed, now it's back! -->
-                    <p class="text-muted small">Register a pet</p>
-                </a>
-                <a href="medical/history.php" class="quick-action-card">
-                    <span class="quick-action-icon">📋</span>
-                    <h4>Medical Records</h4>
-                    <!-- This line was mistakenly removed, now it's back! -->
-                    <p class="text-muted small">View history</p>
-                </a>
-                <a href="profile/index.php" class="quick-action-card">
-                    <span class="quick-action-icon">👤</span>
-                    <h4>My Profile</h4>
-                    <!-- This line was mistakenly removed, now it's back! -->
-                    <p class="text-muted small">Update info</p>
-                </a>
-            </div>
+    </div>
 
             <!-- My Pets Section -->
             <div class="pets-section">
                 <div class="section-header">
                     <h2>My Pets</h2>
-                    <?php if (count($pets) < 10): ?>
-                        <a href="pets/add.php" class="btn btn-secondary btn-sm">Add New Pet</a>
-                    <?php endif; ?>
                 </div>
 
                 <?php if (empty($pets)): ?>
@@ -1017,7 +986,7 @@ $past_appointments = $stmt->fetchAll();
                         <div class="card-header">
                             <h3>Recent Visits</h3>
                             <?php if (!empty($past_appointments)): ?>
-                                <a href="appointments/history.php" class="text-primary">View History →</a>
+                                <a href="medical/history.php" class="text-primary">View History →</a>
                             <?php endif; ?>
                         </div>
                         <div class="appointment-list">

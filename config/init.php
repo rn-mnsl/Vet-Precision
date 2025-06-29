@@ -225,45 +225,89 @@ if (isLoggedIn()) {
  * @return bool           True on success, false on failure.
  */
 function sendAdminNotification(string $subject, string $body, string $altBody) {
+    // Check if PHPMailer is available BEFORE creating instance
+    if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+        // PHPMailer is unavailable; fall back to PHP's mail() function
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: no-reply@vetprecision.com\r\n";
+        $headers .= "Reply-To: no-reply@vetprecision.com\r\n";
+        
+        error_log("PHPMailer not available, using PHP mail() function");
+        return mail('manansalarin@gmail.com', $subject, $body, $headers);
+    }
+
     $mail = new PHPMailer(true);
 
     try {
-        // --- Server settings (Copied from your existing function) ---
+        // Enable debug output for troubleshooting (remove in production)
         // $mail->SMTPDebug = 2;
+        // $mail->Debugoutput = 'error_log';
+        
+        // Server settings
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'roljohn.frilles87@gmail.com'; // Your sending email
-        $mail->Password   = 'yecs lggr egaf kiej';         // Your App Password
+        $mail->Username   = 'roljohn.frilles87@gmail.com';
+        $mail->Password   = 'yecs lggr egaf kiej';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
-
-        // --- Recipients ---
-        $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
-        $mail->setFrom('no-reply@vetprecision.com', $site_name);
         
-        // ** THE IMPORTANT PART: Hardcode the admin's email address **
-        $mail->addAddress('manansalarin@gmail.com'); // Add the admin recipient
+        // Additional SMTP settings for Gmail
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
 
-        // --- Content ---
+        // Recipients
+        $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
+        $mail->setFrom('roljohn.frilles87@gmail.com', $site_name); // Use actual Gmail address
+        $mail->addReplyTo('no-reply@vetprecision.com', $site_name);
+        $mail->addAddress('manansalarin@gmail.com', 'Admin'); // Add recipient name
+
+        // Content
         $mail->isHTML(true);
-        $mail->Subject = $subject; // Use the provided subject
-        $mail->Body    = $body;    // Use the provided HTML body
-        $mail->AltBody = $altBody; // Use the provided plain-text body
+        $mail->CharSet = 'UTF-8';
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        $mail->AltBody = $altBody;
 
-        $mail->send();
-        return true; // Email sent successfully
+        // Send the email
+        $result = $mail->send();
+        
+        if ($result) {
+            error_log("Admin notification sent successfully: " . $subject);
+            return true;
+        } else {
+            error_log("Failed to send admin notification: " . $subject);
+            return false;
+        }
         
     } catch (Exception $e) {
-        // Log the error for debugging, but don't expose it to the client.
-        error_log("sendAdminNotification PHPMailer Error: {$mail->ErrorInfo}");
-        return false; // Email failed to send
+        // Log detailed error information
+        error_log("sendAdminNotification PHPMailer Error: " . $e->getMessage());
+        error_log("PHPMailer ErrorInfo: " . $mail->ErrorInfo);
+        
+        // Fallback to PHP mail() function on SMTP failure
+        try {
+            $headers  = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+            $headers .= "From: no-reply@vetprecision.com\r\n";
+            $headers .= "Reply-To: no-reply@vetprecision.com\r\n";
+            
+            error_log("Attempting fallback to PHP mail() function");
+            return mail('manansalarin@gmail.com', $subject, $body, $headers);
+        } catch (Exception $fallbackError) {
+            error_log("Fallback mail() also failed: " . $fallbackError->getMessage());
+            return false;
+        }
     }
 }
 
 
-
-// ADD THIS NEW FUNCTION TO config/init.php
 
 /**
  * Sends a notification email to a specific client.
@@ -275,15 +319,25 @@ function sendAdminNotification(string $subject, string $body, string $altBody) {
  * @return bool           True on success, false on failure.
  */
 function sendClientNotification(string $clientEmail, string $subject, string $body, string $altBody) {
-    // This function assumes you have included PHPMailer at the top of init.php
-    // use PHPMailer\PHPMailer\PHPMailer;
-    // use PHPMailer\PHPMailer\Exception;
+    // Check if PHPMailer is available BEFORE creating instance
+    if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: no-reply@vetprecision.com\r\n";
+        $headers .= "Reply-To: no-reply@vetprecision.com\r\n";
+        
+        error_log("PHPMailer not available, using PHP mail() function for client: " . $clientEmail);
+        return mail($clientEmail, $subject, $body, $headers);
+    }
     
     $mail = new PHPMailer(true);
 
     try {
-        // --- Server settings (Copied from your other functions) ---
+        // Enable debug output for troubleshooting (remove in production)
         // $mail->SMTPDebug = 2;
+        // $mail->Debugoutput = 'error_log';
+        
+        // Server settings
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
@@ -291,26 +345,58 @@ function sendClientNotification(string $clientEmail, string $subject, string $bo
         $mail->Password   = 'yecs lggr egaf kiej';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
-
-        // --- Recipients ---
-        $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
-        $mail->setFrom('no-reply@vetprecision.com', $site_name);
         
-        // ** THE IMPORTANT PART: Use the provided client email **
-        $mail->addAddress($clientEmail); // Add the client as a recipient
+        // Additional SMTP settings for Gmail
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
 
-        // --- Content ---
+        // Recipients
+        $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
+        $mail->setFrom('roljohn.frilles87@gmail.com', $site_name); // Use actual Gmail address
+        $mail->addReplyTo('no-reply@vetprecision.com', $site_name);
+        $mail->addAddress($clientEmail); // Client email
+
+        // Content
         $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
         $mail->Subject = $subject;
         $mail->Body    = $body;
         $mail->AltBody = $altBody;
 
-        $mail->send();
-        return true; // Email sent successfully
+        // Send the email
+        $result = $mail->send();
         
+        if ($result) {
+            error_log("Client notification sent successfully to: " . $clientEmail);
+            return true;
+        } else {
+            error_log("Failed to send client notification to: " . $clientEmail);
+            return false;
+        }
+
     } catch (Exception $e) {
-        error_log("sendClientNotification PHPMailer Error for {$clientEmail}: {$mail->ErrorInfo}");
-        return false; // Email failed to send
+        // Log detailed error information
+        error_log("sendClientNotification PHPMailer Error for {$clientEmail}: " . $e->getMessage());
+        error_log("PHPMailer ErrorInfo: " . $mail->ErrorInfo);
+        
+        // Fallback to PHP mail() function on SMTP failure
+        try {
+            $headers  = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+            $headers .= "From: no-reply@vetprecision.com\r\n";
+            $headers .= "Reply-To: no-reply@vetprecision.com\r\n";
+            
+            error_log("Attempting fallback to PHP mail() for client: " . $clientEmail);
+            return mail($clientEmail, $subject, $body, $headers);
+        } catch (Exception $fallbackError) {
+            error_log("Fallback mail() also failed for client {$clientEmail}: " . $fallbackError->getMessage());
+            return false;
+        }
     }
 }
 ?>

@@ -803,10 +803,6 @@ function getPetEmoji($species) {
                     <p>Manage your pets' information and health records</p>
                 </div>
                 <?php if (count($pets) < 10): ?>
-                    <a href="add.php" class="btn btn-primary">
-                        <span style="margin-right: 0.5rem;">➕</span>
-                        Add New Pet
-                    </a>
                 <?php endif; ?>
             </div>
 
