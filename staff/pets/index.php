@@ -168,8 +168,8 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
         }
 
         .add-pet-btn {
-            background: linear-gradient(135deg, #ff6b6b, #ff5252);
-            color: white;
+            background: var(--gradient-primary);
+            color: var(--white);
             padding: 1rem 2rem;
             border: none;
             border-radius: 25px;
@@ -180,15 +180,15 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             gap: 0.75rem;
             transition: all 0.3s ease;
             font-size: 1rem;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            box-shadow: var(--shadow-primary);
             cursor: pointer;
         }
 
         .add-pet-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+            box-shadow: var(--shadow-lg);
             text-decoration: none;
-            color: white;
+            color: var(--white);
         }
 
         .search-filters {
@@ -271,21 +271,21 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
         }
 
         .pet-card {
-            background: white;
+            background: var(--white);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
-            border: 1px solid #f0f0f0;
+            border: 1px solid var(--gray-200);
         }
 
         .pet-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 25px rgba(0,0,0,0.12);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
         }
 
         .pet-header {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            background: var(--gradient-secondary);
             padding: 1.5rem;
             text-align: center;
             position: relative;
@@ -320,6 +320,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
 
         .pet-details {
             padding: 2rem;
+            background: var(--gray-50);
         }
 
         .pet-info {
@@ -335,7 +336,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
 
         .info-label {
             font-size: 0.8rem;
-            color: #95a5a6;
+            color: var(--gray-600);
             text-transform: uppercase;
             font-weight: 600;
             letter-spacing: 0.5px;
@@ -345,7 +346,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
         .info-value {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--text-dark);
         }
 
         .pet-actions {
@@ -371,40 +372,40 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #ff6b6b, #ff5252);
-            color: white;
-            box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+            background: var(--gradient-primary);
+            color: var(--white);
+            box-shadow: var(--shadow-primary);
         }
 
         .btn-primary:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-            color: white;
+            box-shadow: var(--shadow-lg);
+            color: var(--white);
             text-decoration: none;
         }
 
         .btn-outline {
             background: transparent;
-            color: #ff6b6b;
-            border: 2px solid #ff6b6b;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
         }
 
         .btn-outline:hover {
-            background: #ff6b6b;
-            color: white;
+            background: var(--primary-color);
+            color: var(--white);
             text-decoration: none;
             transform: translateY(-1px);
         }
 
         .btn-danger {
             background: transparent;
-            color: #e74c3c;
-            border: 2px solid #e74c3c;
+            color: var(--danger-color);
+            border: 2px solid var(--danger-color);
         }
 
         .btn-danger:hover {
-            background: #e74c3c;
-            color: white;
+            background: var(--danger-color);
+            color: var(--white);
             text-decoration: none;
             transform: translateY(-1px);
         }
@@ -423,9 +424,9 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
 
         .pagination-controls button {
             /* Base Style */
-            background-color: #ffffff;
-            border: 2px solid #e9ecef;
-            color: #5a6a78; /* Softer text color */
+            background-color: var(--white);
+            border: 2px solid var(--gray-200);
+            color: var(--gray-600); /* Softer text color */
             font-weight: 600;
             font-size: 0.9rem;
             min-width: 42px; /* Ensures even single digits look good */
@@ -441,17 +442,17 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
 
         /* Hover State (for non-active buttons) */
         .pagination-controls button:not(.active):not(:disabled):hover {
-            border-color: #ffb8b8; /* A lighter shade of the primary red */
-            color: #ff6b6b;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
             transform: translateY(-3px);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
         }
 
         /* Active Page Style */
         .pagination-controls button.active {
-            background: linear-gradient(135deg, #ff6b6b, #ff5252);
-            border-color: #ff5252;
-            color: white;
+            background: var(--gradient-primary);
+            border-color: var(--primary-color);
+            color: var(--white);
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(255, 107, 107, 0.45);
             cursor: default; /* No need to click the active page */
@@ -461,7 +462,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
         .pagination-controls button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            background-color: #f8f9fa; /* A slightly off-white to show it's inactive */
+            background-color: var(--gray-100); /* A slightly off-white to show it's inactive */
             box-shadow: none; /* No lift for disabled buttons */
         }
 
@@ -485,7 +486,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             opacity: 1;
         }
         .modal-content {
-            background: white;
+            background: var(--white);
             padding: 2.5rem;
             border-radius: 16px;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
@@ -504,25 +505,25 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid var(--gray-200);
             padding-bottom: 1rem;
             margin-bottom: 2rem;
         }
         .modal-title {
             font-size: 1.8rem;
             font-weight: 700;
-            color: #2c3e50;
+            color: var(--text-dark);
         }
         .modal-close-btn {
             background: transparent;
             border: none;
             font-size: 1.5rem;
-            color: #95a5a6;
+            color: var(--gray-600);
             cursor: pointer;
             transition: color 0.3s ease;
         }
         .modal-close-btn:hover {
-            color: #2c3e50;
+            color: var(--text-dark);
         }
 
         /* Form inside the modal */
@@ -534,15 +535,15 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
         #petForm input, #petForm textarea, #petForm select {
             width: 100%;
             padding: 0.875rem;
-            border: 2px solid #e9ecef;
+            border: 2px solid var(--gray-200);
             border-radius: 8px;
             font-size: 1rem;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         #petForm input:focus, #petForm textarea:focus, #petForm select:focus {
             outline: none;
-            border-color: #ff6b6b;
-            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(29, 186, 168, 0.1);
         }
         #petForm .full-width {
             grid-column: 1 / -1; /* Makes an element span both columns */
@@ -566,8 +567,8 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        .form-actions button[type="submit"] { background: linear-gradient(135deg, #ff6b6b, #ff5252); color: white; }
-        .form-actions button[type="button"] { background: #6c757d; color: white; }
+        .form-actions button[type="submit"] { background: var(--gradient-primary); color: var(--white); }
+        .form-actions button[type="button"] { background: var(--gray-500); color: var(--white); }
 
 
         /* Form Styles */
@@ -720,6 +721,11 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                             <option value="cat">Cat</option>
                             <option value="bird">Bird</option>
                             <option value="rabbit">Rabbit</option>
+                            <option value="reptile">Reptile</option>
+                            <option value="fish">Fish</option>
+                            <option value="small mammal">Small Mammal</option>
+                            <option value="horse">Horse</option>
+                            <option value="farm">Farm Animal</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -988,6 +994,11 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                         <option value="Cat" ${pet && pet.species === 'Cat' ? 'selected' : ''}>Cat</option>
                         <option value="Bird" ${pet && pet.species === 'Bird' ? 'selected' : ''}>Bird</option>
                         <option value="Rabbit" ${pet && pet.species === 'Rabbit' ? 'selected' : ''}>Rabbit</option>
+                        <option value="Reptile" ${pet && pet.species === 'Reptile' ? 'selected' : ''}>Reptile</option>
+                        <option value="Fish" ${pet && pet.species === 'Fish' ? 'selected' : ''}>Fish</option>
+                        <option value="Small Mammal" ${pet && pet.species === 'Small Mammal' ? 'selected' : ''}>Small Mammal</option>
+                        <option value="Horse" ${pet && pet.species === 'Horse' ? 'selected' : ''}>Horse</option>
+                        <option value="Farm Animal" ${pet && pet.species === 'Farm Animal' ? 'selected' : ''}>Farm Animal</option>
                         <option value="Other" ${pet && pet.species === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
                     <input type="text" name="breed" placeholder="Breed" value="${pet ? pet.breed : ''}" required>
