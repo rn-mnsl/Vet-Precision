@@ -109,6 +109,10 @@ if (isPost()) {
             
             $petId = $pdo->lastInsertId();
             
+            $clientName = $_SESSION['first_name'] . ' ' . $_SESSION['last_name'];
+            notifyStaff("$clientName added a new pet named {$formData['name']}.", 'pet');
+
+            
             setFlash($formData['name'] . ' has been successfully added to your pets!', 'success');
             redirect('/client/pets/index.php');
             

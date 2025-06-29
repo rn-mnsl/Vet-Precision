@@ -1579,7 +1579,7 @@ for ($i = 0; $i < 7; $i++) {
                     const bookedSlots = await response.json();
                     timeSlotsContainer.innerHTML = '';
                     
-                    ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','14:30','15:00','15:30','16:00','16:30'].forEach(slot => {
+                    ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','14:30','15:00','15:30','16:00','16:00'].forEach(slot => {
                         const time24h = slot + ':00';
                         const isBooked = bookedSlots.includes(time24h);
                         const slotId = `time_${slot.replace(':', '')}`;

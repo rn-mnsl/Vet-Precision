@@ -150,6 +150,22 @@ function addNotification($userId, $message, $type = 'info', $appointmentId = nul
     ]);
 }
 
+// Get all active staff user IDs
+function getStaffUserIds() {
+    global $pdo;
+    $stmt = $pdo->query("SELECT user_id FROM users WHERE role = 'staff' AND is_active = 1");
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+// Convenience: add a notification for every staff/admin user
+function notifyStaff($message, $type = 'info', $appointmentId = null) {
+    $staffIds = getStaffUserIds();
+    foreach ($staffIds as $sid) {
+        addNotification($sid, $message, $type, $appointmentId);
+    }
+}
+
+
 // Get unread notification count
 function getUnreadNotificationCount($userId) {
     global $pdo;

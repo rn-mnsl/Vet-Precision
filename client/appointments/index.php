@@ -61,12 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_appointment'])
             // 2. Decide whether to UPDATE or INSERT
             if ($reusable_appointment_id) {
                 // A reusable slot was found! UPDATE it to be a complete appointment.
-                $sql = "UPDATE appointments 
-                        SET pet_id = ?, 
-                            status = 'requested', 
-                            reason = ?, 
-                            notes = ?, 
-                            created_by = ?, 
+                $sql = "UPDATE appointments
+                        SET pet_id = ?,
+                            status = 'requested',
+                            reason = ?,
+                            notes = ?,
+                            created_by = ?,
                             updated_at = NOW(),
                             type = ?,             -- [FIX] Added missing column
                             duration_minutes = ?  -- [FIX] Added missing column
@@ -74,14 +74,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_appointment'])
                 $stmt = $pdo->prepare($sql);
                 // [FIX] Added 'Checkup', 30, and the ID to the execute array
                 $stmt->execute([$pet_id, $reason, $notes, $user_id, 'Checkup', 30, $reusable_appointment_id]);
+                $appointmentId = $reusable_appointment_id;
 
             } else {
                 // No reusable slot found. INSERT a new appointment as before.
                 // This branch also handles the pre-submission check for race conditions.
-                $sql = "INSERT INTO appointments (pet_id, appointment_date, appointment_time, duration_minutes, status, type, reason, notes, created_by, created_at, updated_at) 
+                $sql = "INSERT INTO appointments (pet_id, appointment_date, appointment_time, duration_minutes, status, type, reason, notes, created_by, created_at, updated_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$pet_id, $appointment_date, $appointment_time, 30, 'requested', 'Checkup', $reason, $notes, $user_id]);
+                $appointmentId = $pdo->lastInsertId();
             }
 
             // --- [EMAIL NOTIFICATION LOGIC - REMAINS THE SAME] ---
@@ -133,6 +135,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_appointment'])
             }
 
             sendAdminNotification($subject, $email_body, $alt_body);
+            $noteMsg = "$client_name requested an appointment for $pet_name on $formatted_date at $formatted_time.";
+            notifyStaff($noteMsg, 'appointment', $appointmentId);
             
             $_SESSION['success_message'] = "Appointment requested successfully!";
             header('Location: index.php');
