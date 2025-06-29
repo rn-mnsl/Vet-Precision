@@ -97,37 +97,6 @@ $activePage = getActivePage();
     text-align: center;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-        transition: transform var(--transition-base);
-    }
-    
-    .sidebar.active {
-        transform: translateX(0);
-    }
-    
-    .mobile-menu-toggle {
-        display: block;
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        z-index: 1001;
-        background: var(--primary-color);
-        color: white;
-        border: none;
-        padding: 10px;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-}
-
-@media (min-width: 769px) {
-    .mobile-menu-toggle {
-        display: none;
-    }
-}
 </style>
 
 <aside class="sidebar">    
@@ -170,8 +139,3 @@ $activePage = getActivePage();
         </li>
     </ul>
 </aside>
-
-<!-- Mobile Menu Toggle -->
-<button class="mobile-menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
-    ☰
-</button>

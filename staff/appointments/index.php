@@ -159,6 +159,17 @@ if ($view === 'list') {
             }
             $appointments_grid[$date_key][$hour_key][] = $appt;
         }
+
+        // --- NEW: Add this logic to create a simpler array for the mobile agenda view ---
+        $appointments_by_day = [];
+        foreach ($week_appointments as $appt) {
+            $date_key = $appt['appointment_date'];
+            if (!isset($appointments_by_day[$date_key])) {
+                $appointments_by_day[$date_key] = [];
+            }
+            $appointments_by_day[$date_key][] = $appt;
+        }
+
     } catch (PDOException $e) { 
         $errors[] = "Could not fetch week appointments."; 
     }
@@ -299,6 +310,19 @@ for ($i = 0; $i < 7; $i++) {
             font-size: 1.25rem;
             width: 1.5rem;
             text-align: center;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1099; /* Below sidebar, above content */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
         }
 
         /* Main Content Area */
@@ -667,7 +691,8 @@ for ($i = 0; $i < 7; $i++) {
 
         /* === PAGINATION STYLES === */
         .pagination-controls {
-            disp.appointmentlay: flex;
+            display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
             gap: 0.5rem;
@@ -730,38 +755,283 @@ for ($i = 0; $i < 7; $i++) {
         .modal-body .table tbody tr { cursor: pointer; }
         .modal-body .table tbody tr:hover { background-color: var(--light-color); }
 
-        /* Responsive */
+        /* === NEW: MOBILE RESPONSIVE STYLES === */
+        /* --- 1. General Layout: Sidebar & Content --- */
         @media (max-width: 768px) {
-            .action-buttons {
-                flex-direction: column;
+            /* Hide the sidebar off-screen by default on mobile */
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+                /* OVERRIDE styles from navbar.css to make it a full-height slide-out */
+                top: 0; 
+                height: 100vh;
+                z-index: 1100; /* Ensure sidebar is on top */
+            }
+
+            /* --- NEW: Style for when the sidebar is open --- */
+            body.sidebar-is-open .sidebar {
+                transform: translateX(0);
+                box-shadow: 0 0 20px rgba(0,0,0,0.25); /* Add shadow for depth */
+            }
+
+            body.sidebar-is-open .sidebar-overlay {
+                opacity: 1;
+                visibility: visible;
+            }
+            /* --- END NEW --- */
+
+            /* Adjust main content for mobile */
+            .main-content {
+                margin-left: 0; /* Remove the space left for the desktop sidebar */
             }
             
-            .btn-status {
+            /* Remove padding-top from body since main-content handles it */
+            body {
+                padding-top: 0;
+            }
+            /* Add the space back to the main-content area */
+            .main-content {
+                padding-top: 85px; /* 70px for navbar + 15px top padding */
+            }
+            
+            /* On mobile, remove the left margin from the logo to make space */
+            .navbar-brand .brand-logo {
+                margin-left: 0;
+            }
+        }
+
+
+        /* --- 2. Card Layout for Tables on Mobile --- */
+        @media (max-width: 768px) {
+            .table thead {
+                display: none; /* Hide table headers */
+            }
+            .table, .table tbody, .table tr, .table td {
+                display: block; /* Make table elements behave like blocks */
                 width: 100%;
-                margin-bottom: 0.25rem;
             }
+            .table tr {
+                margin-bottom: 1rem;
+                border: 1px solid var(--gray-light);
+                border-radius: 8px;
+                padding: 0.5rem;
+            }
+            .table td {
+                display: flex; /* Use flexbox for label-value alignment */
+                justify-content: space-between;
+                padding: 0.75rem 0.5rem;
+                text-align: right; /* Align value to the right */
+                border-bottom: 1px solid #eee;
+            }
+            .table td:last-child {
+                border-bottom: none;
+            }
+            .table td::before {
+                content: attr(data-label); /* Use data-label for the "header" */
+                font-weight: 600;
+                text-align: left;
+                margin-right: 1rem;
+                color: var(--text-dark);
+            }
+            /* Style action buttons container in the card view */
+            .table td[data-label="Actions"] .action-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            .table td[data-label="Actions"] .btn-status {
+                 width: 100%;
+                 text-align: center;
+                 margin-bottom: 0.25rem;
+            }
+        }
 
+        /* --- 3. Week View (Calendar) --- */
+        @media (max-width: 768px) {
+            .calendar-grid-wrapper {
+                overflow-x: auto; /* Enable horizontal scrolling */
+                -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+                border: 1px solid var(--gray-light);
+                border-radius: 8px;
+            }
             .calendar-grid {
-                font-size: 0.8rem;
+                width: 1200px; /* Force grid to be wide, making it scrollable */
             }
-
-            .calendar-cell {
-                min-height: 50px;
+            .week-header {
+                 justify-content: center;
             }
+        }
 
+        /* --- 4. Forms, Headers, and General Stacking --- */
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1.5rem;
+            }
+            .page-header h1 {
+                font-size: 1.75rem;
+            }
+            .card {
+                padding: 1.5rem;
+            }
+            .form-grid {
+                grid-template-columns: 1fr; /* Stack form fields vertically */
+                gap: 1.5rem;
+            }
+            .form-actions {
+                flex-direction: column-reverse; /* Stack buttons, primary on top */
+            }
+            .form-actions .btn {
+                width: 100%;
+                text-align: center;
+            }
             .view-controls {
                 flex-direction: column;
                 align-items: flex-start;
             }
+        }
+
+        /* === NEW: AGENDA VIEW STYLES FOR MOBILE WEEK VIEW === */
+        .agenda-view {
+            display: none; /* Hidden by default, shown on mobile */
+        }
+
+        .agenda-day {
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .agenda-day-header {
+            background-color: var(--light-color);
+            padding: 0.75rem 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .agenda-appointments {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .agenda-appointment-item {
+            display: flex;
+            padding: 1rem;
+            gap: 1rem;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--gray-light);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .agenda-appointment-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .agenda-appointment-item:last-child {
+            border-bottom: none;
+        }
+
+        .agenda-appointment-item .time {
+            flex-shrink: 0;
+            width: 80px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+
+        .agenda-appointment-item .details {
+            flex-grow: 1;
+        }
+
+        .agenda-appointment-item .details .pet-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+
+        .agenda-appointment-item .details .client-name {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .agenda-appointment-item .details .status {
+            display: inline-block; /* allows padding/margin */
+            margin-top: 0.5rem;
+        }
+
+        .no-appointments {
+            padding: 1.5rem 1rem;
+            text-align: center;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        /* --- Media Query to SWITCH between Grid and Agenda --- */
+        @media (max-width: 768px) {
+            /* Hide the desktop grid view */
+            .calendar-grid-wrapper {
+                display: none;
+            }
+            /* Show the mobile agenda view */
+            .agenda-view {
+                display: block;
+            }
+        }
+
+        /* === NEW: Color the entire agenda item card based on status === */
+
+        /* Base style for all colored cards: white text, no border */
+        .agenda-appointment-item.status-confirmed,
+        .agenda-appointment-item.status-completed,
+        .agenda-appointment-item.status-requested {
+            color: white; /* Make all text inside white */
+            border-bottom: 1px solid rgba(0,0,0,0.1); /* Use a darker border for separation */
+        }
+
+        /* Set specific background colors from your desktop theme */
+        .agenda-appointment-item.status-confirmed { background-color: #10b981; } /* Green */
+        .agenda-appointment-item.status-completed { background-color: #3b82f6; } /* Blue */
+        .agenda-appointment-item.status-requested { background-color: #f59e0b; } /* Orange */
+
+        /* Make the text inside the colored cards more legible */
+        .agenda-appointment-item.status-confirmed .time,
+        .agenda-appointment-item.status-completed .time,
+        .agenda-appointment-item.status-requested .time,
+        .agenda-appointment-item.status-confirmed .client-name,
+        .agenda-appointment-item.status-completed .client-name,
+        .agenda-appointment-item.status-requested .client-name {
+            color: rgba(255, 255, 255, 0.85); /* Make secondary text slightly transparent */
+        }
+        .agenda-appointment-item.status-confirmed .pet-name,
+        .agenda-appointment-item.status-completed .pet-name,
+        .agenda-appointment-item.status-requested .pet-name {
+            color: white; /* Ensure main text is fully opaque */
+        }
+
+        /* Update the hover effect for colored cards to darken them slightly */
+        .agenda-appointment-item.status-confirmed:hover,
+        .agenda-appointment-item.status-completed:hover,
+        .agenda-appointment-item.status-requested:hover {
+            background-color: initial;  /* Reset the default hover effect */
+            filter: brightness(95%);    /* Slightly darken the existing color */
+            -webkit-filter: brightness(95%);
         }
     </style>
 </head>
 <body>
     <div class="dashboard-layout">
         <?php include '../../includes/sidebar-staff.php'; ?>
-        <?php include '../../includes/navbar.php'; ?>
+
         
         <main class="main-content">
+            <?php include '../../includes/navbar.php'; ?>
+
+
             <?php if ($action === 'create'): ?>
                 <!-- CREATE VIEW -->
                 <div class="page-header"><div><h1>Create Appointment</h1><p>Fill in the details below to schedule a new appointment.</p></div></div>
@@ -839,62 +1109,94 @@ for ($i = 0; $i < 7; $i++) {
                             <button class="btn btn-secondary" onclick="goToToday()">Today</button>
                         </div>
 
-                        <div class="calendar-grid">
-                            <!-- Header row -->
-                            <div class="calendar-header time-header"></div>
-                            <?php foreach ($week_dates as $date_info): ?>
-                                <div class="calendar-header">
-                                    <div class="calendar-day-header">
-                                        <span class="day-name"><?php echo $date_info['day_short']; ?></span>
-                                        <span class="day-number"><?php echo $date_info['day_number']; ?></span>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-
-                            <!-- Time slots and appointments -->
-                            <?php foreach ($time_slots as $time): ?>
-                                <div class="time-slot-row"><?php echo date('g:i A', strtotime($time . ':00')); ?></div>
+                        <!-- 1. DESKTOP GRID VIEW (Hidden on mobile) -->
+                        <div class="calendar-grid-wrapper">
+                            <div class="calendar-grid">
+                                <!-- Header row -->
+                                <div class="calendar-header time-header"></div>
                                 <?php foreach ($week_dates as $date_info): ?>
-                                    <div class="calendar-cell">
-                                        <?php
-                                        // --- MODIFICATION 3: Simplified Rendering Logic ---
-                                        $current_date = $date_info['date'];
-                                        $current_hour = substr($time, 0, 2); // '08', '09', etc.
-
-                                        // Check if there are ANY appointments for this entire hour
-                                        if (isset($appointments_grid[$current_date][$current_hour])) {
-                                            
-                                            // Loop through ALL appointments found for this hour and display them
-                                            foreach ($appointments_grid[$current_date][$current_hour] as $appt) {
-                                                
-                                                // The rendering logic is the same, but now it runs for every appointment in the hour
-                                                echo '<div class="appointment-block status-' . htmlspecialchars($appt['status']) . '" 
-                                                           data-id="' . $appt['appointment_id'] . '"
-                                                           data-datetime="' . date("D, M j, Y, g:i A", strtotime($appt['appointment_date'] . ' ' . $appt['appointment_time'])) . '"
-                                                           data-client="' . htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']) . '"
-                                                           data-pet="' . htmlspecialchars($appt['pet_name']) . '"
-                                                           data-reason="' . htmlspecialchars($appt['reason']) . '"
-                                                           data-notes="' . htmlspecialchars($appt['notes']) . '"
-                                                           data-status="' . htmlspecialchars($appt['status']) . '">';
-                                                
-                                                echo '<div class="appointment-summary">';
-                                                // Display the specific time (e.g., 9:30AM) to differentiate
-                                                echo '<span>' . date('g:iA', strtotime($appt['appointment_time'])) . ' ' . htmlspecialchars($appt['pet_name']) . '</span>';
-                                                echo '<i class="fas fa-chevron-down"></i>';
-                                                echo '</div>';
-                                                
-                                                echo '<div class="appointment-details">';
-                                                echo '<strong>Client:</strong> ' . htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']) . '<br>';
-                                                echo '<strong>Reason:</strong> ' . htmlspecialchars($appt['reason']);
-                                                echo '</div>';
-                                                
-                                                echo '</div>';
-                                            }
-                                        }
-                                        // --- END MODIFICATION 3 ---
-                                        ?>
+                                    <div class="calendar-header">
+                                        <div class="calendar-day-header">
+                                            <span class="day-name"><?php echo $date_info['day_short']; ?></span>
+                                            <span class="day-number"><?php echo $date_info['day_number']; ?></span>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
+
+                                <!-- Time slots and appointments -->
+                                <?php foreach ($time_slots as $time): ?>
+                                    <div class="time-slot-row"><?php echo date('g:i A', strtotime($time . ':00')); ?></div>
+                                    <?php foreach ($week_dates as $date_info): ?>
+                                        <div class="calendar-cell">
+                                            <?php
+                                            $current_date = $date_info['date'];
+                                            $current_hour = substr($time, 0, 2);
+                                            if (isset($appointments_grid[$current_date][$current_hour])):
+                                                foreach ($appointments_grid[$current_date][$current_hour] as $appt): ?>
+                                                    <div class="appointment-block status-<?php echo htmlspecialchars($appt['status']); ?>" 
+                                                        data-id="<?php echo $appt['appointment_id']; ?>"
+                                                        data-datetime="<?php echo date("D, M j, Y, g:i A", strtotime($appt['appointment_date'] . ' ' . $appt['appointment_time'])); ?>"
+                                                        data-client="<?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?>"
+                                                        data-pet="<?php echo htmlspecialchars($appt['pet_name']); ?>"
+                                                        data-reason="<?php echo htmlspecialchars($appt['reason']); ?>"
+                                                        data-notes="<?php echo htmlspecialchars($appt['notes']); ?>"
+                                                        data-status="<?php echo htmlspecialchars($appt['status']); ?>">
+                                                        <div class="appointment-summary">
+                                                            <span><?php echo date('g:iA', strtotime($appt['appointment_time'])) . ' ' . htmlspecialchars($appt['pet_name']); ?></span>
+                                                            <i class="fas fa-chevron-down"></i>
+                                                        </div>
+                                                        <div class="appointment-details">
+                                                            <strong>Client:</strong> <?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?><br>
+                                                            <strong>Reason:</strong> <?php echo htmlspecialchars($appt['reason']); ?>
+                                                        </div>
+                                                    </div>
+                                            <?php endforeach; endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- 2. MOBILE AGENDA VIEW (Hidden on desktop) -->
+                        <div class="agenda-view">
+                            <?php foreach ($week_dates as $date_info): 
+                                $current_date = $date_info['date'];
+                                $day_has_appointments = isset($appointments_by_day[$current_date]);
+                            ?>
+                                <div class="agenda-day">
+                                    <div class="agenda-day-header">
+                                        <?php echo date('l, F j', strtotime($current_date)); ?>
+                                    </div>
+                                    <?php if ($day_has_appointments): ?>
+                                        <ul class="agenda-appointments">
+                                            <?php foreach ($appointments_by_day[$current_date] as $appt): ?>
+                                                <!-- MODIFICATION: Added status class to the <li> for background coloring -->
+                                                <li class="agenda-appointment-item appointment-block status-<?php echo htmlspecialchars($appt['status']); ?>" 
+                                                    data-id="<?php echo $appt['appointment_id']; ?>"
+                                                    data-datetime="<?php echo date("D, M j, Y, g:i A", strtotime($appt['appointment_date'] . ' ' . $appt['appointment_time'])); ?>"
+                                                    data-client="<?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?>"
+                                                    data-pet="<?php echo htmlspecialchars($appt['pet_name']); ?>"
+                                                    data-reason="<?php echo htmlspecialchars($appt['reason']); ?>"
+                                                    data-notes="<?php echo htmlspecialchars($appt['notes']); ?>"
+                                                    data-status="<?php echo htmlspecialchars($appt['status']); ?>">
+                                                    
+                                                    <div class="time">
+                                                        <?php echo date('g:i A', strtotime($appt['appointment_time'])); ?>
+                                                    </div>
+                                                    <div class="details">
+                                                        <div class="pet-name"><?php echo htmlspecialchars($appt['pet_name']); ?></div>
+                                                        <div class="client-name"><?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?></div>
+                                                        <!-- The redundant status badge has been removed from here -->
+                                                    </div>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php else: ?>
+                                        <div class="no-appointments">
+                                            No appointments scheduled.
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -917,36 +1219,23 @@ for ($i = 0; $i < 7; $i++) {
                                     <tr><td colspan="6" style="text-align:center; padding: 3rem;">No appointments found.</td></tr>
                                 <?php else: foreach ($appointments as $appt): ?>
                                     <tr data-appointment-id="<?php echo $appt['appointment_id']; ?>">
-                                        <td>
+                                        <!-- MODIFICATION: Add data-label attributes for mobile view -->
+                                        <td data-label="Date & Time">
                                             <strong><?php echo date("M d, Y", strtotime($appt['appointment_date'])); ?></strong><br>
                                             <small><?php echo date("g:i A", strtotime($appt['appointment_time'])); ?></small>
                                         </td>
-                                        <td><?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($appt['pet_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($appt['reason']); ?></td>
-                                        <td>
-                                            <span class="status-badge status-<?php echo $appt['status']; ?>">
-                                                <?php echo ucfirst(htmlspecialchars($appt['status'])); ?>
-                                            </span>
+                                        <td data-label="Client"><?php echo htmlspecialchars($appt['owner_first_name'] . ' ' . $appt['owner_last_name']); ?></td>
+                                        <td data-label="Pet"><?php echo htmlspecialchars($appt['pet_name']); ?></td>
+                                        <td data-label="Reason"><?php echo htmlspecialchars($appt['reason']); ?></td>
+                                        <td data-label="Status">
+                                            <span class="status-badge status-<?php echo $appt['status']; ?>"><?php echo ucfirst(htmlspecialchars($appt['status'])); ?></span>
                                         </td>
-                                        <td>
+                                        <td data-label="Actions">
                                             <div class="action-buttons">
-                                                <button class="btn btn-status btn-requested" data-status="requested" 
-                                                        <?php echo $appt['status'] === 'requested' ? 'disabled' : ''; ?>>
-                                                    Requested
-                                                </button>
-                                                <button class="btn btn-status btn-confirmed" data-status="confirmed"
-                                                        <?php echo $appt['status'] === 'confirmed' ? 'disabled' : ''; ?>>
-                                                    Confirmed
-                                                </button>
-                                                <button class="btn btn-status btn-completed" data-status="completed"
-                                                        <?php echo $appt['status'] === 'completed' ? 'disabled' : ''; ?>>
-                                                    Completed
-                                                </button>
-                                                <button class="btn btn-status btn-cancelled" data-status="cancelled"
-                                                        <?php echo $appt['status'] === 'cancelled' ? 'disabled' : ''; ?>>
-                                                    Cancelled
-                                                </button>
+                                                <button class="btn btn-status btn-requested" data-status="requested" <?php echo $appt['status'] === 'requested' ? 'disabled' : ''; ?>>Requested</button>
+                                                <button class="btn btn-status btn-confirmed" data-status="confirmed" <?php echo $appt['status'] === 'confirmed' ? 'disabled' : ''; ?>>Confirmed</button>
+                                                <button class="btn btn-status btn-completed" data-status="completed" <?php echo $appt['status'] === 'completed' ? 'disabled' : ''; ?>>Completed</button>
+                                                <button class="btn btn-status btn-cancelled" data-status="cancelled" <?php echo $appt['status'] === 'cancelled' ? 'disabled' : ''; ?>>Cancelled</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -1357,6 +1646,27 @@ for ($i = 0; $i < 7; $i++) {
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
         }
+
+        // --- NEW: Hamburger Menu & Sidebar Toggle ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.querySelector('.hamburger-menu');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const body = document.body;
+
+            if (hamburgerBtn && body) {
+                hamburgerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    body.classList.toggle('sidebar-is-open');
+                });
+            }
+            
+            if (overlay && body) {
+                overlay.addEventListener('click', function() {
+                    body.classList.remove('sidebar-is-open');
+                });
+            }
+        });
+        
     </script>
 </body>
 </html>
