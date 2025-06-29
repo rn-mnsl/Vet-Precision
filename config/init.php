@@ -317,6 +317,4 @@ function sendClientNotification(string $clientEmail, string $subject, string $bo
         return false; // Email failed to send
     }
 }
-?>
-
 

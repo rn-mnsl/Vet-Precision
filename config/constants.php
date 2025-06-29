@@ -51,4 +51,4 @@ define('ALLOWED_IMAGE_TYPES', [
 define('DATE_FORMAT', 'F j, Y');
 define('TIME_FORMAT', 'g:i A');
 define('DATETIME_FORMAT', 'F j, Y g:i A');
-?>
+

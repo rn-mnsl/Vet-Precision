@@ -188,4 +188,4 @@ function updatePassword($userId, $currentPassword, $newPassword) {
     
     return ['success' => true];
 }
-?> 
+

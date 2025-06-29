@@ -172,4 +172,4 @@ function validateInput($input, $type = 'string', $required = true) {
             return !empty($input) || !$required;
     }
 }
-?>
+

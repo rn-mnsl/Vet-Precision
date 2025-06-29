@@ -86,4 +86,3 @@ function rollback() {
     global $pdo;
     return $pdo->rollBack();
 }
-?>
