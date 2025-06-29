@@ -264,4 +264,59 @@ function sendAdminNotification(string $subject, string $body, string $altBody) {
         return false; // Email failed to send
     }
 }
+
+
+
+// ADD THIS NEW FUNCTION TO config/init.php
+
+/**
+ * Sends a notification email to a specific client.
+ *
+ * @param string $clientEmail The email address of the client.
+ * @param string $subject The subject of the email.
+ * @param string $body    The HTML body of the email.
+ * @param string $altBody The plain-text alternative body.
+ * @return bool           True on success, false on failure.
+ */
+function sendClientNotification(string $clientEmail, string $subject, string $body, string $altBody) {
+    // This function assumes you have included PHPMailer at the top of init.php
+    // use PHPMailer\PHPMailer\PHPMailer;
+    // use PHPMailer\PHPMailer\Exception;
+    
+    $mail = new PHPMailer(true);
+
+    try {
+        // --- Server settings (Copied from your other functions) ---
+        // $mail->SMTPDebug = 2;
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'roljohn.frilles87@gmail.com';
+        $mail->Password   = 'yecs lggr egaf kiej';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port       = 465;
+
+        // --- Recipients ---
+        $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
+        $mail->setFrom('no-reply@vetprecision.com', $site_name);
+        
+        // ** THE IMPORTANT PART: Use the provided client email **
+        $mail->addAddress($clientEmail); // Add the client as a recipient
+
+        // --- Content ---
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        $mail->AltBody = $altBody;
+
+        $mail->send();
+        return true; // Email sent successfully
+        
+    } catch (Exception $e) {
+        error_log("sendClientNotification PHPMailer Error for {$clientEmail}: {$mail->ErrorInfo}");
+        return false; // Email failed to send
+    }
+}
 ?>
+
+
