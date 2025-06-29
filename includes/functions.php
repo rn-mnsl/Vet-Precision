@@ -228,4 +228,42 @@ function checkAndSendAppointmentReminders($userId) {
         }
     }
 }
+
+// Automatically send reminders for tomorrow's appointments
+function sendAutomaticAppointmentReminders() {
+    global $pdo;
+
+    $stmt = $pdo->prepare(
+        "SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.reminder_sent,
+                p.name AS pet_name, u.email, u.first_name
+           FROM appointments a
+           JOIN pets p ON a.pet_id = p.pet_id
+           JOIN owners o ON p.owner_id = o.owner_id
+           JOIN users u ON o.user_id = u.user_id
+          WHERE a.status = 'confirmed'
+            AND a.reminder_sent = 0
+            AND a.appointment_date = DATE_ADD(CURDATE(), INTERVAL 1 DAY)"
+    );
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($rows as $r) {
+        $date = formatDate($r['appointment_date']);
+        $time = formatTime($r['appointment_time']);
+
+        $subject = 'Appointment Reminder - ' . (defined('SITE_NAME') ? SITE_NAME : 'Vet Precision');
+        $body = '<p>Dear ' . htmlspecialchars($r['first_name']) . ',</p>' .
+                '<p>This is a friendly reminder of your upcoming appointment for <strong>' .
+                htmlspecialchars($r['pet_name']) . '</strong>.</p>' .
+                '<p><strong>Date:</strong> ' . $date . '<br><strong>Time:</strong> ' . $time . '</p>' .
+                '<p>We look forward to seeing you!</p>' .
+                '<p>Sincerely,<br>The ' . (defined('SITE_NAME') ? SITE_NAME : 'Vet Precision') . ' Team</p>';
+        $alt = "Reminder: appointment for {$r['pet_name']} on {$date} at {$time}.";
+
+        if (sendClientNotification($r['email'], $subject, $body, $alt)) {
+            $upd = $pdo->prepare("UPDATE appointments SET reminder_sent = 1 WHERE appointment_id = :aid");
+            $upd->execute([':aid' => $r['appointment_id']]);
+        }
+    }
+}
 ?>

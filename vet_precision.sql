@@ -37,6 +37,7 @@ CREATE TABLE `appointments` (
   `type` varchar(50) DEFAULT 'General Checkup',
   `reason` text DEFAULT NULL,
   `notes` text DEFAULT NULL,
+  `reminder_sent` tinyint(1) DEFAULT 0,
   `created_by` int(11) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
