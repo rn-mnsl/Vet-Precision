@@ -48,7 +48,9 @@ try {
             // Handle photo upload if provided
             $photo_url = null;
             if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-                $upload_dir = '../../../uploads/pets/';
+                // Build the absolute path to the uploads directory. Using __DIR__
+                // ensures this works regardless of where this handler is located.
+                $upload_dir = dirname(__FILE__, 3) . '/uploads/pets/';
                 
                 // Create directory if it doesn't exist
                 if (!is_dir($upload_dir)) {
@@ -74,13 +76,19 @@ try {
                 if (move_uploaded_file($_FILES['photo']['tmp_name'], $file_path)) {
                     $photo_url = '../../uploads/pets/' . $filename;
                     
-                    // Delete old photo if exists
+                    // Delete old photo if it exists. The path stored in the
+                    // database is relative, so we resolve it from the uploads
+                    // directory using only the file's basename.
                     $old_photo_stmt = $pdo->prepare("SELECT photo_url FROM pets WHERE pet_id = ?");
                     $old_photo_stmt->execute([$pet_id]);
                     $old_photo = $old_photo_stmt->fetchColumn();
                     
-                    if ($old_photo && file_exists($old_photo)) {
-                        unlink($old_photo);
+                    if ($old_photo) {
+                        $old_filename = basename($old_photo);
+                        $old_file_path = $upload_dir . $old_filename;
+                        if (file_exists($old_file_path)) {
+                            unlink($old_file_path);
+                        }
                     }
                 }
             }

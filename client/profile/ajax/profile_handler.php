@@ -1,123 +1,184 @@
 <?php
 require_once '../../../config/init.php';
 
-// Ensure the user is logged in before proceeding
+// Start session if not already started
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Security check
 if (!isset($_SESSION['user_id'])) {
-    header('Content-Type: application/json');
-    http_response_code(401); // Unauthorized
-    echo json_encode(['success' => false, 'message' => 'Authentication required.']);
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
 }
 
 header('Content-Type: application/json');
-$action = $_REQUEST['action'] ?? null;
-$userId = $_SESSION['user_id']; // Get user ID from the session for security
+
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 try {
     switch ($action) {
         case 'fetch':
-            fetch_profile($pdo, $userId);
+            // Get user data with owner information
+            $stmt = $pdo->prepare("
+                SELECT u.user_id, u.email, u.first_name, u.last_name, u.role,
+                       o.phone, o.address, o.city
+                FROM users u
+                LEFT JOIN owners o ON u.user_id = o.user_id
+                WHERE u.user_id = ?
+            ");
+            $stmt->execute([$_SESSION['user_id']]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user) {
+                echo json_encode(['success' => true, 'data' => $user]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'User not found']);
+            }
             break;
+
         case 'update':
-            update_profile($pdo, $userId);
+            $first_name = trim($_POST['first_name'] ?? '');
+            $last_name = trim($_POST['last_name'] ?? '');
+            $phone = trim($_POST['phone'] ?? '');
+            $address = trim($_POST['address'] ?? '');
+            $city = trim($_POST['city'] ?? '');
+            
+            if (empty($first_name) || empty($last_name)) {
+                echo json_encode(['success' => false, 'message' => 'First name and last name are required']);
+                break;
+            }
+            
+            // Start transaction
+            $pdo->beginTransaction();
+            
+            try {
+                // Update users table
+                $stmt = $pdo->prepare("
+                    UPDATE users 
+                    SET first_name = ?, last_name = ?, updated_at = NOW() 
+                    WHERE user_id = ?
+                ");
+                $result = $stmt->execute([$first_name, $last_name, $_SESSION['user_id']]);
+                
+                if (!$result) {
+                    throw new Exception('Failed to update user information');
+                }
+                
+                // Check if owner record exists
+                $check_stmt = $pdo->prepare("SELECT owner_id FROM owners WHERE user_id = ?");
+                $check_stmt->execute([$_SESSION['user_id']]);
+                $owner_id = $check_stmt->fetchColumn();
+                
+                if ($owner_id) {
+                    // Update existing owner record
+                    $owner_stmt = $pdo->prepare("
+                        UPDATE owners 
+                        SET phone = ?, address = ?, city = ?, updated_at = NOW() 
+                        WHERE user_id = ?
+                    ");
+                    $owner_result = $owner_stmt->execute([
+                        $phone ?: null, 
+                        $address ?: null, 
+                        $city ?: null, 
+                        $_SESSION['user_id']
+                    ]);
+                } else {
+                    // Create new owner record
+                    $owner_stmt = $pdo->prepare("
+                        INSERT INTO owners (user_id, phone, address, city, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, NOW(), NOW())
+                    ");
+                    $owner_result = $owner_stmt->execute([
+                        $_SESSION['user_id'],
+                        $phone ?: null, 
+                        $address ?: null, 
+                        $city ?: null
+                    ]);
+                }
+                
+                if (!$owner_result) {
+                    throw new Exception('Failed to update contact information');
+                }
+                
+                // Update session data
+                $_SESSION['first_name'] = $first_name;
+                $_SESSION['last_name'] = $last_name;
+                
+                $pdo->commit();
+                
+                // Return updated data
+                $stmt = $pdo->prepare("
+                    SELECT u.user_id, u.email, u.first_name, u.last_name, u.role,
+                           o.phone, o.address, o.city
+                    FROM users u
+                    LEFT JOIN owners o ON u.user_id = o.user_id
+                    WHERE u.user_id = ?
+                ");
+                $stmt->execute([$_SESSION['user_id']]);
+                $updated_user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Profile updated successfully',
+                    'data' => $updated_user
+                ]);
+                
+            } catch (Exception $e) {
+                $pdo->rollback();
+                throw $e;
+            }
             break;
+
         case 'change_password':
-            change_password($pdo, $userId);
+            $current_password = $_POST['current_password'] ?? '';
+            $new_password = $_POST['new_password'] ?? '';
+            
+            if (empty($current_password) || empty($new_password)) {
+                echo json_encode(['success' => false, 'message' => 'Both current and new passwords are required']);
+                break;
+            }
+            
+            if (strlen($new_password) < 8) {
+                echo json_encode(['success' => false, 'message' => 'New password must be at least 8 characters long']);
+                break;
+            }
+            
+            // Verify current password
+            $stmt = $pdo->prepare("SELECT password FROM users WHERE user_id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $stored_password = $stmt->fetchColumn();
+            
+            if (!password_verify($current_password, $stored_password)) {
+                echo json_encode(['success' => false, 'message' => 'Current password is incorrect']);
+                break;
+            }
+            
+            // Update password
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+            $update_stmt = $pdo->prepare("
+                UPDATE users 
+                SET password = ?, updated_at = NOW() 
+                WHERE user_id = ?
+            ");
+            $result = $update_stmt->execute([$hashed_password, $_SESSION['user_id']]);
+            
+            if ($result) {
+                echo json_encode(['success' => true, 'message' => 'Password updated successfully']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to update password']);
+            }
             break;
+
         default:
-            throw new Exception('Invalid action specified.');
+            echo json_encode(['success' => false, 'message' => 'Invalid action']);
     }
+} catch (PDOException $e) {
+    error_log("Database error in profile handler: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Database error occurred']);
 } catch (Exception $e) {
-    http_response_code(400); // Bad Request
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    error_log("General error in profile handler: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'An unexpected error occurred']);
 }
-
-/**
- * Fetches the logged-in user's profile data.
- */
-function fetch_profile($pdo, $userId) {
-    $stmt = $pdo->prepare("
-        SELECT 
-            u.user_id, u.email, u.first_name, u.last_name,
-            o.phone, o.address, o.city
-        FROM users u
-        LEFT JOIN owners o ON u.user_id = o.user_id
-        WHERE u.user_id = ?
-    ");
-    $stmt->execute([$userId]);
-    $profile = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$profile) {
-        throw new Exception('Profile not found.');
-    }
-
-    echo json_encode(['success' => true, 'data' => $profile]);
-}
-
-/**
- * Updates the user's personal information.
- */
-function update_profile($pdo, $userId) {
-    // Collect data from POST request
-    $firstName = $_POST['first_name'] ?? '';
-    $lastName = $_POST['last_name'] ?? '';
-    $phone = $_POST['phone'] ?? '';
-    $address = $_POST['address'] ?? '';
-    $city = $_POST['city'] ?? '';
-
-    $pdo->beginTransaction();
-
-    // 1. Update the 'users' table
-    $stmtUser = $pdo->prepare("UPDATE users SET first_name = ?, last_name = ? WHERE user_id = ?");
-    $stmtUser->execute([$firstName, $lastName, $userId]);
-
-    // 2. Insert or Update the 'owners' table.
-    // This is robust: it creates the owner record if it doesn't exist,
-    // or updates it if it does. Requires `user_id` to be a UNIQUE key in `owners`.
-    $stmtOwner = $pdo->prepare("
-        INSERT INTO owners (user_id, phone, address, city) 
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE phone = VALUES(phone), address = VALUES(address), city = VALUES(city)
-    ");
-    $stmtOwner->execute([$userId, $phone, $address, $city]);
-
-    $pdo->commit();
-
-    echo json_encode(['success' => true, 'message' => 'Profile updated successfully!']);
-}
-
-/**
- * Changes the user's password after verifying the current one.
- */
-function change_password($pdo, $userId) {
-    $currentPassword = $_POST['current_password'] ?? '';
-    $newPassword = $_POST['new_password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
-
-    if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
-        throw new Exception('All password fields are required.');
-    }
-    if ($newPassword !== $confirmPassword) {
-        throw new Exception('New passwords do not match.');
-    }
-    if (strlen($newPassword) < 8) {
-        throw new Exception('Password must be at least 8 characters long.');
-    }
-
-    // Fetch the current hashed password from the DB
-    $stmt = $pdo->prepare("SELECT password FROM users WHERE user_id = ?");
-    $stmt->execute([$userId]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    // Verify the current password
-    if (!$user || !password_verify($currentPassword, $user['password'])) {
-        throw new Exception('Incorrect current password.');
-    }
-
-    // Hash the new password and update the database
-    $newHashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-    $updateStmt = $pdo->prepare("UPDATE users SET password = ? WHERE user_id = ?");
-    $updateStmt->execute([$newHashedPassword, $userId]);
-
-    echo json_encode(['success' => true, 'message' => 'Password changed successfully.']);
-}
+?>
