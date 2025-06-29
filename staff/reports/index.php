@@ -538,6 +538,90 @@ switch ($reportType) {
             color: var(--dark-color);
         }
 
+        /* =============================================== */
+        /* =========== RESPONSIVE STYLES START =========== */
+        /* =============================================== */
+        /* Mobile specific styles */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+                padding-top: 70px; /* Space for a fixed navbar if it exists */
+            }
+
+            .report-header {
+                padding: 1.5rem 1rem;
+            }
+
+            .report-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .export-buttons {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .report-filters {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .filter-group, .apply-filter-btn {
+                width: 100%;
+            }
+
+            .stats-grid, .chart-grid {
+                grid-template-columns: 1fr; /* Force single column */
+            }
+
+            .chart-container {
+                padding: 1rem;
+            }
+            
+            /* === RESPONSIVE TABLE STYLES === */
+            .report-table {
+                overflow-x: hidden;
+                padding: 0;
+                background: transparent;
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .report-table table thead {
+                display: none;
+            }
+            .report-table table, .report-table tbody, .report-table tr, .report-table td {
+                display: block;
+                width: 100%;
+            }
+            .report-table tr {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                margin-bottom: 1rem;
+                padding: 0.5rem 1rem;
+            }
+            .report-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 0;
+                border-bottom: 1px solid #f0f0f0;
+                text-align: right;
+            }
+            .report-table tr td:last-child {
+                border-bottom: none;
+            }
+            .report-table td::before {
+                content: attr(data-label);
+                font-weight: 500;
+                text-align: left;
+                margin-right: 1rem;
+            }
+        }
+
         tr:hover {
             background: #f9fafb;
         }
@@ -562,41 +646,6 @@ switch ($reportType) {
             body.sidebar-is-open .sidebar { transform: translateX(0); box-shadow: 0 0 20px rgba(0,0,0,0.25); }
             body.sidebar-is-open .sidebar-overlay { opacity: 1; visibility: visible; }
             .main-content { padding-top: 85px; } /* Space for fixed navbar */
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                margin-left: 0;
-                padding: 1rem;
-            }
-
-            .report-title {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-
-            .report-filters {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .filter-group {
-                width: 100%;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .chart-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .report-tabs {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
         }
     </style>
 </head>
@@ -720,36 +769,36 @@ switch ($reportType) {
                     </div>
                 </div>
 
-                <!-- Quick Summary Table -->
+                <!-- MODIFICATION: Period Summary Table -->
                 <div class="report-table">
-                    <h3 class="table-title">Period Summary</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Metric</th>
-                                <th>Count</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Completed Appointments</td>
-                                <td><?php echo $reportData['appointments']['completed_appointments']; ?></td>
-                                <td><span style="color: #10b981;">✓ Good</span></td>
-                            </tr>
-                            <tr>
-                                <td>Pending Appointments</td>
-                                <td><?php echo $reportData['appointments']['pending_appointments']; ?></td>
-                                <td><span style="color: #f59e0b;">⚠ Review</span></td>
-                            </tr>
-                            <tr>
-                                <td>Medical Records Created</td>
-                                <td><?php echo $reportData['medical_records']; ?></td>
-                                <td><span style="color: #10b981;">✓ On track</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <h3 class="table-title">Period Summary</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Count</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Completed Appointments</td>
+                            <td><?php echo $reportData['appointments']['completed_appointments']; ?></td>
+                            <td><span style="color: #10b981;">✓ Good</span></td>
+                        </tr>
+                        <tr>
+                            <td>Pending Appointments</td>
+                            <td><?php echo $reportData['appointments']['pending_appointments']; ?></td>
+                            <td><span style="color: #f59e0b;">⚠ Review</span></td>
+                        </tr>
+                        <tr>
+                            <td>Medical Records Created</td>
+                            <td><?php echo $reportData['medical_records']; ?></td>
+                            <td><span style="color: #10b981;">✓ On track</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <?php elseif ($reportType === 'appointments'): ?>
                 <!-- Appointments Report -->
@@ -807,7 +856,7 @@ switch ($reportType) {
                     </div>
                 </div>
 
-                <!-- Most Frequent Patients -->
+                <!-- MODIFICATION: Most Frequent Patients Table -->
                 <div class="report-table">
                     <h3 class="table-title">Most Frequent Patients</h3>
                     <?php if (!empty($reportData['frequent_patients'])): ?>
@@ -823,19 +872,16 @@ switch ($reportType) {
                             <tbody>
                                 <?php foreach ($reportData['frequent_patients'] as $patient): ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($patient['pet_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($patient['species']); ?></td>
-                                        <td><?php echo htmlspecialchars($patient['owner_name']); ?></td>
-                                        <td><?php echo $patient['visit_count']; ?></td>
+                                        <td data-label="Pet Name"><?php echo htmlspecialchars($patient['pet_name']); ?></td>
+                                        <td data-label="Species"><?php echo htmlspecialchars($patient['species']); ?></td>
+                                        <td data-label="Owner"><?php echo htmlspecialchars($patient['owner_name']); ?></td>
+                                        <td data-label="Visits"><?php echo $patient['visit_count']; ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     <?php else: ?>
-                        <div class="no-data">
-                            <div class="no-data-icon">📊</div>
-                            <p>No patient data available for this period.</p>
-                        </div>
+                        <div class="no-data"> ... </div>
                     <?php endif; ?>
                 </div>
 
@@ -867,7 +913,7 @@ switch ($reportType) {
                     </div>
                 </div>
 
-                <!-- Common Diagnoses -->
+                <!-- MODIFICATION: Common Diagnoses Table -->
                 <div class="report-table">
                     <h3 class="table-title">Common Diagnoses</h3>
                     <?php if (!empty($reportData['common_diagnoses'])): ?>
@@ -886,10 +932,10 @@ switch ($reportType) {
                                     $percentage = $totalDiagnoses > 0 ? round(($diagnosis['count'] / $totalDiagnoses) * 100, 1) : 0;
                                 ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($diagnosis['diagnosis']); ?></td>
-                                        <td><?php echo $diagnosis['count']; ?></td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <td data-label="Diagnosis"><?php echo htmlspecialchars($diagnosis['diagnosis']); ?></td>
+                                        <td data-label="Occurrences"><?php echo $diagnosis['count']; ?></td>
+                                        <td data-label="Percentage">
+                                            <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
                                                 <div style="width: 100px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
                                                     <div style="width: <?php echo $percentage; ?>%; height: 100%; background: var(--primary-color);"></div>
                                                 </div>
@@ -901,10 +947,7 @@ switch ($reportType) {
                             </tbody>
                         </table>
                     <?php else: ?>
-                        <div class="no-data">
-                            <div class="no-data-icon">🏥</div>
-                            <p>No medical record data available for this period.</p>
-                        </div>
+                        <div class="no-data"> ... </div>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
