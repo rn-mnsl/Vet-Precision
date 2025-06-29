@@ -274,6 +274,19 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             body.sidebar-is-open .sidebar-overlay { opacity: 1; visibility: visible; }
             .main-content { padding-top: 85px; } /* Space for fixed navbar */
         }
+
+        .center-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: start; /* or center if you want vertical centering too */
+            padding: 2rem;
+            min-height: 100vh; /* optional: makes sure there's enough height */
+        }
+
+        .card.form-container {
+            max-width: 800px;  /* limit the form width */
+            width: 100%;
+        }
         
         /* --- 3. PAGE CONTENT STYLES (HEADER, CARD, BUTTONS) --- */
         .page-header { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
@@ -416,36 +429,55 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                 <?php if (!empty($errors)): ?>
                     <div class="alert alert-danger"><ul><?php foreach ($errors as $error): ?><li><?php echo htmlspecialchars($error); ?></li><?php endforeach; ?></ul></div>
                 <?php endif; ?>
-                <div class="card form-container">
-                    <form action="index.php?action=create" method="POST">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="pet_id">Pet <span>*</span></label>
-                                <select id="pet_id" name="pet_id" required>
-                                    <option value="">Select a pet</option>
-                                    <?php foreach ($pets as $pet): ?>
-                                        <option value="<?php echo htmlspecialchars($pet['pet_id']); ?>" <?php echo ($preselected_pet_id && $pet['pet_id'] == $preselected_pet_id) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($pet['name']); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="form-group"><label for="appointment_date">Select Date <span>*</span></label><input type="date" id="appointment_date" name="appointment_date" required min="<?php echo date('Y-m-d'); ?>"></div>
-                        </div>
-                        <div class="form-grid" style="margin-top: 1.5rem;">
-                             <div class="form-group">
-                                <label>Available Time Slots <span>*</span></label>
-                                <div class="time-slots-grid" id="time-slots-container">
-                                    Select a date to see times
+                <div class="center-wrapper">
+                    <div class="card form-container">
+                        <form action="index.php?action=create" method="POST">
+                            <div class="form-grid" style="display: flex; flex-direction: column; gap: 2rem;">
+        
+                                <!-- Row 1: Select Date and Pet -->
+                                <div style="display: flex; gap: 1.5rem;">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="appointment_date">Select Date<span>*</span></label>
+                                        <input type="date" id="appointment_date" name="appointment_date" placeholder="mm/dd/yyyy" required min="<?php echo date('Y-m-d'); ?>">
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="pet_id">Pet<span>*</span></label>
+                                        <select id="pet_id" name="pet_id" required>
+                                            <option value="">Select a pet</option>
+                                            <?php foreach ($pets as $pet): ?>
+                                                <option value="<?php echo htmlspecialchars($pet['pet_id']); ?>" <?php echo ($preselected_pet_id && $pet['pet_id'] == $preselected_pet_id) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($pet['name']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
                                 </div>
+
+                                <!-- Row 2: Available Time Slots (Full Width) -->
+                                <div class="form-group">
+                                    <label>Available Time Slots<span>*</span></label>
+                                    <div class="time-slots-grid" id="time-slots-container">
+                                        Select a date<br>to see times
+                                    </div>
+                                </div>
+
+                                <!-- Row 3: Reason and Notes -->
+                                <div style="display: flex; gap: 1.5rem;">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="reason">Reason for Visit<span>*</span></label>
+                                        <textarea id="reason" name="reason" required></textarea>
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="notes">Additional Notes</label>
+                                        <textarea id="notes" name="notes"></textarea>
+                                    </div>
+                                </div>
+
                             </div>
-                            <div>
-                                 <div class="form-group"><label for="reason">Reason for Visit <span>*</span></label><textarea id="reason" name="reason" placeholder="e.g., Annual vaccination, skin irritation..." required></textarea></div><br>
-                                <div class="form-group"><label for="notes">Additional Notes</label><textarea id="notes" name="notes" placeholder="Enter any additional information, like symptoms or concerns."></textarea></div>
-                            </div>
-                        </div>
-                        <div class="form-actions"><a href="index.php" class="btn btn-close">Cancel</a><button type="submit" name="create_appointment" class="btn btn-primary">Request Appointment</button></div>
-                    </form>
+
+                            <div class="form-actions"><a href="index.php" class="btn btn-close">Cancel</a><button type="submit" name="create_appointment" class="btn btn-primary">Request Appointment</button></div>
+                        </form>
+                    </div>
                 </div>
 
             <?php else: ?>
@@ -684,9 +716,9 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
                 // 3. Define all possible time slots for your clinic
                 // (Using a full day schedule for robustness)
                 const allPossibleSlots = [];
-                for (let h = 8; h <= 19; h++) { // 8 AM to 7 PM
+                for (let h = 9; h <= 16; h++) { // 9 AM to 4 PM
                     allPossibleSlots.push(`${String(h).padStart(2, '0')}:00`);
-                    if (h < 19) { // Don't add a :30 slot after the last hour
+                    if (h < 16) { // Don't add a :30 slot after the last hour
                         allPossibleSlots.push(`${String(h).padStart(2, '0')}:30`);
                     }
                 }
