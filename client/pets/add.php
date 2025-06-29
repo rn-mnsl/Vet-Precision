@@ -110,7 +110,7 @@ if (isPost()) {
             $petId = $pdo->lastInsertId();
             
             setFlash($formData['name'] . ' has been successfully added to your pets!', 'success');
-            redirect('/client/pets/view.php?id=' . $petId);
+            redirect('/client/pets/index.php');
             
         } catch (PDOException $e) {
             // Log the error for debugging, but show a generic message to the user
@@ -349,7 +349,8 @@ $commonSpecies = [
         }
 
         .progress-line {
-            width: 100px;
+            flex: 1; /* CHANGE: Replaces fixed width, allows the line to shrink and grow */
+            max-width: 100px; /* ADD: Prevents the line from becoming too wide on desktop */
             height: 2px;
             background: #e0e0e0;
             margin: 0 1rem;
@@ -612,6 +613,14 @@ $commonSpecies = [
         }
 
         @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 1100; position: fixed; top: 0; height: 100vh; margin-top: 0; }
+            .main-content { margin-left: 0; }
+            body.sidebar-is-open .sidebar { transform: translateX(0); box-shadow: 0 0 20px rgba(0,0,0,0.25); }
+            body.sidebar-is-open .sidebar-overlay { opacity: 1; visibility: visible; }
+            .main-content { padding-top: 85px; } /* Space for fixed navbar */
+        }
+
+        @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
@@ -658,6 +667,7 @@ $commonSpecies = [
     <div class="dashboard-layout">
         <!-- Include Sidebar -->
         <?php include '../../includes/sidebar-client.php'; ?>
+        <?php include '../../includes/navbar.php'; ?>
 
         <!-- Mobile Menu Toggle -->
         <button class="mobile-menu-toggle" aria-label="Toggle Navigation">
@@ -936,7 +946,7 @@ $commonSpecies = [
                     </div>
 
                     <div class="form-actions">
-                        <a href="/client/pets/index.php" class="btn btn-secondary">
+                        <a href="<?php echo SITE_URL; ?>/client/pets/index.php" class="btn btn-secondary">
                             <i class="fas fa-times-circle"></i> Cancel
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -1013,6 +1023,25 @@ $commonSpecies = [
             if (mobileMenuToggle && sidebar) {
                 mobileMenuToggle.addEventListener('click', () => {
                     sidebar.classList.toggle('active');
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.querySelector('.hamburger-menu');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const body = document.body;
+
+            if (hamburgerBtn && body) {
+                hamburgerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    body.classList.toggle('sidebar-is-open');
+                });
+            }
+            
+            if (overlay && body) {
+                overlay.addEventListener('click', function() {
+                    body.classList.remove('sidebar-is-open');
                 });
             }
         });

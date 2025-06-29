@@ -205,7 +205,7 @@ if (isPost()) {
             } else {
                 setFlash('No changes were detected for ' . sanitize($formData['name']) . '.', 'info');
             }
-            redirect('/client/pets/view.php?id=' . $formData['pet_id']);
+            redirect('/client/pets/index.php');
             
         } catch (PDOException $e) {
             // error_log("Failed to update pet: " . $e->getMessage()); 
@@ -737,6 +737,14 @@ $commonSpecies = [
         }
 
         @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 1100; position: fixed; top: 0; height: 100vh; margin-top: 0; }
+            .main-content { margin-left: 0; }
+            body.sidebar-is-open .sidebar { transform: translateX(0); box-shadow: 0 0 20px rgba(0,0,0,0.25); }
+            body.sidebar-is-open .sidebar-overlay { opacity: 1; visibility: visible; }
+            .main-content { padding-top: 85px; } /* Space for fixed navbar */
+        }
+
+        @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
@@ -1096,7 +1104,7 @@ $commonSpecies = [
                     </div>
 
                     <div class="form-actions">
-                        <a href="/client/pets/view.php?id=<?php echo $petId; ?>" class="btn btn-secondary">
+                        <a href="<?php echo SITE_URL; ?>/client/pets/index.php" class="btn btn-secondary">
                             <i class="fas fa-times-circle"></i> Cancel
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -1198,6 +1206,25 @@ $commonSpecies = [
                 }
             });
             
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.querySelector('.hamburger-menu');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const body = document.body;
+
+            if (hamburgerBtn && body) {
+                hamburgerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    body.classList.toggle('sidebar-is-open');
+                });
+            }
+            
+            if (overlay && body) {
+                overlay.addEventListener('click', function() {
+                    body.classList.remove('sidebar-is-open');
+                });
+            }
         });
     </script>
 </body>

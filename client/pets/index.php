@@ -77,6 +77,8 @@ function getPetEmoji($species) {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f5f5f5;
             color: #333;
+            /* NEW: Transition for smooth main content shifting */
+            transition: margin-left 0.3s ease-in-out;
         }
 
         /* Dashboard Layout */
@@ -93,7 +95,8 @@ function getPetEmoji($species) {
             position: fixed;
             height: 100vh;
             overflow-y: auto;
-            z-index: 100;
+            z-index: 1100; /* NEW: Higher z-index for mobile */
+            transition: transform 0.3s ease-in-out; /* NEW: Smooth slide transition */
         }
 
         .sidebar-header {
@@ -163,18 +166,16 @@ function getPetEmoji($species) {
             padding: 2rem;
             background-color: #f5f5f5;
             min-height: 100vh;
+            transition: margin-left 0.3s ease-in-out; /* NEW: Animate the margin shift */
         }
 
         /* Page Header */
         .page-header {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: white; padding: 2rem; border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08); margin-bottom: 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; /* NEW: Allow wrapping on small screens */
+            gap: 1rem; /* NEW: Add gap for wrapped items */
         }
 
         .page-header h1 {
@@ -299,12 +300,10 @@ function getPetEmoji($species) {
 
         /* Pet Card */
         .pet-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-            overflow: hidden;
-            transition: all 0.3s ease;
-            position: relative;
+            background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            overflow: hidden; transition: all 0.3s ease; position: relative;
+            /* NEW: Hide cards by default for JS pagination */
+            display: none;
         }
 
         .pet-card:hover {
@@ -338,19 +337,11 @@ function getPetEmoji($species) {
         }
 
         .pet-avatar {
-            width: 100px;
-            height: 100px;
-            background-color: white; /* Use background-color for fallback */
-            background-size: cover;    /* This is for the uploaded photo */
-            background-position: center; /* This is for the uploaded photo */
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 4.5rem; /* Increased size for a better look */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            line-height: 1; /* Ensures perfect vertical centering for emojis */
+            width: 100px; height: 100px; background-color: white;
+            background-size: cover; background-position: center;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1rem; font-size: 4.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            line-height: 1;
         }
 
         .pet-card-header h3 {
@@ -424,9 +415,10 @@ function getPetEmoji($species) {
 
         .pet-card-actions {
             padding: 1.5rem;
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
+    display: flex;
+    flex-wrap: wrap; /* Good practice: allows buttons to wrap on very small screens if needed */
+    gap: 0.75rem;     /* REFINED: Increased gap for better spacing */
+    justify-content: center;
         }
 
         /* Empty State */
@@ -486,6 +478,54 @@ function getPetEmoji($species) {
             border: 1px solid #ffeeba;
         }
 
+        /* --- NEW: PAGINATION STYLES --- */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        .pagination-list {
+            list-style: none;
+            display: flex;
+            gap: 0.5rem;
+            padding: 0;
+            margin: 0;
+        }
+
+        .page-item .page-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            min-width: 45px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            color: #666;
+            background-color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .page-item .page-link:hover {
+            border-color: #FF6B6B;
+            color: #FF6B6B;
+        }
+
+        .page-item.active .page-link {
+            background: #FF6B6B;
+            border-color: #FF6B6B;
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+        }
+
+        .page-item.disabled .page-link {
+            color: #ccc;
+            pointer-events: none;
+            background: #f5f5f5;
+        }
+
         /* Mobile Responsive */
         .mobile-menu-toggle {
             display: none;
@@ -509,7 +549,7 @@ function getPetEmoji($species) {
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1000;
+            z-index: 2000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -552,6 +592,7 @@ function getPetEmoji($species) {
             color: #999;
             cursor: pointer;
             line-height: 1;
+            z-index: 10;
         }
         .modal-loader {
             text-align: center;
@@ -583,9 +624,19 @@ function getPetEmoji($species) {
         .modal-pet-title p { color: #666; margin: 0; }
         .modal-body { padding: 0; }
         .modal-tabs {
-            display: flex;
-            background: #e9ecef;
-            padding: 0 2rem;
+            overflow-x: auto;       /* This enables horizontal scrolling */
+            white-space: nowrap;    /* This prevents the buttons from wrapping to the next line */
+            justify-content: flex-start; /* Align tabs to the left when scrolling */
+            padding: 0 1rem;
+            -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+        }
+        /* Bonus: Hide the scrollbar for a cleaner look */
+        .modal-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .modal-tabs {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
         }
         .tab-link {
             padding: 1rem 1.5rem;
@@ -616,28 +667,49 @@ function getPetEmoji($species) {
         .no-records { text-align: center; padding: 2rem; color: #666; }
 
         @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 1100; position: fixed; top: 0; height: 100vh; margin-top: 0; }
+            .main-content { margin-left: 0; }
+            body.sidebar-is-open .sidebar { transform: translateX(0); box-shadow: 0 0 20px rgba(0,0,0,0.25); }
+            body.sidebar-is-open .sidebar-overlay { opacity: 1; visibility: visible; }
+            .main-content { padding-top: 85px; } /* Space for fixed navbar */
+        }
+
+        @media (max-width: 768px) {
             .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
+                transform: translateX(-100%); /* Hide sidebar off-screen */
             }
 
-            .sidebar.active {
+            /* This class will be toggled by JS */
+            body.sidebar-is-open .sidebar {
                 transform: translateX(0);
+                box-shadow: 0 0 25px rgba(0,0,0,0.2);
+            }
+            
+            body.sidebar-is-open .sidebar-overlay {
+                display: block; /* Show overlay */
             }
 
             .main-content {
-                margin-left: 0;
+                margin-left: 0; /* Main content takes full width */
                 padding: 1rem;
+                padding-top: 6rem; /* NEW: Space for the fixed hamburger menu */
+            }
+
+            .mobile-menu-toggle {
+                display: flex; /* Show the hamburger menu */
+                align-items: center;
+                justify-content: center;
             }
 
             .page-header {
                 flex-direction: column;
-                align-items: start;
-                gap: 1rem;
+                align-items: flex-start;
+                padding: 1.5rem;
             }
 
             .filter-section {
                 flex-direction: column;
+                align-items: stretch;
             }
 
             .search-box {
@@ -645,11 +717,40 @@ function getPetEmoji($species) {
             }
 
             .pets-grid {
+                /* Let auto-fill handle it, but can force 1 column if needed */
                 grid-template-columns: 1fr;
             }
 
-            .pet-info-grid {
-                grid-template-columns: 1fr;
+            .modal-content {
+                width: 95%; /* Use a bit more of the screen width on mobile */
+                max-height: 95vh;
+            }
+
+            .modal-header {
+                flex-direction: column; /* Stack the avatar and title vertically */
+                text-align: center;     /* Center the text below the avatar */
+                padding: 1.5rem;        /* Slightly reduce padding */
+            }
+
+            .modal-pet-avatar {
+                width: 100px;           /* Make the avatar a bit smaller */
+                height: 100px;
+                margin-bottom: 0.5rem;  /* Add a little space below the avatar */
+            }
+
+            .modal-pet-title h2 {
+                font-size: 1.5rem;      /* Slightly smaller title for mobile */
+            }
+
+            .modal-tabs {
+                overflow-x: auto;       /* Allow tabs to be scrolled horizontally */
+                white-space: nowrap;    /* Prevent tabs from wrapping */
+                justify-content: flex-start; /* Align tabs to the start */
+                padding: 0 1rem;
+            }
+
+            .tab-content {
+                padding: 1.5rem;        /* Reduce padding inside tabs */
             }
         }
 
@@ -675,7 +776,7 @@ function getPetEmoji($species) {
         }
     </style>
 </head>
-<body>
+<body class="<?php if(!empty($pets)) echo 'has-pets'; ?>">
     <div class="dashboard-layout">
         <!-- Include Sidebar -->
         <?php include '../../includes/sidebar-client.php'; ?>
@@ -728,12 +829,12 @@ function getPetEmoji($species) {
                             class="search-input" 
                             placeholder="Search pets by name..."
                             id="searchPets"
-                            onkeyup="filterPets()"
+                            onkeyup="applyFilters()"
                         >
                     </div>
                     <div class="filter-group">
                         <label for="filterSpecies">Species:</label>
-                        <select class="filter-select" id="filterSpecies" onchange="filterPets()">
+                        <select class="filter-select" id="filterSpecies" onchange="applyFilters()">
                             <option value="">All Species</option>
                             <option value="dog">Dogs</option>
                             <option value="cat">Cats</option>
@@ -743,7 +844,7 @@ function getPetEmoji($species) {
                     </div>
                     <div class="filter-group">
                         <label for="filterStatus">Status:</label>
-                        <select class="filter-select" id="filterStatus" onchange="filterPets()">
+                        <select class="filter-select" id="filterStatus" onchange="applyFilters()">
                             <option value="">All</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
@@ -900,8 +1001,18 @@ function getPetEmoji($species) {
                         </div>
                     <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
 
+
+                <!-- NEW: This is where the pagination controls will be rendered by JavaScript -->
+                <div id="noResults" style="display: none; text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px;">
+                    <span style="font-size: 4rem; opacity: 0.3; margin-bottom: 1rem; display: block;">🔍</span>
+                    <h3>No Pets Found</h3>
+                    <p>Your search or filter criteria did not match any of your pets.</p>
+                </div>
+                
+                <nav id="pagination-container" class="pagination-container" aria-label="Pet navigation"></nav>
+
+            <?php endif; ?>
             <!-- Info Section -->
             <?php if (!empty($pets)): ?>
                 <div class="alert alert-info">
@@ -932,70 +1043,129 @@ function getPetEmoji($species) {
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- NEW: Mobile Menu Logic ---
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const body = document.body;
+
+            if (menuToggle) {
+                menuToggle.addEventListener('click', () => {
+                    body.classList.toggle('sidebar-is-open');
+                });
+            }
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', () => {
+                    body.classList.remove('sidebar-is-open');
+                });
+            }
+
+            // --- NEW: Client-Side Pagination & Filtering Logic ---
+            if (body.classList.contains('has-pets')) {
+                applyFilters(); // Initial setup of pagination and display
+            }
+        });
+
+        const PETS_PER_PAGE = 6;
+        let currentPage = 1;
+
+
         // Filter pets function
-        function filterPets() {
+        function applyFilters() {
             const searchTerm = document.getElementById('searchPets').value.toLowerCase();
             const speciesFilter = document.getElementById('filterSpecies').value.toLowerCase();
             const statusFilter = document.getElementById('filterStatus').value;
-            const petCards = document.querySelectorAll('.pet-card');
+            const allPetCards = document.querySelectorAll('#petsGrid .pet-card');
             
-            petCards.forEach(card => {
-                const name = card.getAttribute('data-name');
-                const species = card.getAttribute('data-species');
-                const status = card.getAttribute('data-status');
+            let visibleCards = [];
+            
+            allPetCards.forEach(card => {
+                const name = card.dataset.name;
+                const species = card.dataset.species;
+                const status = card.dataset.status;
                 
-                let showCard = true;
-                
-                // Search filter
+                let isVisible = true;
+
                 if (searchTerm && !name.includes(searchTerm)) {
-                    showCard = false;
+                    isVisible = false;
                 }
                 
-                // Species filter
                 if (speciesFilter) {
-                    if (speciesFilter === 'other') {
-                        if (species === 'dog' || species === 'cat' || species === 'bird') {
-                            showCard = false;
-                        }
-                    } else if (!species.includes(speciesFilter)) {
-                        showCard = false;
+                    if (speciesFilter === 'other' && (species.includes('dog') || species.includes('cat') || species.includes('bird'))) {
+                        isVisible = false;
+                    } else if (speciesFilter !== 'other' && !species.includes(speciesFilter)) {
+                        isVisible = false;
                     }
                 }
                 
-                // Status filter
                 if (statusFilter && status !== statusFilter) {
-                    showCard = false;
+                    isVisible = false;
                 }
                 
-                card.style.display = showCard ? 'block' : 'none';
+                // Instead of showing/hiding here, we add it to an array
+                if (isVisible) {
+                    visibleCards.push(card);
+                }
+                // Hide all cards initially before pagination logic takes over
+                card.style.display = 'none';
             });
-            
-            // Check if no results
-            const visibleCards = document.querySelectorAll('.pet-card[style="display: block;"], .pet-card:not([style])');
-            const petsGrid = document.getElementById('petsGrid');
-            
-            if (visibleCards.length === 0 && petsGrid) {
-                // Show no results message
-                const existingNoResults = document.getElementById('noResults');
-                if (!existingNoResults) {
-                    const noResultsDiv = document.createElement('div');
-                    noResultsDiv.id = 'noResults';
-                    noResultsDiv.className = 'empty-state';
-                    noResultsDiv.innerHTML = `
-                        <span class="empty-state-icon">🔍</span>
-                        <h3>No pets found</h3>
-                        <p>Try adjusting your search or filters</p>
-                    `;
-                    petsGrid.parentNode.insertBefore(noResultsDiv, petsGrid.nextSibling);
-                }
-                petsGrid.style.display = 'none';
+
+            updateNoResultsMessage(visibleCards.length);
+            setupPagination(visibleCards);
+            showPage(1, visibleCards);
+        }
+        function updateNoResultsMessage(visibleCount) {
+            const noResultsDiv = document.getElementById('noResults');
+            const paginationContainer = document.getElementById('pagination-container');
+            if (visibleCount === 0) {
+                noResultsDiv.style.display = 'block';
+                paginationContainer.style.display = 'none';
             } else {
-                // Remove no results message if it exists
-                const noResults = document.getElementById('noResults');
-                if (noResults) {
-                    noResults.remove();
-                }
-                petsGrid.style.display = 'grid';
+                noResultsDiv.style.display = 'none';
+                paginationContainer.style.display = 'flex';
+            }
+        }
+        function setupPagination(visibleCards) {
+            const paginationContainer = document.getElementById('pagination-container');
+            paginationContainer.innerHTML = '';
+            const pageCount = Math.ceil(visibleCards.length / PETS_PER_PAGE);
+
+            if (pageCount <= 1) return;
+
+            const ul = document.createElement('ul');
+            ul.className = 'pagination-list';
+
+            for (let i = 1; i <= pageCount; i++) {
+                const li = document.createElement('li');
+                li.className = 'page-item';
+                li.innerHTML = `<a href="#" class="page-link" data-page="${i}">${i}</a>`;
+                li.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentPage = i;
+                    showPage(currentPage, visibleCards);
+                });
+                ul.appendChild(li);
+            }
+            paginationContainer.appendChild(ul);
+        }
+
+        function showPage(page, visibleCards) {
+            currentPage = page;
+            // First, hide all cards that were determined to be visible by the filter
+            visibleCards.forEach(card => card.style.display = 'none');
+            
+            const start = (page - 1) * PETS_PER_PAGE;
+            const end = start + PETS_PER_PAGE;
+            
+            const cardsToShow = visibleCards.slice(start, end);
+            cardsToShow.forEach(card => card.style.display = 'block');
+            
+            // Update active state on pagination links
+            document.querySelectorAll('.page-item').forEach(item => item.classList.remove('active'));
+            const activeLink = document.querySelector(`.page-link[data-page="${page}"]`);
+            if (activeLink) {
+                activeLink.parentElement.classList.add('active');
             }
         }
 
@@ -1132,6 +1302,25 @@ function getPetEmoji($species) {
 
             return '🐾'; // Fallback
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerBtn = document.querySelector('.hamburger-menu');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const body = document.body;
+
+            if (hamburgerBtn && body) {
+                hamburgerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    body.classList.toggle('sidebar-is-open');
+                });
+            }
+            
+            if (overlay && body) {
+                overlay.addEventListener('click', function() {
+                    body.classList.remove('sidebar-is-open');
+                });
+            }
+        });
     </script>
 </body>
 </html>
