@@ -409,6 +409,167 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             transform: translateY(-1px);
         }
 
+
+        /* --- NEW: Enhanced & Styled Pagination Controls --- */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 2.5rem 0 1rem; /* Added more space above */
+            padding: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .pagination-controls button {
+            /* Base Style */
+            background-color: #ffffff;
+            border: 2px solid #e9ecef;
+            color: #5a6a78; /* Softer text color */
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-width: 42px; /* Ensures even single digits look good */
+            height: 42px;    /* Makes them perfectly square */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px; /* A more modern, rounded look */
+            cursor: pointer;
+            transition: all 0.25s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle lift */
+        }
+
+        /* Hover State (for non-active buttons) */
+        .pagination-controls button:not(.active):not(:disabled):hover {
+            border-color: #ffb8b8; /* A lighter shade of the primary red */
+            color: #ff6b6b;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Active Page Style */
+        .pagination-controls button.active {
+            background: linear-gradient(135deg, #ff6b6b, #ff5252);
+            border-color: #ff5252;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.45);
+            cursor: default; /* No need to click the active page */
+        }
+
+        /* Disabled State (for Prev/Next) */
+        .pagination-controls button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #f8f9fa; /* A slightly off-white to show it's inactive */
+            box-shadow: none; /* No lift for disabled buttons */
+        }
+
+        /* --- NEW: Modal Styles for Add/Edit Pet Forms --- */
+        .modal {
+            position: fixed;
+            z-index: 1050;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal.is-open {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-content {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh; /* Crucial for small screens */
+            overflow-y: auto; /* Adds scrollbar inside modal if needed */
+            position: relative;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal.is-open .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: #95a5a6;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .modal-close-btn:hover {
+            color: #2c3e50;
+        }
+
+        /* Form inside the modal */
+        #petForm {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        #petForm input, #petForm textarea, #petForm select {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        #petForm input:focus, #petForm textarea:focus, #petForm select:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+        #petForm .full-width {
+            grid-column: 1 / -1; /* Makes an element span both columns */
+        }
+        #petForm textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        .form-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .form-actions button {
+            flex: 1;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .form-actions button[type="submit"] { background: linear-gradient(135deg, #ff6b6b, #ff5252); color: white; }
+        .form-actions button[type="button"] { background: #6c757d; color: white; }
+
+
         /* Form Styles */
         #inlinePetForm {
             background: white;
@@ -502,42 +663,27 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
 
 
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
+            .main-content { padding: 1rem; padding-top: 70px; /* Space for fixed navbar */ }
+            .page-header { flex-direction: column; gap: 1.5rem; text-align: center; padding: 1.5rem; }
+            .page-title-section h1 { font-size: 2rem; }
+            .page-title-section p { font-size: 1rem; }
+            .add-pet-btn { padding: 0.8rem 1.5rem; font-size: 0.9rem; }
             
-            .main-content {
-                margin-left: 0;
-                padding: 1rem;
+            .search-filters { flex-direction: column; gap: 1.5rem; align-items: stretch; }
+            .filter-group { justify-content: space-between; }
+            
+            .pets-grid { grid-template-columns: 1fr; }
+            
+            .pet-actions { flex-direction: column; }
+            .btn { flex: auto; }
+            
+            /* --- THIS IS THE KEY FIX FOR THE FORM'S HORIZONTAL SCROLLBAR --- */
+            #petForm {
+                grid-template-columns: 1fr; /* Stack form fields vertically */
             }
-
-            .page-header {
-                flex-direction: column;
-                gap: 1.5rem;
-                text-align: center;
-            }
-
-            .search-filters {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .pets-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .pet-actions {
-                flex-direction: column;
-            }
-
-            .btn {
-                flex: none;
-            }
-
-            #inlinePetForm form {
-                grid-template-columns: 1fr;
-            }
+            .modal-content { padding: 1.5rem; }
+            .modal-title { font-size: 1.5rem; }
+            .form-actions { flex-direction: column; }
         }
     </style>
 </head>
@@ -564,11 +710,11 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                 <div class="search-filters">
                     <div class="search-box">
                         <i class="search-icon fas fa-search"></i>
-                        <input type="text" placeholder="Search pets by name, breed, or owner..." id="searchInput" onkeyup="renderPets()">
+                        <input type="text" placeholder="Search pets by name, breed, or owner..." id="searchInput" onkeyup="handleFilterChange()">
                     </div>
                     <div class="filter-group">
                         <span class="filter-label">Species:</span>
-                        <select class="filter-select" id="speciesFilter" onchange="renderPets()">
+                        <select class="filter-select" id="speciesFilter" onchange="handleFilterChange()">
                             <option value="">All Species</option>
                             <option value="dog">Dog</option>
                             <option value="cat">Cat</option>
@@ -578,7 +724,7 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                     </div>
                     <div class="filter-group">
                         <span class="filter-label">Status:</span>
-                        <select class="filter-select" id="statusFilter" onchange="renderPets()">
+                        <select class="filter-select" id="statusFilter" onchange="handleFilterChange()">
                             <option value="">All Status</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
@@ -594,36 +740,57 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                 <div class="pets-grid" id="petsGrid">
                     <!-- Pet cards will be populated by JavaScript -->
                 </div>
+
+                <!-- NEW: Container for Pagination Controls -->
+                <div id="paginationControls" class="pagination-controls"></div>
             </div>
         </main>
     </div>
 
+    <!-- NEW: Modal for Add/Edit Pet -->
+    <div class="modal" id="petModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Add New Pet</h2>
+                <button class="modal-close-btn" onclick="closePetForm()">×</button>
+            </div>
+            <div id="modalBody">
+                <!-- Pet form will be injected here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <!-- REMINDER: This is the fully modified JavaScript section. -->
-    <script>
-        // REMINDER: This is the list of owners fetched by PHP.
+        <script>
         const allOwners = <?php echo json_encode($owners); ?>;
         
-        // REMINDER: The 'pets' array is now empty. It will be filled by our AJAX call.
         let pets = [];
-        let currentEditingPet = null;
+        let filteredPets = [];
+        
+        // --- Pagination State ---
+        let currentPage = 1;
+        const petsPerPage = 6;
 
         // --- Core AJAX Functions ---
-
         async function fetchAllPets() {
             try {
                 const response = await fetch('ajax/pets_handler.php?action=fetch_all');
+                if (!response.ok) { // Check for HTTP errors like 404 or 500
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const result = await response.json();
 
                 if (result.success) {
-                    pets = result.data; // Update the global pets array
-                    renderPets(); // Re-render the UI with the new data
+                    pets = result.data;
+                    // FIX #1: This now calls the correct central function to render everything.
+                    handleFilterChange(); 
                 } else {
                     console.error('Failed to fetch pets:', result.error);
                     document.getElementById('petsGrid').innerHTML = '<p>Error loading pets. Please try again.</p>';
                 }
             } catch (error) {
-                console.error('Network error:', error);
-                document.getElementById('petsGrid').innerHTML = '<p>Could not connect to the server.</p>';
+                console.error('Network or JSON parsing error:', error);
+                document.getElementById('petsGrid').innerHTML = '<p>Could not connect to the server or process the data.</p>';
             }
         }
 
@@ -631,23 +798,17 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
-            const petId = formData.get('pet_id');
-
-            // Determine if we are adding or updating
-            const action = petId ? 'update' : 'add';
+            const action = formData.get('pet_id') ? 'update' : 'add';
             formData.append('action', action);
 
             try {
-                const response = await fetch('ajax/pets_handler.php', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('ajax/pets_handler.php', { method: 'POST', body: formData });
                 const result = await response.json();
-
                 if (result.success) {
-                    alert(result.message); // Show success message
-                    cancelForm(); // Hide the form
-                    fetchAllPets(); // Refresh the list from the database
+                    alert(result.message);
+                    // FIX #2: Replaced the old cancelForm() with the new closePetForm().
+                    closePetForm(); 
+                    fetchAllPets();
                 } else {
                     alert('Error: ' + result.error);
                 }
@@ -658,24 +819,18 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
         }
         
         async function deletePet(id) {
-            if (!confirm('Are you sure you want to delete this pet? This action cannot be undone.')) {
-                return;
-            }
+            if (!confirm('Are you sure you want to delete this pet? This action cannot be undone.')) return;
             
             const formData = new FormData();
             formData.append('action', 'delete');
             formData.append('pet_id', id);
 
             try {
-                const response = await fetch('ajax/pets_handler.php', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('ajax/pets_handler.php', { method: 'POST', body: formData });
                 const result = await response.json();
-
                 if (result.success) {
                     alert(result.message);
-                    fetchAllPets(); // Refresh the list
+                    fetchAllPets();
                 } else {
                     alert('Error: ' + result.error);
                 }
@@ -685,156 +840,148 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
             }
         }
 
-        // --- UI Rendering and Helper Functions (Modified to use real data) ---
-
-        // REMINDER: No changes needed to calculateAge or getPetEmoji
-        function calculateAge(dateOfBirth) {
-            const today = new Date();
-            const birthDate = new Date(dateOfBirth);
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
-            
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-            }
-            
-            return age;
+        // --- Helper Functions ---
+        function calculateAge(dob) {
+            if (!dob) return 'N/A';
+            const diff = Date.now() - new Date(dob).getTime();
+            const ageDate = new Date(diff);
+            return Math.abs(ageDate.getUTCFullYear() - 1970);
         }
         function getPetEmoji(species) {
             switch(species.toLowerCase()) {
-                case 'dog': return '🐕';
-                case 'cat': return '🐱';
-                case 'bird': return '🐦';
-                case 'rabbit': return '🐇';
-                default: return '🐾';
+                case 'dog': return '🐕'; case 'cat': return '🐱'; case 'bird': return '🐦'; case 'rabbit': return '🐇'; default: return '🐾';
             }
         }
 
-        function renderPets() {
-            const grid = document.getElementById('petsGrid');
-            grid.innerHTML = '';
+        // --- Central Filter & Render Logic ---
+        function handleFilterChange() {
+            currentPage = 1; // Reset to first page on any filter change
+            applyFiltersAndRender();
+        }
+
+        function applyFiltersAndRender() {
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             const speciesFilter = document.getElementById('speciesFilter').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
 
-            const filteredPets = pets.filter(pet => {
+            filteredPets = pets.filter(pet => {
                 const isActive = pet.is_active == 1;
                 const searchMatch = pet.name.toLowerCase().includes(searchQuery) ||
                                     pet.breed.toLowerCase().includes(searchQuery) ||
                                     (pet.owner_name && pet.owner_name.toLowerCase().includes(searchQuery));
-
-                const speciesMatch = speciesFilter === '' || pet.species.toLowerCase() === speciesFilter;
+                const speciesMatch = !speciesFilter || pet.species.toLowerCase() === speciesFilter;
                 const statusMatch = statusFilter === '' || (statusFilter === 'active' && isActive) || (statusFilter === 'inactive' && !isActive);
-                
                 return searchMatch && speciesMatch && statusMatch;
             });
+            
+            renderPage();
+            renderPagination();
+        }
+        
+        // Renders only the current page's pets
+        function renderPage() {
+            const grid = document.getElementById('petsGrid');
+            grid.innerHTML = '';
 
             if (filteredPets.length === 0) {
-                grid.innerHTML = '<p>No pets found matching your criteria.</p>';
+                grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">No pets found matching your criteria.</p>';
                 return;
             }
             
-            filteredPets.forEach(pet => {
-                const age = calculateAge(pet.date_of_birth);
+            const startIndex = (currentPage - 1) * petsPerPage;
+            const endIndex = startIndex + petsPerPage;
+            const petsOnPage = filteredPets.slice(startIndex, endIndex);
 
-                // --- START: NEW AVATAR LOGIC ---
-                let avatarHtml = '';
-                
-                // This simple 'if' works because the PHP handler now sends 'null' for missing photos.
-                if (pet.photo_url) {
-                    // A valid photo exists. Use it as a background image.
-                    // The path from the DB is relative, but we need it relative to the main HTML page.
-                    // e.g., ../../uploads/pets/image.jpg
-                    const imagePath = pet.photo_url
-                    console.log(imagePath);
-                    avatarHtml = `<div class="pet-avatar" style="background-image: url('${imagePath}'); background-size: cover; background-position: center;"></div>`;
-                } else {
-                    // No valid photo. Use the emoji as the content.
-                    const emoji = getPetEmoji(pet.species);
-                    avatarHtml = `<div class="pet-avatar">${emoji}</div>`;
-                }
-                // --- END: NEW AVATAR LOGIC ---
+            petsOnPage.forEach(pet => {
+                const age = calculateAge(pet.date_of_birth);
+                const emoji = getPetEmoji(pet.species);
+                const avatarHtml = pet.photo_url ?
+                    `<div class="pet-avatar" style="background-image: url('${pet.photo_url}'); background-size: cover; background-position: center;"></div>` :
+                    `<div class="pet-avatar">${emoji}</div>`;
 
                 const card = document.createElement('div');
                 card.className = 'pet-card';
-                // We use the `avatarHtml` variable here
                 card.innerHTML = `
                     <div class="pet-header">
-                        ${avatarHtml} 
+                        ${avatarHtml}
                         <div class="pet-name">${pet.name}</div>
                         <div class="pet-breed">${pet.breed}</div>
                     </div>
                     <div class="pet-details">
                         <div class="pet-info">
-                            <div class="info-item">
-                                <div class="info-label">Owner</div>
-                                <div class="info-value">${pet.owner_name || 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Age</div>
-                                <div class="info-value">${age} years</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Weight</div>
-                                <div class="info-value">${pet.weight ? pet.weight + ' kg' : 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Gender</div>
-                                <div class="info-value">${pet.gender}</div>
-                            </div>
+                            <div class="info-item"><div class="info-label">Owner</div><div class="info-value">${pet.owner_name || 'N/A'}</div></div>
+                            <div class="info-item"><div class="info-label">Age</div><div class="info-value">${age} years</div></div>
+                            <div class="info-item"><div class="info-label">Weight</div><div class="info-value">${pet.weight ? pet.weight + ' kg' : 'N/A'}</div></div>
+                            <div class="info-item"><div class="info-label">Gender</div><div class="info-value">${pet.gender}</div></div>
                         </div>
                         <div class="pet-actions">
                             <a href="../appointments/index.php?action=create&owner_id=${pet.owner_id}&pet_id=${pet.pet_id}" class="btn btn-primary">Book Appointment</a>
                             <button class="btn btn-outline" onclick="editPet(${pet.pet_id})">Edit Info</button>
                             <button class="btn btn-danger" onclick="deletePet(${pet.pet_id})">Delete</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 grid.appendChild(card);
             });
         }
+        
+        // Renders Pagination Controls
+        function renderPagination() {
+            const controlsContainer = document.getElementById('paginationControls');
+            controlsContainer.innerHTML = '';
+            const totalPages = Math.ceil(filteredPets.length / petsPerPage);
+
+            if (totalPages <= 1) return;
+
+            let buttonsHtml = '';
+            buttonsHtml += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>« Prev</button>`;
+            for (let i = 1; i <= totalPages; i++) {
+                buttonsHtml += `<button onclick="changePage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+            }
+            buttonsHtml += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next »</button>`;
+            controlsContainer.innerHTML = buttonsHtml;
+        }
+        
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(filteredPets.length / petsPerPage)) return;
+            currentPage = page;
+            renderPage();
+            renderPagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- Modal Control Functions ---
+        const petModal = document.getElementById('petModal');
+        
+        // FIX #3: Removed the duplicate, old openPetForm function. This is the only one now.
+        function openPetForm(pet = null) {
+            document.getElementById('modalTitle').innerText = pet ? `Edit ${pet.name}` : 'Add New Pet';
+            document.getElementById('modalBody').innerHTML = generatePetForm(pet);
+            petModal.classList.add('is-open');
+        }
+
+        function closePetForm() {
+            petModal.classList.remove('is-open');
+        }
 
         function editPet(id) {
-            // REMINDER: Find pet from the global array fetched from DB
             const pet = pets.find(p => p.pet_id === id);
-            if (pet) {
-                currentEditingPet = pet;
-                openPetForm(pet);
-            }
+            if (pet) openPetForm(pet);
         }
 
-        function openPetForm(pet = null) {
-            const formContainer = document.getElementById('inlinePetForm');
-            const mainContainer = document.getElementById('mainContainer');
-            
-            // Hide the pet cards and search filters
-            mainContainer.classList.add('form-active');
-            
-            formContainer.style.display = 'block';
-            formContainer.innerHTML = generatePetForm(pet);
-            formContainer.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // REMINDER: This function is now dynamic and includes the owner dropdown.
+        // FIX #4: Removed the duplicate generatePetForm function. This is the only one now.
         function generatePetForm(pet) {
-            let ownerOptions = allOwners.map(owner => 
-                `<option value="${owner.owner_id}" ${pet && pet.owner_id == owner.owner_id ? 'selected' : ''}>
-                    ${owner.full_name}
-                </option>`
+            const ownerOptions = allOwners.map(owner => 
+                `<option value="${owner.owner_id}" ${pet && pet.owner_id == owner.owner_id ? 'selected' : ''}>${owner.full_name}</option>`
             ).join('');
-
+            
             return `
-                <h2>${pet ? 'Edit ' + pet.name : 'Add New Pet'}</h2>
-                <form onsubmit="savePet(event)">
+                <form id="petForm" onsubmit="savePet(event)">
                     <input type="hidden" name="pet_id" value="${pet ? pet.pet_id : ''}">
-                    
                     <input type="text" name="name" placeholder="Pet Name" value="${pet ? pet.name : ''}" required>
-                    
                     <select name="owner_id" required>
                         <option value="">Select Owner</option>
                         ${ownerOptions}
                     </select>
-
                     <select name="species" required>
                         <option value="">Select Species</option>
                         <option value="Dog" ${pet && pet.species === 'Dog' ? 'selected' : ''}>Dog</option>
@@ -843,41 +990,33 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                         <option value="Rabbit" ${pet && pet.species === 'Rabbit' ? 'selected' : ''}>Rabbit</option>
                         <option value="Other" ${pet && pet.species === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-
                     <input type="text" name="breed" placeholder="Breed" value="${pet ? pet.breed : ''}" required>
                     <input type="date" name="date_of_birth" value="${pet ? pet.date_of_birth : ''}" required>
-                    
                     <select name="gender" required>
                         <option value="">Select Gender</option>
                         <option value="Male" ${pet && pet.gender === 'Male' ? 'selected' : ''}>Male</option>
                         <option value="Female" ${pet && pet.gender === 'Female' ? 'selected' : ''}>Female</option>
                     </select>
-
-                    <input type="text" name="microchip_id" placeholder="Microchip Number" value="${pet ? pet.microchip_id : ''}">
+                    <input type="text" name="microchip_id" placeholder="Microchip ID (optional)" value="${pet ? pet.microchip_id : ''}">
                     <input type="text" name="color" placeholder="Color" value="${pet ? pet.color : ''}">
-                    <input type="number" step="0.01" name="weight" placeholder="Weight (kg)" value="${pet ? pet.weight : ''}">
-                    
-                    <textarea name="notes" placeholder="Notes (e.g., allergies, conditions)">${pet ? pet.notes : ''}</textarea>
-                    
-                    <button type="submit">${pet ? 'Update Pet' : 'Add Pet'}</button>
-                    <button type="button" onclick="cancelForm()">Cancel</button>
+                    <input type="number" step="0.01" name="weight" placeholder="Weight in kg (optional)" value="${pet ? pet.weight : ''}">
+                    <textarea name="notes" placeholder="Medical Notes (e.g., allergies, conditions)" class="full-width">${pet && pet.notes ? pet.notes : ''}</textarea>
+                    <div class="form-actions">
+                        <button type="submit">${pet ? 'Update Pet' : 'Save New Pet'}</button>
+                        <button type="button" onclick="closePetForm()">Cancel</button>
+                    </div>
                 </form>
             `;
         }
         
-        function cancelForm() {
-            const formContainer = document.getElementById('inlinePetForm');
-            const mainContainer = document.getElementById('mainContainer');
-            
-            // Show the pet cards and search filters again
-            mainContainer.classList.remove('form-active');
-            
-            formContainer.style.display = 'none';
-            currentEditingPet = null;
-        }
-
-        // REMINDER: This is the starting point. It fetches data from the server instead of just rendering.
+        // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', fetchAllPets);
+        
+        petModal.addEventListener('click', (event) => {
+            if (event.target === petModal) {
+                closePetForm();
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', function() {
             const hamburgerBtn = document.querySelector('.hamburger-menu');
@@ -890,11 +1029,8 @@ $pageTitle = 'Pets Management - ' . SITE_NAME;
                     body.classList.toggle('sidebar-is-open');
                 });
             }
-            
             if (overlay && body) {
-                overlay.addEventListener('click', function() {
-                    body.classList.remove('sidebar-is-open');
-                });
+                overlay.addEventListener('click', function() { body.classList.remove('sidebar-is-open'); });
             }
         });
     </script>

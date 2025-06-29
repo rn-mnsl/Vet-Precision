@@ -259,6 +259,10 @@ $pageTitle = 'Patients - ' . SITE_NAME;
         .modal-content h2 {
             margin-top: 0;
         }
+        /* NEW: Form layout classes */
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-group { flex: 1; }
+        .form-group label, .modal-content > label { display: block; margin-bottom: 5px; font-weight: 500; }
         .modal-content label {
             display: block;
             margin-top: 15px;
@@ -328,6 +332,84 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             .main-content { padding-top: 85px; } /* Space for fixed navbar */
         }
 
+        /* For Mobile Phones */
+        @media (max-width: 768px) {
+            .main-content { padding: 15px; }
+            .main-content .header h1 { font-size: 24px; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .search-box { max-width: none; }
+            .action-buttons .btn { width: 100%; }
+            .pagination { flex-direction: column; align-items: center; border-top: 1px solid #ddd; }
+            .form-row { flex-direction: column; gap: 0; margin-bottom: 0; }
+            .form-row .form-group { margin-bottom: 15px; }
+
+            /* =============================== */
+            /* === NEW RESPONSIVE TABLE STYLES === */
+            /* =============================== */
+
+            /* Remove the scroll container behavior */
+            .table-container {
+                overflow-x: hidden;
+                background: transparent;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            /* Hide the table header row */
+            #patientsTable thead {
+                display: none;
+            }
+
+            /* Make table elements block-level */
+            #patientsTable, #patientsTable tbody, #patientsTable tr, #patientsTable td {
+                display: block;
+                width: 100%;
+            }
+
+            /* Style each row as a card */
+            #patientsTable tr {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                margin-bottom: 1rem;
+                padding: 0.5rem 1rem;
+                border-bottom: none; /* Remove original border */
+            }
+
+            /* Style each cell */
+            #patientsTable td {
+                display: flex; /* Key for alignment */
+                justify-content: space-between; /* Pushes label and value apart */
+                align-items: center;
+                padding: 0.75rem 0;
+                border-bottom: 1px solid #f0f0f0;
+                text-align: right; /* Aligns cell value to the right */
+                white-space: normal; /* Allows long text to wrap */
+            }
+
+            #patientsTable tr td:last-child {
+                border-bottom: none; /* No border for the last cell in a card */
+            }
+
+            /* Use the data-label attribute to create a label */
+            #patientsTable td::before {
+                content: attr(data-label); /* The magic! */
+                font-weight: 500;
+                text-align: left;
+                margin-right: 1rem;
+                color: #333;
+            }
+
+            /* Special styling for the action links container */
+            #patientsTable td.action-links {
+                justify-content: flex-end; /* Align links to the right */
+                padding-top: 1rem;
+            }
+            #patientsTable td.action-links::before {
+                display: none; /* We don't need a label for "Actions" */
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -395,37 +477,47 @@ $pageTitle = 'Patients - ' . SITE_NAME;
         <div class="modal-content">
             <h2 id="modalTitle">Add New Client</h2>
             <form id="clientForm" novalidate>
-                <!-- Hidden input to store user_id during edits -->
                 <input type="hidden" name="user_id" id="user_id">
 
-                <div style="display: flex; gap: 15px;">
-                    <div style="flex: 1;">
+                <!-- MODIFIED: Using classes instead of inline style for responsiveness -->
+                <div class="form-row">
+                    <div class="form-group">
                         <label for="first_name">First Name*</label>
                         <input type="text" id="first_name" name="first_name" placeholder="Enter first name" required>
                     </div>
-                    <div style="flex: 1;">
+                    <div class="form-group">
                         <label for="last_name">Last Name*</label>
                         <input type="text" id="last_name" name="last_name" placeholder="Enter last name" required>
                     </div>
                 </div>
 
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="Enter email">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter email">
+                </div>
                 
-                <label for="phone">Phone</label>
-                <input type="text" id="phone" name="phone" placeholder="Enter phone number">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="phone">Phone</label>
+                    <input type="text" id="phone" name="phone" placeholder="Enter phone number">
+                </div>
 
-                <label for="address">Address</label>
-                <input type="text" id="address" name="address" placeholder="Enter address">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="address">Address</label>
+                    <input type="text" id="address" name="address" placeholder="Enter address">
+                </div>
 
-                <label for="city">City</label>
-                <input type="text" id="city" name="city" placeholder="Enter city">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="city">City</label>
+                    <input type="text" id="city" name="city" placeholder="Enter city">
+                </div>
                 
-                <label for="is_active">Status</label>
-                <select id="is_active" name="is_active">
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </select>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="is_active">Status</label>
+                    <select id="is_active" name="is_active">
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
                 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
@@ -434,6 +526,7 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             </form>
         </div>
     </div>
+
 
    <script>
         // --- GLOBAL STATE & CONFIG ---
@@ -486,25 +579,25 @@ $pageTitle = 'Patients - ' . SITE_NAME;
 
         function renderTable(patients) {
             if (patients.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">No patients found</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px;">No patients found</td></tr>`;
                 return;
             }
-
             tableBody.innerHTML = patients.map(p => {
                 const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
                 const statusText = p.is_active == 1 ? 'Active' : 'Inactive';
                 const statusClass = p.is_active == 1 ? 'active' : 'inactive';
                 const createdAt = new Date(p.user_created_at).toLocaleDateString('en-CA');
 
+                // We add a `data-label` to each `<td>` for the responsive CSS to use
                 return `
                     <tr>
-                        <td>${fullName || 'N/A'}</td>
-                        <td>${p.phone || 'No phone'}</td>
-                        <td>${p.email || 'N/A'}</td>
-                        <td>${p.city || 'N/A'}</td>
-                        <td><span class="status ${statusClass}">${statusText}</span></td>
-                        <td>${createdAt}</td>
-                        <td class="action-links">
+                        <td data-label="Name">${fullName || 'N/A'}</td>
+                        <td data-label="Phone">${p.phone || 'N/A'}</td>
+                        <td data-label="Email">${p.email || 'N/A'}</td>
+                        <td data-label="City">${p.city || 'N/A'}</td>
+                        <td data-label="Status"><span class="status ${statusClass}">${statusText}</span></td>
+                        <td data-label="Created At">${createdAt}</td>
+                        <td data-label="Actions" class="action-links">
                             <a href="#" onclick="event.preventDefault(); editClient(${p.user_id})">Edit</a>
                             <a href="#" class="delete" onclick="event.preventDefault(); deleteClient(${p.user_id})">Delete</a>
                         </td>
