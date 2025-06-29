@@ -617,6 +617,386 @@ if ($owner_id) {
                 bottom: 10px;
             }
         }
+
+        /* Mobile Responsive Styles - Updated to match existing pattern */
+        @media (max-width: 1024px) {
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            
+            .dashboard-layout {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Sidebar Mobile Styles */
+            .sidebar { 
+                transform: translateX(-100%); 
+                transition: transform 0.3s ease-in-out; 
+                z-index: 1100; 
+                position: fixed; 
+                top: 0; 
+                height: 100vh; 
+                margin-top: 0; 
+            }
+            
+            .main-content { 
+                margin-left: 0; 
+                padding-top: 85px; /* Space for fixed navbar */
+            }
+            
+            body.sidebar-is-open .sidebar { 
+                transform: translateX(0); 
+                box-shadow: 0 0 20px rgba(0,0,0,0.25); 
+            }
+            
+            body.sidebar-is-open .sidebar-overlay { 
+                opacity: 1; 
+                visibility: visible; 
+            }
+
+            /* Dashboard Layout */
+            .dashboard-layout {
+                display: block;
+            }
+
+            /* Mobile Layout Adjustments */
+            .main-content {
+                padding: 1rem;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* Page Header Mobile */
+            .page-header {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                text-align: center;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+                justify-content: center;
+            }
+
+            .breadcrumb {
+                justify-content: center;
+                margin-bottom: 1rem;
+            }
+
+            /* Filters Section Mobile */
+            .filters-section {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            .filter-group label {
+                text-align: center;
+                font-size: 1rem;
+            }
+
+            .filter-select {
+                min-width: 100%;
+                padding: 0.75rem;
+                font-size: 1rem;
+                text-align: center;
+            }
+
+            .clear-filter {
+                align-self: center;
+                padding: 0.75rem 1.5rem;
+            }
+
+            /* Records Count Mobile */
+            .filters-section div[style*="margin-left: auto"] {
+                margin-left: 0 !important;
+                text-align: center;
+                margin-top: 0.5rem;
+            }
+
+            /* Medical Records Grid Mobile */
+            .records-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                margin-bottom: 1.5rem;
+                padding: 0;
+            }
+
+            /* Medical Card Mobile */
+            .medical-card {
+                margin: 0 auto;
+                max-width: 100%;
+                width: 100%;
+            }
+
+            /* Card Header Mobile */
+            .card-header {
+                padding: 1.25rem;
+            }
+
+            .visit-date {
+                font-size: 1.25rem;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+
+            .pet-info {
+                justify-content: center;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+
+            .pet-details h3 {
+                font-size: 1.1rem;
+            }
+
+            .appointment-info {
+                text-align: center;
+                font-size: 0.85rem;
+            }
+
+            /* Card Body Mobile */
+            .card-body {
+                padding: 1.25rem;
+            }
+
+            .section-title {
+                font-size: 0.95rem;
+                justify-content: center;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+
+            .section-content {
+                padding: 1rem;
+                text-align: center;
+            }
+
+            .text-content {
+                font-size: 0.9rem;
+                line-height: 1.6;
+            }
+
+            /* Vital Signs Mobile */
+            .vital-signs-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+
+            .vital-item {
+                padding: 0.5rem;
+            }
+
+            .vital-label {
+                font-size: 0.7rem;
+            }
+
+            .vital-value {
+                font-size: 1rem;
+            }
+
+            /* Prescription Photo Mobile */
+            .prescription-photo {
+                margin: 0 auto;
+                max-width: 100%;
+            }
+
+            .prescription-photo img {
+                height: 150px;
+            }
+
+            .no-prescription {
+                padding: 1.5rem;
+                font-size: 0.9rem;
+            }
+
+            /* Follow-up Badge Mobile */
+            .follow-up-badge {
+                justify-content: center;
+                margin: 1rem auto 0;
+                display: flex;
+                max-width: fit-content;
+            }
+
+            /* Veterinarian Info Mobile */
+            .vet-info {
+                justify-content: center;
+                text-align: center;
+                flex-wrap: wrap;
+                font-size: 0.8rem;
+            }
+
+            /* Empty State Mobile */
+            .empty-state {
+                text-align: center;
+                padding: 2rem 1rem;
+            }
+
+            .empty-state h3 {
+                font-size: 1.25rem;
+                margin: 1rem 0;
+            }
+
+            .empty-state p {
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 1.5rem;
+            }
+
+            /* Alert Messages Mobile */
+            .alert {
+                margin: 0 1rem 1.5rem;
+                padding: 1rem;
+                text-align: center;
+                border-radius: 8px;
+            }
+
+            /* Pagination Mobile Styles */
+            .pagination-controls {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                margin: 2rem 0;
+                padding: 0 1rem;
+            }
+
+            .pagination-link {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+                min-width: 40px;
+                text-align: center;
+            }
+
+            .pagination-link.active {
+                background: #4ECDC4;
+                color: white;
+                border-radius: 6px;
+            }
+
+            .pagination-link.disabled {
+                opacity: 0.5;
+                pointer-events: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Extra Small Mobile Devices */
+            .main-content {
+                padding: 0.5rem;
+                padding-top: 85px; /* Maintain navbar space */
+            }
+
+            .page-header {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .filters-section {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .records-grid {
+                gap: 1rem;
+            }
+
+            .card-header {
+                padding: 1rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .vital-signs-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .pet-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .pet-avatar {
+                align-self: center;
+            }
+
+            .appointment-info {
+                font-size: 0.8rem;
+                padding: 0.5rem;
+            }
+
+            .section-title {
+                font-size: 0.9rem;
+                gap: 0.25rem;
+            }
+
+            .prescription-photo img {
+                height: 120px;
+            }
+
+            .follow-up-badge {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .vet-info {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Center content for all screen sizes */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 100%;
+        }
+
+        .page-header,
+        .filters-section,
+        .records-grid,
+        .pagination-controls,
+        .empty-state,
+        .alert {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        @media (min-width: 769px) {
+            .main-content {
+                margin-left: 250px;
+                align-items: stretch;
+                padding-top: 2rem; /* Reset padding for desktop */
+            }
+
+            .page-header,
+            .filters-section,
+            .records-grid,
+            .pagination-controls,
+            .empty-state,
+            .alert {
+                max-width: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1012,10 +1392,35 @@ if ($owner_id) {
 
         // Enhanced modal event listeners
         document.addEventListener('DOMContentLoaded', function() {
+            // Hamburger menu functionality - Updated to match existing pattern
+            const hamburgerBtn = document.querySelector('.hamburger-menu');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const body = document.body;
+
+            if (hamburgerBtn && body) {
+                hamburgerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    body.classList.toggle('sidebar-is-open');
+                });
+            }
+            
+            if (overlay && body) {
+                overlay.addEventListener('click', function() {
+                    body.classList.remove('sidebar-is-open');
+                });
+            }
+
+            // Close sidebar on window resize to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    body.classList.remove('sidebar-is-open');
+                }
+            });
+
+            // Modal functionality
             const modal = document.getElementById('prescriptionModal');
             const closeBtn = document.querySelector('.prescription-modal-close');
             
-            // Close modal when clicking outside of image
             if (modal) {
                 modal.addEventListener('click', function(e) {
                     if (e.target === this) {
@@ -1024,7 +1429,6 @@ if ($owner_id) {
                 });
             }
             
-            // Close modal with close button
             if (closeBtn) {
                 closeBtn.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -1033,14 +1437,16 @@ if ($owner_id) {
                 });
             }
             
-            // Close modal with Escape key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     closePrescriptionModal();
+                    // Also close sidebar if open
+                    if (body.classList.contains('sidebar-is-open')) {
+                        body.classList.remove('sidebar-is-open');
+                    }
                 }
             });
             
-            // Initialize other functions
             console.log('Medical history page loaded successfully');
         });
     </script>
