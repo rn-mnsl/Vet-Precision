@@ -178,9 +178,6 @@ function sendPasswordResetEmail(string $email, string $token) {
 }
 // ===== END OF PASSWORD RESET FUNCTIONS =====
 
-
-
-
 // Check if user is logged in for protected pages
 function requireLogin() {
     if (!isLoggedIn()) {
@@ -215,5 +212,56 @@ if (isLoggedIn()) {
         redirect('/login.php');
     }
     $_SESSION['last_activity'] = time();
+}
+
+
+
+
+
+// ADD THIS NEW FUNCTION TO config/init.php
+
+/**
+ * Sends a general notification email to the site administrator.
+ *
+ * @param string $subject The subject of the email.
+ * @param string $body    The HTML body of the email.
+ * @param string $altBody The plain-text alternative body.
+ * @return bool           True on success, false on failure.
+ */
+function sendAdminNotification(string $subject, string $body, string $altBody) {
+    $mail = new PHPMailer(true);
+
+    try {
+        // --- Server settings (Copied from your existing function) ---
+        // $mail->SMTPDebug = 2;
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'roljohn.frilles87@gmail.com'; // Your sending email
+        $mail->Password   = 'yecs lggr egaf kiej';         // Your App Password
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port       = 465;
+
+        // --- Recipients ---
+        $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
+        $mail->setFrom('no-reply@vetprecision.com', $site_name);
+        
+        // ** THE IMPORTANT PART: Hardcode the admin's email address **
+        $mail->addAddress('manansalarin@gmail.com'); // Add the admin recipient
+
+        // --- Content ---
+        $mail->isHTML(true);
+        $mail->Subject = $subject; // Use the provided subject
+        $mail->Body    = $body;    // Use the provided HTML body
+        $mail->AltBody = $altBody; // Use the provided plain-text body
+
+        $mail->send();
+        return true; // Email sent successfully
+        
+    } catch (Exception $e) {
+        // Log the error for debugging, but don't expose it to the client.
+        error_log("sendAdminNotification PHPMailer Error: {$mail->ErrorInfo}");
+        return false; // Email failed to send
+    }
 }
 ?>
