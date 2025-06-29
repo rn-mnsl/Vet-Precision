@@ -4,7 +4,18 @@ requireClient();
 
 $pageTitle = 'My Dashboard - ' . SITE_NAME;
 
-// Get client's pets
+// --- MODIFIED: PAGINATION LOGIC FOR PETS ---
+$pets_per_page = 4; // Display 4 pets per page. A good number for a 2x2 grid.
+$current_page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($current_page - 1) * $pets_per_page;
+
+// First, get the total number of pets for pagination controls
+$stmt_count = $pdo->prepare("SELECT COUNT(*) FROM pets WHERE owner_id = :owner_id AND is_active = 1");
+$stmt_count->execute(['owner_id' => $_SESSION['owner_id']]);
+$total_pets = $stmt_count->fetchColumn();
+$total_pages = ceil($total_pets / $pets_per_page);
+
+// Now, get the paginated list of pets
 $stmt = $pdo->prepare("
     SELECT p.*, 
            (SELECT COUNT(*) FROM appointments 
@@ -17,11 +28,17 @@ $stmt = $pdo->prepare("
     WHERE p.owner_id = :owner_id
     AND p.is_active = 1
     ORDER BY p.name
+    LIMIT :limit OFFSET :offset
 ");
-$stmt->execute(['owner_id' => $_SESSION['owner_id']]);
+$stmt->bindValue(':owner_id', $_SESSION['owner_id'], PDO::PARAM_INT);
+$stmt->bindValue(':limit', $pets_per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
 $pets = $stmt->fetchAll();
+// --- END OF MODIFIED PETS LOGIC ---
 
-// Get upcoming appointments
+
+// Get upcoming appointments (No changes needed here)
 $stmt = $pdo->prepare("
     SELECT a.*, p.name as pet_name, p.species
     FROM appointments a
@@ -35,7 +52,7 @@ $stmt = $pdo->prepare("
 $stmt->execute(['owner_id' => $_SESSION['owner_id']]);
 $upcoming_appointments = $stmt->fetchAll();
 
-// Get past appointments
+// Get past appointments (No changes needed here)
 $stmt = $pdo->prepare("
     SELECT a.*, p.name as pet_name, p.species
     FROM appointments a
@@ -194,6 +211,7 @@ $past_appointments = $stmt->fetchAll();
         .quick-action-card h4 {
             margin: 0.5rem 0;
             color: #333;
+            overflow-wrap: break-word;
         }
 
         .quick-action-card p {
@@ -439,7 +457,7 @@ $past_appointments = $stmt->fetchAll();
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1000;
+            z-index: 2000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -548,6 +566,97 @@ $past_appointments = $stmt->fetchAll();
         .info-item label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 0.25rem; }
         .info-item span { font-size: 1rem; font-weight: 500; }
 
+        /* --- Modal Styles (some existing, some new) --- */
+        .modal-container { /* ... existing ... */ }
+        .modal-overlay { /* ... existing ... */ }
+        .modal-content { /* ... existing ... */ }
+        .modal-close-btn { /* ... existing ... */ }
+        .modal-loader { /* ... existing ... */ }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .modal-pet-avatar {
+            width: 120px; height: 120px; flex-shrink: 0;
+            border-radius: 50%; background-size: cover; background-position: center;
+            border: 5px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .modal-pet-title h2 { font-size: 2rem; margin: 0 0 0.25rem 0; }
+        .modal-pet-title p { color: #666; margin: 0; }
+
+        /* --- NEW MODAL STYLES (INSPIRED BY YOUR REFERENCE) --- */
+        .modal-body {
+            /* REFINED: Padding is now applied directly here */
+            padding: 2rem;
+            background: #fff;
+        }
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end; /* Align buttons to the right */
+        }
+        .pet-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .pet-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .pet-info-label {
+            color: #666;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        .pet-info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 1rem;
+            white-space: pre-wrap; /* Allows notes to wrap nicely */
+        }
+        .pet-stats {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border: 1px solid #e0e0e0;
+        }
+        .pet-stat-value {
+            display: block;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #FF6B6B;
+        }
+        .pet-stat-label {
+            display: block;
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 0.25rem;
+        }
+        .modal-section-header {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
         .history-item { border-bottom: 1px solid #e9ecef; padding: 1rem 0; }
         .history-item:last-child { border-bottom: none; }
         .history-date { font-weight: 600; margin-bottom: 0.5rem; }
@@ -555,6 +664,64 @@ $past_appointments = $stmt->fetchAll();
         .history-details strong { color: #333; }
 
         .no-records { text-align: center; padding: 2rem; color: #666; }
+
+        /* --- NEW: Pagination Styles --- */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem 0;
+            margin-top: -1rem; /* Pull it closer to the cards */
+            margin-bottom: 2rem;
+            gap: 0.5rem;
+        }
+        .pagination a, .pagination span {
+            display: inline-block;
+            padding: 0.6rem 1rem;
+            min-width: 40px;
+            text-align: center;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .pagination a {
+            background-color: white;
+            color: #FF6B6B;
+            border: 1px solid #ddd;
+        }
+        .pagination a:hover {
+            background-color: #FF6B6B;
+            color: white;
+            border-color: #FF6B6B;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .pagination span.current {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            font-weight: 700;
+            border: 1px solid transparent;
+            box-shadow: 0 4px 10px rgba(255, 107, 107, 0.4);
+        }
+        .pagination span.disabled {
+            color: #aaa;
+            background-color: #f0f0f0;
+            cursor: not-allowed;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* --- NEW: Responsive Sidebar & Layout --- */
+        .sidebar-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1050; /* Below sidebar, above content */
+        }
 
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 1100; position: fixed; top: 0; height: 100vh; margin-top: 0; }
@@ -566,12 +733,12 @@ $past_appointments = $stmt->fetchAll();
 
         @media (max-width: 768px) {
             .main-content {
-                margin-left: 0;
                 padding: 1rem;
+                padding-top: 70px;
             }
 
             .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
             .pet-cards {
@@ -589,6 +756,20 @@ $past_appointments = $stmt->fetchAll();
             .welcome-content h1 {
                 font-size: 1.5rem;
             }
+
+            .quick-action-card h4 {
+                font-size: 0.9rem; /* Or 14px, or whatever value looks good and fits */
+            }
+
+            .modal-header {
+                flex-direction: column; text-align: center;
+            }
+            .modal-pet-avatar {
+                width: 100px; height: 100px;
+            }
+            .modal-pet-title h2 { font-size: 1.5rem; }
+            .modal-body { padding: 1.5rem; }
+            .modal-footer { justify-content: center; }
         }
 
         /* Utility Classes */
@@ -620,21 +801,25 @@ $past_appointments = $stmt->fetchAll();
                 <a href="appointments/index.php?action=create" class="quick-action-card">
                     <span class="quick-action-icon">📅</span>
                     <h4>Book Appointment</h4>
+                    <!-- This line was mistakenly removed, now it's back! -->
                     <p class="text-muted small">Schedule a visit</p>
                 </a>
                 <a href="pets/add.php" class="quick-action-card">
                     <span class="quick-action-icon">➕</span>
                     <h4>Add New Pet</h4>
+                    <!-- This line was mistakenly removed, now it's back! -->
                     <p class="text-muted small">Register a pet</p>
                 </a>
                 <a href="medical/history.php" class="quick-action-card">
                     <span class="quick-action-icon">📋</span>
                     <h4>Medical Records</h4>
+                    <!-- This line was mistakenly removed, now it's back! -->
                     <p class="text-muted small">View history</p>
                 </a>
                 <a href="profile/index.php" class="quick-action-card">
                     <span class="quick-action-icon">👤</span>
                     <h4>My Profile</h4>
+                    <!-- This line was mistakenly removed, now it's back! -->
                     <p class="text-muted small">Update info</p>
                 </a>
             </div>
@@ -752,6 +937,33 @@ $past_appointments = $stmt->fetchAll();
                             </div>
                         <?php endforeach; ?>
                     </div>
+                    
+                    <!-- --- NEW: PAGINATION CONTROLS --- -->
+                    <?php if ($total_pages > 1): ?>
+                    <nav class="pagination">
+                        <?php if ($current_page > 1): ?>
+                            <a href="?page=<?php echo $current_page - 1; ?>">Prev</a>
+                        <?php else: ?>
+                            <span class="disabled">Prev</span>
+                        <?php endif; ?>
+
+                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                            <?php if ($i == $current_page): ?>
+                                <span class="current"><?php echo $i; ?></span>
+                            <?php else: ?>
+                                <a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+
+                        <?php if ($current_page < $total_pages): ?>
+                            <a href="?page=<?php echo $current_page + 1; ?>">Next</a>
+                        <?php else: ?>
+                            <span class="disabled">Next</span>
+                        <?php endif; ?>
+                    </nav>
+                    <?php endif; ?>
+                    <!-- --- END OF PAGINATION CONTROLS --- -->
+
                 <?php endif; ?>
             </div>
 
@@ -888,24 +1100,44 @@ $past_appointments = $stmt->fetchAll();
 </body>
 
 <script>
+// --- SIDEBAR TOGGLE FUNCTION ---
+function toggleSidebar() {
+    document.body.classList.toggle('sidebar-is-open');
+}
+
 // --- MODAL SCRIPT ---
+// All constants are declared once at the top for clarity.
 const petDetailModal = document.getElementById('petDetailModal');
 const petDetailModalBody = document.getElementById('petDetailModalBody');
 const API_URL = 'ajax/pet_details_handler.php';
 
 function openPetModal() {
     petDetailModal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    document.body.style.overflow = 'hidden';
 }
 
 function closePetModal() {
     petDetailModal.classList.add('hidden');
-    document.body.style.overflow = ''; // Restore scrolling
-    petDetailModalBody.innerHTML = '<div class="modal-loader">Loading...</div>'; // Reset for next time
+    document.body.style.overflow = '';
+    petDetailModalBody.innerHTML = '<div class="modal-loader">Loading...</div>';
+}
+
+// Helper function to calculate age in JS
+function calculateAgeJS(birthDate) {
+    if (!birthDate) return 'N/A';
+    const ageDifMs = Date.now() - new Date(birthDate).getTime();
+    const ageDate = new Date(ageDifMs);
+    const years = Math.abs(ageDate.getUTCFullYear() - 1970);
+    const months = ageDate.getUTCMonth();
+    const days = ageDate.getUTCDate() - 1;
+
+    if (years > 0) return `${years} year${years > 1 ? 's' : ''}`;
+    if (months > 0) return `${months} month${months > 1 ? 's' : ''}`;
+    return `${days} day${days > 1 ? 's' : ''}`;
 }
 
 async function viewPetDetails(petId) {
-    openPetModal(); // Show modal with loader immediately
+    openPetModal();
 
     try {
         const response = await fetch(`${API_URL}?id=${petId}`);
@@ -924,108 +1156,128 @@ async function viewPetDetails(petId) {
 
 function renderModalContent(data) {
     const pet = data.details;
-
-    // Helper for cleaning and formatting
+    // CRITICAL FIX: Make sure your AJAX returns these exact data structures
+    const upcomingCount = data.upcoming_appointments ? data.upcoming_appointments.length : 0;
+    const historyCount = data.medical_history ? data.medical_history.length : 0;
+    
     const sanitize = (str) => str || 'N/A';
     const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A';
     const formatTime = (timeStr) => timeStr ? new Date(`1970-01-01T${timeStr}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
 
     let avatarHtml = '';
-    // This simple check now works perfectly!
     if (pet.photo_url) {
-        // This block only runs if the server confirmed the file exists.
         const cleanedPath = pet.photo_url.replace('../../', '');
         const avatarPath = `../${cleanedPath}`;
         avatarHtml = `<div class="modal-pet-avatar" style="background-image: url('${avatarPath}')"></div>`;
     } else {
-        // This block will now correctly run for pets with no photo or a broken photo link.
-        const emoji = getPetEmojiJS(pet.species); // Remember to have getPetEmojiJS() in your script
-        avatarHtml = `<div class="modal-pet-avatar" style="display: flex; align-items: center; justify-content: center; font-size: 4rem; background-color: white;">
-                        ${emoji}
-                    </div>`;
+        const emoji = getPetEmojiJS(pet.species);
+        avatarHtml = `<div class="modal-pet-avatar" style="display: flex; align-items: center; justify-content: center; font-size: 4rem; background-color: white;">${emoji}</div>`;
     }
-    
-    // Build the HTML using template literals
+
     const html = `
         <div class="modal-header">
             ${avatarHtml}
             <div class="modal-pet-title">
                 <h2>${sanitize(pet.name)}</h2>
-                <p>${sanitize(pet.species)} - ${sanitize(pet.breed)}</p>
+                <p>${sanitize(pet.species)}${pet.breed ? ' - ' + sanitize(pet.breed) : ''}</p>
             </div>
         </div>
         <div class="modal-body">
-            <div class="modal-tabs">
-                <button class="tab-link active" onclick="switchTab(this, 'info')">Details</button>
-                <button class="tab-link" onclick="switchTab(this, 'appointments')">Appointments</button>
-                <button class="tab-link" onclick="switchTab(this, 'history')">Medical History</button>
-            </div>
-
-            <!-- Details Tab -->
-            <div id="tab-info" class="tab-content active">
-                <div class="info-grid">
-                    <div class="info-item"><label>Gender</label> <span>${sanitize(pet.gender)}</span></div>
-                    <div class="info-item"><label>Date of Birth</label> <span>${formatDate(pet.date_of_birth)}</span></div>
-                    <div class="info-item"><label>Color</label> <span>${sanitize(pet.color)}</span></div>
-                    <div class="info-item"><label>Weight</label> <span>${pet.weight ? pet.weight + ' kg' : 'N/A'}</span></div>
-                    <div class="info-item"><label>Microchip ID</label> <span>${sanitize(pet.microchip_id)}</span></div>
+            
+            <div class="pet-stats">
+                <div class="pet-stat">
+                    <span class="pet-stat-value">${upcomingCount}</span>
+                    <span class="pet-stat-label">Upcoming</span>
                 </div>
-                <div class="info-item" style="margin-top: 1rem;">
-                    <label>Notes / Allergies</label>
-                    <span>${sanitize(pet.notes)}</span>
+                <div class="pet-stat">
+                    <span class="pet-stat-value">${historyCount}</span>
+                    <span class="pet-stat-label">Total Visits</span>
+                </div>
+                ${(pet.pending_followups > 0) ? `
+                <div class="pet-stat">
+                    <span class="pet-stat-value" style="color: #f39c12;">${pet.pending_followups}</span>
+                    <span class="pet-stat-label">Follow-ups</span>
+                </div>` : ''}
+            </div>
+            
+            <h3 class="modal-section-header">Pet Details</h3>
+            <div class="pet-info-grid">
+                <div class="pet-info-item">
+                    <span class="pet-info-label">Gender</span>
+                    <span class="pet-info-value">${sanitize(pet.gender)}</span>
+                </div>
+                <div class="pet-info-item">
+                    <span class="pet-info-label">Age</span>
+                    <span class="pet-info-value">${calculateAgeJS(pet.date_of_birth)}</span>
+                </div>
+                <div class="pet-info-item">
+                    <span class="pet-info-label">Date of Birth</span>
+                    <span class="pet-info-value">${formatDate(pet.date_of_birth)}</span>
+                </div>
+                <div class="pet-info-item">
+                    <span class="pet-info-label">Color</span>
+                    <span class="pet-info-value">${sanitize(pet.color)}</span>
+                </div>
+                <div class="pet-info-item">
+                    <span class="pet-info-label">Weight</span>
+                    <span class="pet-info-value">${pet.weight ? pet.weight + ' kg' : 'N/A'}</span>
+                </div>
+                <div class="pet-info-item">
+                    <span class="pet-info-label">Microchip ID</span>
+                    <span class="pet-info-value">${sanitize(pet.microchip_id)}</span>
                 </div>
             </div>
-
-            <!-- Appointments Tab -->
-            <div id="tab-appointments" class="tab-content">
-                ${data.upcoming_appointments.length > 0 ? data.upcoming_appointments.map(app => `
+            
+            ${pet.notes ? `
+            <div class="pet-info-item" style="margin-bottom: 2rem;">
+                    <span class="pet-info-label">Notes / Allergies</span>
+                    <span class="pet-info-value">${sanitize(pet.notes)}</span>
+            </div>` : ''}
+            
+            ${(data.upcoming_appointments && data.upcoming_appointments.length > 0) ? `
+            <h3 class="modal-section-header">Upcoming Appointments</h3>
+            <div>
+                ${data.upcoming_appointments.map(app => `
                     <div class="history-item">
                         <div class="history-date">${formatDate(app.appointment_date)} at ${formatTime(app.appointment_time)}</div>
                         <div class="history-details">
                             <p><strong>Type:</strong> ${sanitize(app.type)}</p>
-                            <p><strong>Reason:</strong> ${sanitize(app.reason)}</p>
                             <p><strong>Status:</strong> <span class="status-badge status-${app.status}">${app.status}</span></p>
                         </div>
                     </div>
-                `).join('') : '<div class="no-records">No upcoming appointments scheduled.</div>'}
-            </div>
+                `).join('')}
+            </div>` : ''}
 
-            <!-- History Tab -->
-            <div id="tab-history" class="tab-content">
-                ${data.medical_history.length > 0 ? data.medical_history.map(rec => `
+            ${(data.medical_history && data.medical_history.length > 0) ? `
+            <h3 class="modal-section-header" style="margin-top: 2rem;">Recent Medical History</h3>
+            <div>
+                ${data.medical_history.slice(0, 3).map(rec => `
                     <div class="history-item">
                         <div class="history-date">${formatDate(rec.visit_date)}</div>
                         <div class="history-details">
                             <p><strong>Visit Type:</strong> ${sanitize(rec.visit_type)}</p>
-                            <p><strong>Symptoms:</strong> ${sanitize(rec.symptoms)}</p>
                             <p><strong>Diagnosis:</strong> ${sanitize(rec.diagnosis)}</p>
-                            <p><strong>Treatment:</strong> ${sanitize(rec.treatment)}</p>
                         </div>
                     </div>
-                `).join('') : '<div class="no-records">No medical history found.</div>'}
-            </div>
+                `).join('')}
+                ${data.medical_history.length > 3 ? `<p style="text-align:center; margin-top:1rem; font-size: 0.875rem;"><a href="medical/history.php?pet_id=${pet.pet_id}">View full medical history...</a></p>` : ''}
+            </div>` : `<div class="no-records" style="margin-top: 2rem;">No medical history found.</div>`}
+        </div>
+        <div class="modal-footer">
+            <a href="pets/edit.php?id=${pet.pet_id}" class="btn btn-secondary btn-sm">Edit Info</a>
+            <a href="appointments/index.php?action=create&pet_id=${pet.pet_id}" class="btn btn-primary btn-sm">Book Appointment</a>
         </div>
     `;
-
     petDetailModalBody.innerHTML = html;
-    switchTab(document.querySelector('.tab-link'), 'info');
 }
 
-function switchTab(btn, tabName) {
-    // Deactivate all tabs and content
-    document.querySelectorAll('.tab-link').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-    // Activate the clicked tab and corresponding content
-    btn.classList.add('active');
-    document.getElementById(`tab-${tabName}`).classList.add('active');
-}
+// REMOVED: The switchTab function is no longer needed for the new layout.
 
 function getPetEmojiJS(species) {
-    if (!species) return '🐾'; // Handle null/undefined cases
-    const s = species.toLowerCase(); // Use .toLowerCase() in JS
+    if (!species) return '🐾';
+    const s = species.toLowerCase();
 
-    if (s.includes('dog')) return '🐕';   // Use .includes() in JS
+    if (s.includes('dog')) return '🐕';
     if (s.includes('cat')) return '🐈';
     if (s.includes('bird')) return '🦜';
     if (s.includes('rabbit')) return '🐰';
@@ -1033,26 +1285,28 @@ function getPetEmojiJS(species) {
     if (s.includes('fish')) return '🐠';
     if (s.includes('turtle')) return '🐢';
 
-    return '🐾'; // Fallback
+    return '🐾';
 }
 
+// This event listener should be at the end to ensure all functions it might call are defined.
 document.addEventListener('DOMContentLoaded', function() {
-            const hamburgerBtn = document.querySelector('.hamburger-menu');
-            const overlay = document.querySelector('.sidebar-overlay');
-            const body = document.body;
+    const hamburgerBtn = document.querySelector('.hamburger-menu');
+    const overlay = document.querySelector('.sidebar-overlay');
+    const body = document.body;
 
-            if (hamburgerBtn && body) {
-                hamburgerBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    body.classList.toggle('sidebar-is-open');
-                });
-            }
-            
-            if (overlay && body) {
-                overlay.addEventListener('click', function() {
-                    body.classList.remove('sidebar-is-open');
-                });
-            }
+    if (hamburgerBtn && body) {
+        hamburgerBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // The toggleSidebar function is defined at the top of the script
+            toggleSidebar();
         });
+    }
+    
+    if (overlay && body) {
+        overlay.addEventListener('click', function() {
+            body.classList.remove('sidebar-is-open');
+        });
+    }
+});
 </script>
 </html>
