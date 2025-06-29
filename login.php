@@ -560,8 +560,8 @@ $pageTitle = 'Login - ' . SITE_NAME;
         /* ===== Footer Links ===== */
         .login-footer {
             text-align: center;
-            margin-top: var(--spacing-xl);
-            padding-top: var(--spacing-xl);
+            margin-top: var(--spacing-md);
+            padding-top: var(--spacing-md);
             border-top: 1px solid var(--gray-200);
         }
 
@@ -572,9 +572,10 @@ $pageTitle = 'Login - ' . SITE_NAME;
 
         .footer-links {
             display: flex;
-            gap: var(--spacing-lg);
+            gap: var(--spacing-md);
             justify-content: center;
             flex-wrap: wrap;
+            margin-top: var(--spacing-md);
         }
 
         .footer-links a {

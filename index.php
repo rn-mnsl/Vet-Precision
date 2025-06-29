@@ -378,22 +378,25 @@
             margin: 0 auto;
             padding: 0 var(--spacing-lg);
         }
+.about-header {
+    text-align: center; /* Center heading and paragraph */
+    margin-bottom: var(--spacing-xl);
+    max-width: 800px; /* Optional: make it more readable */
+    margin-left: auto;
+    margin-right: auto;
+}
 
-        .about-header {
-            text-align: left;
-            max-width: 1280px;
-            margin-bottom: -15px;;
-        }
+.about-header h2 {
+    color: var(--gray-900);
+    margin-bottom: var(--spacing-md);
+    font-size: 2.25rem; /* Slightly larger for emphasis */
+}
 
-        .about-header h2 {
-            color: var(--gray-900);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .about-header p {
-            font-size: 1.125rem;
-            color: var(--gray-600);
-        }
+.about-header p {
+    font-size: 1.125rem;
+    color: var(--gray-600);
+    line-height: 1.8;
+}
 
         .about-grid {
             display: grid;
@@ -785,8 +788,8 @@
 }
 
 .review-image img {
-    width: 100%;
-    height: 100%;
+    width: 140%;
+    height: 150%;
     object-fit: cover;
 }
 
@@ -1079,20 +1082,24 @@
             }
         }
 
+         /* Responsive nav button fix */
+        .navbar-toggle {
+            display: none;
+        }
+
         @media (max-width: 768px) {
+            .navbar-toggle {
+                display: block;
+                background-color: var(--primary-teal);
+                border: none;
+                padding: 0.5rem 1rem;
+                color: white;
+                font-size: 1.2rem;
+            }
             .nav-links {
                 display: none;
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: var(--white);
                 flex-direction: column;
-                padding: var(--spacing-lg);
-                box-shadow: var(--shadow-lg);
-                border-top: 1px solid var(--gray-200);
             }
-
             .nav-links.active {
                 display: flex;
             }
@@ -1192,420 +1199,607 @@
         .animate-fadeInRight {
             animation: fadeInRight 0.6s ease-out;
         }
+        /* ===== Map Section ===== */
+.map-section {
+    padding: var(--spacing-3xl) 0;
+    background-color: var(--gray-50);
+}
+
+.map-section .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+    text-align: center;
+}
+
+.map-section h3 {
+    font-size: 2rem;
+    color: var(--gray-900);
+    margin-bottom: var(--spacing-xl);
+}
+
+.map-section iframe {
+    width: 100%;
+    height: 350px;
+    border: 0;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.3s ease;
+}
+
+.map-section iframe:hover {
+    transform: scale(1.01);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .map-section iframe {
+        height: 300px;
+    }
+
+    .map-section h3 {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .map-section iframe {
+        height: 250px;
+    }
+
+    .map-section h3 {
+        font-size: 1.5rem;
+    }
+}
+.service-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  max-width: 600px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
     </style>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="#" class="logo">
-                <img src="assets/images/vet-precision-logo-full.png">
-            </a>
-            <ul class="nav-links">
-                <li><a href="#about">About</a></li>
-                <li><a href="#services">Services</a></li>
-                <li><a href="#reviews">Reviews</a></li>
-                <li><a href="#contact">Contact</a></li>
-                <li><a href="login.php" class="btn btn-outline btn-sm">Login</a></li>
-                <li><a href="register.php" class="btn btn-primary btn-sm">Book Now</a></li>
-            </ul>
-            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
-        </div>
-    </nav>
+    <body>
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-container">
+                <a href="#" class="logo">
+                    <img src="assets/images/vet-precision-logo-full.png">
+                </a>
+                <ul class="nav-links">
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#reviews">Reviews</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                    <li><a href="login.php" class="btn btn-outline btn-sm">Login</a></li>
+                    <li><a href="register.php" class="btn btn-primary btn-sm">Book Now</a></li>
+                </ul>
+                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+            </div>
+        </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-container">
-            <div class="hero-content animate-fadeInLeft">
-                <h1>Your Pet's Safety is our <span class="highlight">Top Priority</span></h1>
-                <p>The first and only Canine Distemper Facility in Pampanga dedicated to providing quality health care for your pets in need.</p>
-                <div class="hero-buttons">
-                    <a href="register.php" class="btn btn-primary btn-lg">Book Now</a>
-                    <a href="#services" class="btn btn-secondary btn-lg">Our Services</a>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-container">
+                <div class="hero-content animate-fadeInLeft">
+                    <h1>Your Pet's Safety is our <span class="highlight">Top Priority</span></h1>
+<p>Pampanga’s first and only dedicated Canine Distemper Facility providing expert and compassionate care for pets in critical need.</p>
+                    <div class="hero-buttons">
+                        <a href="register.php" class="btn btn-primary btn-lg">Book Now</a>
+                        <a href="#services" class="btn btn-secondary btn-lg">Our Services</a>
+                    </div>
+                </div>
+                <div class="hero-image animate-fadeInRight">
+<img src="https://www.petprofessional.com.au/wp-content/uploads/2019/11/vet-listening-to-dogs-heart.jpg" alt="Veterinarian listening to a dog's heart at Vet Precision">
                 </div>
             </div>
-            <div class="hero-image animate-fadeInRight">
-                <img src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Happy pets at Vet Precision">
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- About Section -->
-    <section class="about-section" id="about">
-        <div class="about-container">
-            <div class="about-header">
-                <h2>About us</h2>
-                <p>At Vet Precision, we understand that your pets are more than just animals – they're beloved family members. Our team of experienced veterinarians and caring staff are committed to providing the highest quality medical care in a warm, welcoming environment.</p>
-            </div>
-            
-            <div class="about-grid">
-                <div class="about-image animate-fadeInLeft">
-                    <img src="https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Veterinarian with pet">
+        <!-- About Section -->
+        <section class="about-section" id="about">
+            <div class="about-container">
+                <div class="about-header">
+                    <h2>About us</h2>
+                    <p>At Vet Precision, our team of experienced veterinarians and caring staff are committed to providing the highest quality medical care in a warm, welcoming environment.</p>
                 </div>
                 
-                <div class="about-content animate-fadeInRight">
-                    <div class="about-features">
-                        <div class="feature-item">
-                            <div class="feature-icon">🏥</div>
-                            <div class="feature-content">
-                                <h4>Expert Care</h4>
-                                <p>Highly qualified veterinarians with years of experience</p>
-                            </div>
-                        </div>
-                        
-                        <div class="feature-item">
-                            <div class="feature-icon">🔬</div>
-                            <div class="feature-content">
-                                <h4>Advanced Technology</h4>
-                                <p>State-of-the-art equipment for accurate diagnosis</p>
-                            </div>
-                        </div>
-                        
-                        <div class="feature-item">
-                            <div class="feature-icon">❤️</div>
-                            <div class="feature-content">
-                                <h4>Compassionate Care</h4>
-                                <p>We treat every pet with love and understanding</p>
-                            </div>
-                        </div>
-                        
-                        <div class="feature-item">
-                            <div class="feature-icon">🚑</div>
-                            <div class="feature-content">
-                                <h4>Emergency Services</h4>
-                                <p>24/7 emergency care when your pet needs it most</p>
-                            </div>
+                <div class="about-grid">
+                    <div class="about-image animate-fadeInLeft">
+<img src="https://img.freepik.com/premium-photo/show-me-your-smile-male-middle-aged-veterinarian-work-uniform-checking-teeth_386167-12492.jpg" alt="Veterinarian checking pet teeth">
+
+                    </div>
+                    
+                    <div class="about-content animate-fadeInRight">
+                        <div class="about-features">
+                         <div class="feature-item">
+  <div class="feature-icon">🏥</div>
+  <div class="feature-content">
+    <h4>Expert Care</h4>
+    <p>Veterinarians trained in complex and emergency procedures for pets of all ages.</p>
+  </div>
+</div>
+<div class="feature-item">
+  <div class="feature-icon">🔬</div>
+  <div class="feature-content">
+    <h4>Modern Equipment</h4>
+    <p>We use advanced diagnostic tools for faster, more accurate treatment results.</p>
+  </div>
+</div>
+<div class="feature-item">
+  <div class="feature-icon">❤️</div>
+  <div class="feature-content">
+    <h4>Compassionate Staff</h4>
+    <p>Our staff is trained to handle pets gently, reducing stress during visits.</p>
+  </div>
+</div>
+<div class="feature-item">
+  <div class="feature-icon">🚑</div>
+  <div class="feature-content">
+    <h4>On-Call Emergency</h4>
+    <p>We offer 24/7 emergency services including trauma, poisoning, and critical care.</p>
+  </div>
+</div>
+        
                         </div>
                     </div>
                 </div>
             </div>
+        </section>
+
+      <!-- Services Section -->
+<section class="services-section" id="services">
+  <div class="services-container">
+    <div class="section-header">
+      <h2>Services</h2>
+      <p>We offer different services that suits both you and your pet</p>
+    </div>
+
+    <div class="services-grid">
+      <!-- General Consultation -->
+      <div class="service-card">
+        <img src="assets/images/service-consultation.png" alt="Service Name" class="service-image">
+        <h3>General Consultation</h3>
+        <p>Comprehensive health examinations and preventive care to keep your pets healthy and happy throughout their lives.</p>
+        <a href="#" class="service-link" onclick="toggleServiceDetails(event, this)">Learn More →</a>
+        <div class="service-extra" style="display: none;">
+          <p>Our consultations cover routine wellness exams, weight checks, nutrition advice, and early detection of health issues tailored for each pet's needs.</p>
+        </div>
+      </div>
+
+      <!-- Vaccination -->
+      <div class="service-card">
+        <img src="https://d2zp5xs5cp8zlg.cloudfront.net/image-52014-800.jpg" alt="Pet Grooming" class="service-image">
+        <h3>Vaccination & Immunization</h3>
+        <p>Complete vaccination programs to protect your pets from common diseases and ensure their long-term health.</p>
+        <a href="#" class="service-link" onclick="toggleServiceDetails(event, this)">Learn More →</a>
+        <div class="service-extra" style="display: none;">
+          <p>We offer updated vaccine protocols including 5-in-1, 4-in-1, anti-rabies, and booster reminders for puppies, kittens, and adults.</p>
+        </div>
+      </div>
+
+      <!-- Laboratory -->
+      <div class="service-card">
+        <img src="https://www.animalgeneralct.com/files/avon_vet/lab-1.jpg" alt="Laboratory Services" class="service-image">
+        <h3>Laboratory Services</h3>
+        <p>Advanced diagnostic testing including blood work, urinalysis, and imaging for accurate health assessments.</p>
+        <a href="#" class="service-link" onclick="toggleServiceDetails(event, this)">Learn More →</a>
+        <div class="service-extra" style="display: none;">
+          <p>We use modern machines for fast diagnostics. Services include CBC, blood chemistry, skin scrapes, ultrasound, and X-ray interpretation.</p>
+        </div>
+      </div>
+
+      <!-- Grooming -->
+      <div class="service-card">
+        <img src="assets/images/service-surgery.png" alt="Service Name" class="service-image">
+        <h3>Grooming</h3>
+        <p>Professional grooming services to keep your pets looking and feeling their absolute best with expert care.</p>
+        <a href="#" class="service-link" onclick="toggleServiceDetails(event, this)">Learn More →</a>
+        <div class="service-extra" style="display: none;">
+          <p>Includes bath, haircut, nail trim, ear cleaning, and tick/flea treatment with gentle handlers who ensure your pet’s comfort.</p>
+        </div>
+      </div>
+
+      <!-- Dental -->
+      <div class="service-card">
+        <img src="https://petpulsedubai.com/wp-content/uploads/2024/06/Dentistry.jpg" alt="Dental Care" class="service-image">
+        <h3>Dental Care</h3>
+        <p>Comprehensive dental services including cleanings, extractions, and oral health maintenance programs.</p>
+        <a href="#" class="service-link" onclick="toggleServiceDetails(event, this)">Learn More →</a>
+        <div class="service-extra" style="display: none;">
+          <p>We provide safe anesthesia for scaling, polishing, and extractions. Early dental care prevents painful infections and improves pet quality of life.</p>
+        </div>
+      </div>
+
+      <!-- Emergency -->
+      <div class="service-card">
+        <img src="https://www.bathbrunswickvet.com/wp-content/uploads/sites/354/2022/12/AdobeStock_106825488-1080x675-1.jpeg" alt="Emergency Care" class="service-image">
+        <h3>Emergency Care</h3>
+        <p>24/7 emergency services for urgent pet health situations with immediate response and expert treatment.</p>
+        <a href="#" class="service-link" onclick="toggleServiceDetails(event, this)">Learn More →</a>
+        <div class="service-extra" style="display: none;">
+          <p>Our clinic is always ready for trauma, poisoning, seizures, birthing issues, or sudden illnesses. Critical care teams on standby.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section">
+        <div class="testimonials-overlay">
+            <div class="testimonials-content">
+                <h2>Giving hearts to animals</h2>
+                <p>See what our satisfied pet parents have to say about our care</p>
+            </div>
         </div>
     </section>
 
-    <!-- Services Section -->
-    <section class="services-section" id="services">
+    <!-- Reviews Section -->
+    <section class="reviews-section" id="reviews" style="padding: var(--spacing-3xl) 0; background: var(--gray-50);">
         <div class="services-container">
             <div class="section-header">
-                <h2>Services</h2>
-                <p>We offer different services that suits both you and your pet</p>
+                <h2>Reviews</h2>
+                <p>Trusted by pet owners across Pampanga</p>
             </div>
             
-            <div class="services-grid">
-                <div class="service-card">
-                    <img src="assets/images/service-consultation.png" alt="Service Name" class="service-image">
-                    <h3>General Consultation</h3>
-                    <p>Comprehensive health examinations and preventive care to keep your pets healthy and happy throughout their lives.</p>
-                    <a href="#" class="service-link">Learn More →</a>
-                </div>
-                
-                <div class="service-card">
-                    <img src="assets/images/service-grooming.png" alt="Service Name" class="service-image">
-                    <h3>Vaccination & Immunization</h3>
-                    <p>Complete vaccination programs to protect your pets from common diseases and ensure their long-term health.</p>
-                    <a href="#" class="service-link">Learn More →</a>
-                </div>
-                
-                <div class="service-card">
-                    <img src="assets/images/service-supplies.png" alt="Service Name" class="service-image">
-                    <h3>Laboratory Services</h3>
-                    <p>Advanced diagnostic testing including blood work, urinalysis, and imaging for accurate health assessments.</p>
-                    <a href="#" class="service-link">Learn More →</a>
-                </div>
-                
-                <div class="service-card">
-                    <img src="assets/images/service-surgery.png" alt="Service Name" class="service-image">
-                    <h3>Grooming</h3>
-                    <p>Professional grooming services to keep your pets looking and feeling their absolute best with expert care.</p>
-                    <a href="#" class="service-link">Learn More →</a>
-                </div>
-                
-                <div class="service-card">
-                    <img src="assets/images/service-distemper.png" alt="Service Name" class="service-image">
-                    <h3>Dental Care</h3>
-                    <p>Comprehensive dental services including cleanings, extractions, and oral health maintenance programs.</p>
-                    <a href="#" class="service-link">Learn More →</a>
-                </div>
-                
-                <div class="service-card">
-                    <img src="assets/images/service-emergency.png" alt="Service Name" class="service-image">
-                    <h3>Emergency Care</h3>
-                    <p>24/7 emergency services for urgent pet health situations with immediate response and expert treatment.</p>
-                    <a href="#" class="service-link">Learn More →</a>
+            <div class="reviews-carousel">
+                <div class="carousel-wrapper">
+                    <div class="carousel-slides" id="carouselSlides">
+                        <!-- Slide 1 -->
+                        <div class="review-slide active">
+                            <div class="review-image">
+<img src="https://scontent.fmnl3-4.fna.fbcdn.net/v/t39.30808-6/508472229_1183489247126049_6900914901454617688_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=104&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeFBJI1Xa07m0FfDJy4qyKHPjXQtXd3hCDaNdC1d3eEINuWKedicVheFGMXwTAGVvWFHJ2ogcB81Mcu-HX9-3uA3&_nc_ohc=no0xzk6KeUQQ7kNvwHJ1lfR&_nc_oc=AdlMSr0VKjfBAJVbSR2D0_X_MJHmCIsaJx9jDP9ccXDo1_VV5Ug2BNiX4ECIGeczwu4&_nc_zt=23&_nc_ht=scontent.fmnl3-4.fna&_nc_gid=bwqvxpcNUxkfTLvk_JuMcw&oh=00_AfMINZ-L0NU5U-WAPebEQDdkoGevrxurJCcWOPhLIZfmaw&oe=68674B0E" alt="Happy dog" />
+                            </div>
+                            <div class="review-content">
+                                <div class="review-stars">★★★★★</div>
+                                <p class="review-text">Sobrang galing ng serbisyo! Si Dr. Martinez ang nag-alaga kay Dennis nung surgery niya, grabe ang care nila."</p>
+                                <div class="reviewer-info">
+                                    <div class="reviewer-avatar">M</div>
+                                    <div class="reviewer-details">
+                                        <div class="reviewer-name">Maria Santos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 2 -->
+                        <div class="review-slide">
+                            <div class="review-image">
+<img src="https://scontent.fmnl3-2.fna.fbcdn.net/v/t39.30808-6/496956537_1155726506568990_5886642104987578410_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeHrI6r_DXGhX8LQ5-PYGslVSIUv8YxXsyNIhS_xjFezIwDEm82hD2yfdJSRE67wt_OWnFwIXQFTQR4G-gx-spfD&_nc_ohc=jjpI2nXvgq0Q7kNvwGN5maz&_nc_oc=Admw8RKQRdApM_M1ghFuOu_JF2xcCZiO6NPY-kHwpM7CVLSzwE9xoLGx4KeDlbhxz7w&_nc_zt=23&_nc_ht=scontent.fmnl3-2.fna&_nc_gid=GI6fUqz5VH0Pql72rne0OA&oh=00_AfMZ0gq7-aNQwETuUlrr56qJ-DQ7BI_X583W7s_C0u9-kg&oe=68676D98" alt="Cat patient" />
+
+                            </div>
+                            <div class="review-content">
+                                <div class="review-stars">★★★★★</div>
+                                <p class="review-text">"Ang ganda ng clinic, super modern! Komportable si Sky dito, at napaka-propesyonal ng staff."</p>
+                                <div class="reviewer-info">
+                                    <div class="reviewer-avatar">J</div>
+                                    <div class="reviewer-details">
+                                        <div class="reviewer-name">Bong-Bong Dela Cruz</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 3 -->
+                        <div class="review-slide">
+                            <div class="review-image">
+<img src="https://scontent.fmnl37-2.fna.fbcdn.net/v/t39.30808-6/508590641_1183489020459405_3206781276550128783_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=103&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeF91_z2LSVhY43EtKVKtPnjxPXp10hR8FLE9enXSFHwUrPctJmUHKOoyvNrSj8HTCF9DIlif5W5DFB_rysdndSr&_nc_ohc=B1oV8p0mdFwQ7kNvwF3DZrb&_nc_oc=AdltdxLFnyQpb5uwUAa0Df1QllH1Ea4FStWRSpn18tINtLsfSVnrvMd_gvk1aTwmHYE&_nc_zt=23&_nc_ht=scontent.fmnl37-2.fna&_nc_gid=ehCcqZn0nRZuQ8COp9v28Q&oh=00_AfOdIXYukEBkvII7SrJzZL3SRZmSxZjUbY8G0PYVQkRI-w&oe=6867431B" alt="Emergency care" />
+                            </div>
+                            <div class="review-content">
+                                <div class="review-stars">★★★★★</div>
+                                <p class="review-text">"Naligtasan ni Snow ang buhay dahil sa mabilis na emergency service. Salamat talaga sa inyong lahat!"</p>
+                                <div class="reviewer-info">
+                                    <div class="reviewer-avatar">A</div>
+                                    <div class="reviewer-details">
+                                        <div class="reviewer-name">Alexies Dabu </div>
+                                        <div class="reviewer-title">Pet Owner</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide 4 -->
+                        <div class="review-slide">
+                            <div class="review-image">
+<img src="https://scontent.fmnl3-4.fna.fbcdn.net/v/t39.30808-6/497543815_1155726106569030_2966113255558547277_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeGcWj6VAuelDXJEFNS6I89ZovNeIFtsYd-i814gW2xh39AXLIDn0wQzywH89_g9boL47jubojpCA-E35brlii-K&_nc_ohc=IutVp92usYsQ7kNvwGfQBeo&_nc_oc=AdkRl2jJucke_uVaF5IKHSv6MhMN0tcdM6b6UteMjhvvCZTvKMLPzNZBs3md9AonNKU&_nc_zt=23&_nc_ht=scontent.fmnl3-4.fna&_nc_gid=ixjZQwEcuYu8sjAJFJl7gQ&oh=00_AfNTaHzzClC4RDnEH1L1Ns1zr9g2C7HaECs4wcy9dew9lg&oe=68676B4B" alt="Rabbit care" />
+                            </div>
+                            <div class="review-content">
+                                <div class="review-stars">★★★★★</div>
+                                <p class="review-text">"Napakabuti ng team dito, tunay na mahal nila ang mga hayop. Si Butete mabilis gumaling dahil sa kanila!"</p>
+                                <div class="reviewer-info">
+                                    <div class="reviewer-avatar">L</div>
+                                    <div class="reviewer-details">
+                                        <div class="reviewer-name">Anna Manansala</div>
+                                        <div class="reviewer-title">Dog Owner</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <button class="carousel-btn prev-btn" onclick="changeSlide(-1)">‹</button>
+                    <button class="carousel-btn next-btn" onclick="changeSlide(1)">›</button>
+
+                    <!-- Dots -->
+                    <div class="carousel-dots">
+                        <span class="dot active" onclick="currentSlide(0)"></span>
+                        <span class="dot" onclick="currentSlide(1)"></span>
+                        <span class="dot" onclick="currentSlide(2)"></span>
+                        <span class="dot" onclick="currentSlide(3)"></span>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-<!-- Testimonials Section -->
-<section class="testimonials-section">
-    <div class="testimonials-overlay">
-        <div class="testimonials-content">
-            <h2>Giving hearts to animals</h2>
-            <p>See what our satisfied pet parents have to say about our care</p>
-        </div>
-    </div>
+ <!-- Map Section -->
+<section class="map-section">
+  <div class="container">
+    <h3>Find Us</h3>
+    <iframe 
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3858.755690826317!2d120.751032975912!3d15.07283988534909!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3396fa33cc1cd267%3A0x41554d37cd2a1b89!2sVet%20Precision%20Mexico!5e0!3m2!1sen!2sph!4v1719680346744!5m2!1sen!2sph" 
+      width="100%" 
+      height="350" 
+      style="border:0;" 
+      allowfullscreen="" 
+      loading="lazy" 
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+  </div>
 </section>
 
-<!-- Reviews Section -->
-<section class="reviews-section" id="reviews" style="padding: var(--spacing-3xl) 0; background: var(--gray-50);">
-    <div class="services-container">
-        <div class="section-header">
-            <h2>Reviews</h2>
-            <p>Trusted by pet owners across Pampanga</p>
-        </div>
-        
-        <div class="reviews-carousel">
-            <div class="carousel-wrapper">
-                <div class="carousel-slides" id="carouselSlides">
-                    <!-- Slide 1 -->
-                    <div class="review-slide active">
-                        <div class="review-image">
-                            <img src="assets/images/review-snowball.jpg" alt="Happy dog" />
-                        </div>
-                        <div class="review-content">
-                            <div class="review-stars">★★★★★</div>
-                            <p class="review-text">Sobrang galing ng serbisyo! Si Dr. Martinez ang nag-alaga kay Dennis nung surgery niya, grabe ang care nila."</p>
-                            <div class="reviewer-info">
-                                <div class="reviewer-avatar">M</div>
-                                <div class="reviewer-details">
-                                    <div class="reviewer-name">Maria Santos</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Slide 2 -->
-                    <div class="review-slide">
-                        <div class="review-image">
-                            <img src="assets/images/review-sky.jpg" alt="Cat patient" />
-                        </div>
-                        <div class="review-content">
-                            <div class="review-stars">★★★★★</div>
-                            <p class="review-text">"Ang ganda ng clinic, super modern! Komportable si Sky dito, at napaka-propesyonal ng staff."</p>
-                            <div class="reviewer-info">
-                                <div class="reviewer-avatar">J</div>
-                                <div class="reviewer-details">
-                                    <div class="reviewer-name">Bong-Bong Dela Cruz</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Slide 3 -->
-                    <div class="review-slide">
-                        <div class="review-image">
-                            <img src="assets/images/review-snow.jpg" alt="Emergency care" />
-                        </div>
-                        <div class="review-content">
-                            <div class="review-stars">★★★★★</div>
-                            <p class="review-text">"Naligtasan ni Snow ang buhay dahil sa mabilis na emergency service. Salamat talaga sa inyong lahat!"</p>
-                            <div class="reviewer-info">
-                                <div class="reviewer-avatar">A</div>
-                                <div class="reviewer-details">
-                                    <div class="reviewer-name">Alexies Dabu </div>
-                                    <div class="reviewer-title">Pet Owner</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Slide 4 -->
-                    <div class="review-slide">
-                        <div class="review-image">
-                            <img src="assets/images/review-mojito&kenzo.jpg" alt="Rabbit care" />
-                        </div>
-                        <div class="review-content">
-                            <div class="review-stars">★★★★★</div>
-                            <p class="review-text">"Napakabuti ng team dito, tunay na mahal nila ang mga hayop. Si Butete mabilis gumaling dahil sa kanila!"</p>
-                            <div class="reviewer-info">
-                                <div class="reviewer-avatar">L</div>
-                                <div class="reviewer-details">
-                                    <div class="reviewer-name">Anna Manansala</div>
-                                    <div class="reviewer-title">Rabbit Owner</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Navigation Buttons -->
-                <button class="carousel-btn prev-btn" onclick="changeSlide(-1)">‹</button>
-                <button class="carousel-btn next-btn" onclick="changeSlide(1)">›</button>
-
-                <!-- Dots -->
-                <div class="carousel-dots">
-                    <span class="dot active" onclick="currentSlide(0)"></span>
-                    <span class="dot" onclick="currentSlide(1)"></span>
-                    <span class="dot" onclick="currentSlide(2)"></span>
-                    <span class="dot" onclick="currentSlide(3)"></span>
-                </div>
-            </div>
-        </div>
-    </div>
+        <!-- CTA Section -->
+     <section class="cta-section">
+  <div class="cta-container">
+    <h2>Book an Appointment with us</h2>
+    <p>Let our team of caring professionals look after your pet’s needs. Book your visit with just a click.</p>
+    <a href="register.php" class="btn btn-primary btn-lg">Schedule Now</a>
+  </div>
 </section>
 
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="cta-container">
-            <h2>Book an Appointment with us</h2>
-            <p>Ready to give your pet the best care? Schedule an appointment today and experience the Vet Precision difference.</p>
-            <a href="register.php" class="cta-button">Schedule Appointment</a>
-        </div>
-    </section>
 
-    <!-- Footer -->
-    <footer class="footer" id="contact">
-        <div class="footer-container">
-            <div class="footer-section">
-                <h3>Vet Precision</h3>
-                <p>Your trusted partner in pet healthcare since 2014. Dedicated to providing exceptional veterinary care with compassion and expertise.</p>
-                <div class="social-links">
-                    <a href="#" class="social-link">📱</a>
-                    <a href="#" class="social-link">📧</a>
-                    <a href="#" class="social-link">📍</a>
+        <!-- Footer -->
+        <footer class="footer" id="contact">
+            <div class="footer-container">
+                <div class="footer-section">
+                    <h3>Vet Precision</h3>
+                    <p>Your trusted partner in pet healthcare since 2014. Dedicated to providing exceptional veterinary care with compassion and expertise.</p>
+                 
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <a href="#about">About Us</a>
+                    <a href="#services">Our Services</a>
+                    <a href="login.php">Client Portal</a>
+                    <a href="register.php">Book Appointment</a>
+                    <a href="#reviews">Reviews</a>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Our Services</h3>
+                    <a href="#">General Consultation</a>
+                    <a href="#">Emergency Care</a>
+                    <a href="#">Pet Grooming</a>
+                    <a href="#">Vaccination</a>
+                    <a href="#">Dental Care</a>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Contact Info</h3>
+                    <p>📍 Angeles City, Pampanga</p>
+                    <p>📞 0917 824 6458/p>
+                    <p>📧 admin@vetprecision.com</p>
+                    <p>🕒 Mon-Sat: 9AM-4:30PM</p>
+                    <p>🚑 24/7 Emergency Services</p>
                 </div>
             </div>
             
-            <div class="footer-section">
-                <h3>Quick Links</h3>
-                <a href="#about">About Us</a>
-                <a href="#services">Our Services</a>
-                <a href="login.php">Client Portal</a>
-                <a href="register.php">Book Appointment</a>
-                <a href="#reviews">Reviews</a>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Vet Precision. All rights reserved. Made with ❤️ for pets and their families.</p>
             </div>
-            
-            <div class="footer-section">
-                <h3>Our Services</h3>
-                <a href="#">General Consultation</a>
-                <a href="#">Emergency Care</a>
-                <a href="#">Pet Grooming</a>
-                <a href="#">Vaccination</a>
-                <a href="#">Dental Care</a>
-            </div>
-            
-            <div class="footer-section">
-                <h3>Contact Info</h3>
-                <p>📍 Angeles City, Pampanga</p>
-                <p>📞 (045) 123-4567</p>
-                <p>📧 info@vetprecision.com</p>
-                <p>🕒 Mon-Sat: 9AM-8PM</p>
-                <p>🚑 24/7 Emergency Services</p>
-            </div>
-        </div>
-        
-        <div class="footer-bottom">
-            <p>&copy; 2024 Vet Precision. All rights reserved. Made with ❤️ for pets and their families.</p>
-        </div>
-    </footer>
+            <!-- Modals -->
+<div class="service-modal" id="modal-consultation">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('modal-consultation')">&times;</span>
+    <h2>General Consultation</h2>
+    <p>Our comprehensive consultation service covers routine check-ups, physical exams, and early detection of illness. Our veterinarians ensure your pet is in top condition with personalized advice and wellness plans.</p>
+  </div>
+</div>
 
-    <script>
-        // Mobile menu functionality
-        function toggleMobileMenu() {
-            const navLinks = document.querySelector('.nav-links');
-            navLinks.classList.toggle('active');
-        }
+<div class="service-modal" id="modal-vaccination">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('modal-vaccination')">&times;</span>
+    <h2>Vaccination & Immunization</h2>
+    <p>Protect your pets from deadly diseases through core and optional vaccines administered on schedule. We educate owners on the proper vaccine timeline for long-term health.</p>
+  </div>
+</div>
 
-        // Smooth scrolling for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+<div class="service-modal" id="modal-lab">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('modal-lab')">&times;</span>
+    <h2>Laboratory Services</h2>
+    <p>We perform blood tests, fecal exams, urinalysis, and more to diagnose illnesses accurately. Our lab is equipped with modern tools for faster turnaround and reliability.</p>
+  </div>
+</div>
+
+<div class="service-modal" id="modal-grooming">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('modal-grooming')">&times;</span>
+    <h2>Grooming</h2>
+    <p>From nail trimming and bathing to full grooming, we make sure your pet is fresh, clean, and happy. Our groomers are trained to gently handle pets of all sizes and temperaments.</p>
+  </div>
+</div>
+
+<div class="service-modal" id="modal-dental">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('modal-dental')">&times;</span>
+    <h2>Dental Care</h2>
+    <p>We provide preventive cleanings, dental exams, tooth extractions, and treatment of periodontal disease to maintain healthy smiles and reduce risks of infection.</p>
+  </div>
+</div>
+
+<div class="service-modal" id="modal-emergency">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('modal-emergency')">&times;</span>
+    <h2>Emergency Care</h2>
+    <p>Available 24/7 for urgent care, including trauma, poisoning, and serious illness. Our experienced emergency vets act quickly to stabilize and treat your pet in critical times.</p>
+  </div>
+</div>
+
+        </footer>
+
+        <script>
+            
+            // Mobile menu functionality
+            function toggleMobileMenu() {
+                const navLinks = document.querySelector('.nav-links');
+                navLinks.classList.toggle('active');
+            }
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+function toggleServiceDetails(event, link) {
+  event.preventDefault();
+  const extra = link.nextElementSibling;
+  const isVisible = extra.style.display === "block";
+  extra.style.display = isVisible ? "none" : "block";
+  link.textContent = isVisible ? "Learn More →" : "Show Less ↑";
+}
+            // Navbar scroll effect
+            window.addEventListener('scroll', function() {
+                const navbar = document.querySelector('.navbar');
+                if (window.scrollY > 50) {
+                    navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+                    navbar.style.backdropFilter = 'blur(20px)';
+                } else {
+                    navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+                    navbar.style.backdropFilter = 'blur(10px)';
                 }
             });
-        });
 
-        // Navbar scroll effect
-        window.addEventListener('scroll', function() {
-            const navbar = document.querySelector('.navbar');
-            if (window.scrollY > 50) {
-                navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-                navbar.style.backdropFilter = 'blur(20px)';
-            } else {
-                navbar.style.background = 'rgba(255, 255, 255, 0.95)';
-                navbar.style.backdropFilter = 'blur(10px)';
-            }
-        });
+            // Intersection Observer for animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
 
-        // Intersection Observer for animations
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0) translateX(0)';
+                    }
+                });
+            }, observerOptions);
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0) translateX(0)';
+            // Observe elements with animation classes
+            document.querySelectorAll('.animate-fadeInUp, .animate-fadeInLeft, .animate-fadeInRight').forEach(element => {
+                element.style.opacity = '0';
+                element.style.transition = 'all 0.6s ease-out';
+                
+                if (element.classList.contains('animate-fadeInLeft')) {
+                    element.style.transform = 'translateX(-30px)';
+                } else if (element.classList.contains('animate-fadeInRight')) {
+                    element.style.transform = 'translateX(30px)';
+                } else {
+                    element.style.transform = 'translateY(30px)';
+                }
+                
+                observer.observe(element);
+            });
+
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                const navLinks = document.querySelector('.nav-links');
+                const mobileToggle = document.querySelector('.mobile-menu-toggle');
+                
+                if (!navLinks.contains(event.target) && !mobileToggle.contains(event.target)) {
+                    navLinks.classList.remove('active');
                 }
             });
-        }, observerOptions);
 
-        // Observe elements with animation classes
-        document.querySelectorAll('.animate-fadeInUp, .animate-fadeInLeft, .animate-fadeInRight').forEach(element => {
-            element.style.opacity = '0';
-            element.style.transition = 'all 0.6s ease-out';
-            
-            if (element.classList.contains('animate-fadeInLeft')) {
-                element.style.transform = 'translateX(-30px)';
-            } else if (element.classList.contains('animate-fadeInRight')) {
-                element.style.transform = 'translateX(30px)';
-            } else {
-                element.style.transform = 'translateY(30px)';
+            let currentSlideIndex = 0;
+            const slides = document.querySelectorAll('.review-slide');
+            const dots = document.querySelectorAll('.dot');
+            const totalSlides = slides.length;
+
+            function showSlide(index) {
+                // Hide all slides
+                slides.forEach(slide => slide.classList.remove('active'));
+                dots.forEach(dot => dot.classList.remove('active'));
+                
+                // Show current slide
+                slides[index].classList.add('active');
+                dots[index].classList.add('active');
             }
-            
-            observer.observe(element);
-        });
 
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const navLinks = document.querySelector('.nav-links');
-            const mobileToggle = document.querySelector('.mobile-menu-toggle');
-            
-            if (!navLinks.contains(event.target) && !mobileToggle.contains(event.target)) {
-                navLinks.classList.remove('active');
+            function changeSlide(direction) {
+                currentSlideIndex += direction;
+                
+                // Loop around
+                if (currentSlideIndex >= totalSlides) {
+                    currentSlideIndex = 0;
+                }
+                if (currentSlideIndex < 0) {
+                    currentSlideIndex = totalSlides - 1;
+                }
+                
+                showSlide(currentSlideIndex);
             }
-        });
 
-        let currentSlideIndex = 0;
-        const slides = document.querySelectorAll('.review-slide');
-        const dots = document.querySelectorAll('.dot');
-        const totalSlides = slides.length;
-
-        function showSlide(index) {
-            // Hide all slides
-            slides.forEach(slide => slide.classList.remove('active'));
-            dots.forEach(dot => dot.classList.remove('active'));
-            
-            // Show current slide
-            slides[index].classList.add('active');
-            dots[index].classList.add('active');
-        }
-
-        function changeSlide(direction) {
-            currentSlideIndex += direction;
-            
-            // Loop around
-            if (currentSlideIndex >= totalSlides) {
-                currentSlideIndex = 0;
+            function currentSlide(index) {
+                currentSlideIndex = index;
+                showSlide(currentSlideIndex);
             }
-            if (currentSlideIndex < 0) {
-                currentSlideIndex = totalSlides - 1;
-            }
-            
-            showSlide(currentSlideIndex);
-        }
+              function openModal(id) {
+    document.getElementById(id).style.display = 'flex';
+  }
 
-        function currentSlide(index) {
-            currentSlideIndex = index;
-            showSlide(currentSlideIndex);
-        }
-    </script>
-</body>
-</html>
+  function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  // Close modals on outside click
+  window.addEventListener('click', function(e) {
+    document.querySelectorAll('.service-modal').forEach(modal => {
+      if (e.target === modal) modal.style.display = 'none';
+    });
+  });
+        </script>
+    </body>
+    </html>

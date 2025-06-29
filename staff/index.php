@@ -282,7 +282,8 @@ function timeAgo($timestamp) {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--light-color);
+            background: var(--gradient-primary);
+            color: white;
             border-radius: 50%;
             flex-shrink: 0;
         }
@@ -310,49 +311,6 @@ function timeAgo($timestamp) {
             font-weight: 600;
         }
 
-        /* Quick Actions - FIXED */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-            width: 100%;
-        }
-
-        .quick-action-btn {
-            background: white;
-            border: 2px solid var(--gray-light);
-            padding: 2rem 1.5rem;
-            border-radius: var(--radius-lg);
-            text-align: center;
-            text-decoration: none;
-            color: var(--text-dark);
-            transition: all var(--transition-base);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            min-height: 140px;
-        }
-
-        .quick-action-btn:hover {
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            text-decoration: none;
-            color: var(--text-dark);
-        }
-
-        .quick-action-btn .icon {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-        }
-
-        .quick-action-btn span {
-            font-weight: 600;
-            font-size: 1rem;
-        }
 
         /* Dashboard Grid - FIXED */
         .dashboard-grid {
@@ -430,9 +388,9 @@ function timeAgo($timestamp) {
         .appointment-item {
             display: flex;
             align-items: center;
-            padding: 1rem 1.5rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--gray-light);
-            gap: 1.5rem;
+            gap: 1rem;
             flex-wrap: wrap; /* Allows wrapping on small screens */
         }
         .appointment-item:last-child {
@@ -448,12 +406,12 @@ function timeAgo($timestamp) {
             background: rgba(78, 205, 196, 0.1);
             color: var(--secondary-color);
             border-radius: var(--radius-md);
-            padding: 0.75rem;
-            min-width: 80px;
+            padding: 0.5rem;
+            min-width: 70px;
             text-align: center;
         }
         .appointment-date .day {
-            font-size: 1.75rem;
+            font-size: 1.25rem;
             font-weight: 700;
             line-height: 1;
         }
@@ -465,7 +423,7 @@ function timeAgo($timestamp) {
         .appointment-details {
             flex: 1;
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 2 columns for details */
+            grid-template-columns: repeat(4, 1fr); /* 2 columns for details */
             gap: 0.5rem 1.5rem;
             min-width: 250px; /* Prevents squishing */
         }
@@ -847,19 +805,6 @@ function timeAgo($timestamp) {
         }
 
         /* Mobile Responsive */
-        @media (max-width: 1200px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
 
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 1100; position: fixed; top: 0; height: 100vh; margin-top: 0; }
@@ -910,16 +855,6 @@ function timeAgo($timestamp) {
                 font-size: 1.75rem;
             }
 
-            .quick-actions {
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
-            }
-
-            .quick-action-btn {
-                padding: 1.5rem 1rem;
-                min-height: 120px;
-            }
-
             .welcome-header {
                 flex-direction: column;
                 align-items: flex-start;
@@ -954,6 +889,7 @@ function timeAgo($timestamp) {
             .appointment-details {
                 grid-template-columns: 1fr; /* Stack details in a single column */
                 width: 100%;
+                justify-items: center;
             }
             .appointment-actions {
                 margin-left: 0;
@@ -1017,26 +953,6 @@ function timeAgo($timestamp) {
                         <div class="stat-label">Active Clients</div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <a href="appointments/create.php" class="quick-action-btn">
-                    <span class="icon">➕</span>
-                    <span>New Appointment</span>
-                </a>
-                <a href="pets/create.php" class="quick-action-btn">
-                    <span class="icon">🐕</span>
-                    <span>Add Pet</span>
-                </a>
-                <a href="owners/create.php" class="quick-action-btn">
-                    <span class="icon">👤</span>
-                    <span>Add Owner</span>
-                </a>
-                <a href="medical/create.php" class="quick-action-btn">
-                    <span class="icon">📝</span>
-                    <span>Medical Record</span>
-                </a>
             </div>
 
             <!-- Dashboard Grid -->

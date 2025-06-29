@@ -62,7 +62,7 @@ $pageTitle = 'Sign Up - ' . SITE_NAME;
             --error: #EF4444;
             --success: #10B981;
             --gradient-primary: linear-gradient(135deg, var(--primary-teal) 0%, var(--primary-teal-light) 100%);
-            --gradient-overlay: linear-gradient(135deg, rgba(29, 186, 168, 0.9) 0%, rgba(45, 212, 196, 0.8) 100%);
+            --gradient-overlay: linear-gradient(135deg, rgba(29, 186, 168, 0.15) 0%, rgba(45, 212, 196, 0.15) 50%);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             --spacing-sm: 0.5rem;
@@ -158,6 +158,9 @@ $pageTitle = 'Sign Up - ' . SITE_NAME;
             font-size: 2rem;
             font-weight: 800;
             color: var(--white);
+            text-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.6),
+            0 0 20px rgba(0, 0, 0, 0.4);
         }
 
         .welcome-text h1 {
@@ -166,6 +169,9 @@ $pageTitle = 'Sign Up - ' . SITE_NAME;
             margin-bottom: var(--spacing-md);
             color: var(--white);
             line-height: 1.2;
+            text-shadow:
+            2px 2px 4px rgba(0, 0, 0, 0.8),
+            0 0 20px rgba(0, 0, 0, 0.6);
         }
 
         .welcome-text p {
@@ -173,6 +179,9 @@ $pageTitle = 'Sign Up - ' . SITE_NAME;
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: var(--spacing-xl);
             line-height: 1.6;
+            text-shadow:
+                1px 1px 3px rgba(0, 0, 0, 0.8),
+                0 0 15px rgba(0, 0, 0, 0.5);
         }
 
         /* ===== Right Side - Registration Form ===== */
@@ -183,6 +192,8 @@ $pageTitle = 'Sign Up - ' . SITE_NAME;
             justify-content: center;
             padding: var(--spacing-2xl);
             position: relative;
+            max-height: 100vh;
+            overflow-y: auto;
         }
 
         .register-form-container {
@@ -192,7 +203,7 @@ $pageTitle = 'Sign Up - ' . SITE_NAME;
 
         .register-header {
             text-align: center;
-            margin-bottom: var(--spacing-2xl);
+            margin-bottom: var(--spacing-lg);
         }
 
         .register-title {
@@ -213,18 +224,18 @@ $pageTitle = 'Sign Up - ' . SITE_NAME;
 
         /* ===== Form Styles ===== */
         .form-section {
-            margin-bottom: var(--spacing-2xl);
+            margin-bottom: var(--spacing-sm);
         }
 
         .section-title {
             font-size: 1.125rem;
             font-weight: 600;
             color: var(--gray-900);
-            margin-bottom: var(--spacing-lg);
+            margin-bottom: var(--spacing-sm);
         }
 
         .form-group {
-            margin-bottom: var(--spacing-lg);
+            margin-bottom: var(--spacing-sm);
         }
 
         .form-row {
