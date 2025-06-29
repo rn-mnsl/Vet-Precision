@@ -29,7 +29,18 @@ $stats['pending_appointments'] = $stmt->fetch()['count'];
 $stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE role = 'client' AND is_active = 1");
 $stats['total_clients'] = $stmt->fetch()['count'];
 
-// Get upcoming appointments
+// --- NEW: PAGINATION LOGIC FOR UPCOMING APPOINTMENTS ---
+$appointments_per_page = 5; // How many appointments to show per page
+$current_page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($current_page - 1) * $appointments_per_page;
+
+// First, get the total number of upcoming appointments for pagination controls
+$stmt_count = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE appointment_date >= CURDATE() AND status != 'cancelled'");
+$stmt_count->execute();
+$total_appointments = $stmt_count->fetchColumn();
+$total_pages = ceil($total_appointments / $appointments_per_page);
+
+// --- MODIFIED: Get paginated upcoming appointments ---
 $stmt = $pdo->prepare("
     SELECT 
         a.*,
@@ -44,8 +55,10 @@ $stmt = $pdo->prepare("
     WHERE a.appointment_date >= CURDATE()
     AND a.status != 'cancelled'
     ORDER BY a.appointment_date, a.appointment_time
-    LIMIT 10
+    LIMIT :limit OFFSET :offset
 ");
+$stmt->bindValue(':limit', $appointments_per_page, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $upcoming_appointments = $stmt->fetchAll();
 
@@ -404,6 +417,109 @@ function timeAgo($timestamp) {
             background: var(--light-color);
         }
 
+        /* --- MODIFICATION: Make the table wrapper overflow for large screens if needed --- */
+        .appointments-table-wrapper {
+            overflow-x: auto;
+        }
+        /* --- NEW: STYLES FOR THE RESPONSIVE APPOINTMENT LIST --- */
+        .appointments-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .appointment-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+            gap: 1.5rem;
+            flex-wrap: wrap; /* Allows wrapping on small screens */
+        }
+        .appointment-item:last-child {
+            border-bottom: none;
+        }
+        .appointment-item:hover {
+            background: var(--light-color);
+        }
+        .appointment-date {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(78, 205, 196, 0.1);
+            color: var(--secondary-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+            min-width: 80px;
+            text-align: center;
+        }
+        .appointment-date .day {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .appointment-date .month {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .appointment-details {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 columns for details */
+            gap: 0.5rem 1.5rem;
+            min-width: 250px; /* Prevents squishing */
+        }
+        .appointment-details .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+        .appointment-details .detail-value {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        .appointment-actions {
+            margin-left: auto;
+        }
+
+        /* --- NEW: PAGINATION STYLES --- */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            border-top: 1px solid var(--gray-light);
+        }
+        .pagination a, .pagination span {
+            padding: 0.6rem 1rem;
+            margin: 0 0.25rem;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all var(--transition-base);
+        }
+        .pagination a {
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid var(--gray-light);
+        }
+        .pagination a:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .pagination span.current {
+            background: var(--primary-color);
+            color: white;
+            border: 1px solid var(--primary-color);
+        }
+        .pagination span.disabled {
+            color: #aaa;
+            background-color: var(--light-color);
+            cursor: not-allowed;
+            border: 1px solid var(--gray-light);
+        }
+
         .pet-info {
             display: flex;
             flex-direction: column;
@@ -660,6 +776,46 @@ function timeAgo($timestamp) {
             margin-left: 0.5rem;
         }
 
+        /* --- NEW: Modal Edit Form Styles --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 columns by default for desktop */
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group-full {
+            grid-column: 1 / -1; /* This class makes an item span both columns */
+        }
+
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+        }
+
+        /* --- NEW: Alert message style for the modal form --- */
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border: 1px solid #f5c6cb;
+            border-radius: var(--radius-sm);
+        }
+
         /* Detail grid inside modal */
         .detail-grid {
             display: grid;
@@ -789,6 +945,26 @@ function timeAgo($timestamp) {
                 cursor: pointer;
                 font-size: 1.25rem;
             }
+
+            .appointment-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .appointment-details {
+                grid-template-columns: 1fr; /* Stack details in a single column */
+                width: 100%;
+            }
+            .appointment-actions {
+                margin-left: 0;
+                width: 100%;
+            }
+            .appointment-actions .btn {
+                width: 100%;
+            }
+            .form-grid {
+                grid-template-columns: 1fr; /* FORCES a single column layout on mobile */
+            }
         }
     </style>
 </head>
@@ -876,53 +1052,71 @@ function timeAgo($timestamp) {
                             <p>No upcoming appointments</p>
                         </div>
                     <?php else: ?>
-                        <table class="appointments-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Pet</th>
-                                    <th>Owner</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($upcoming_appointments as $appointment): ?>
-                                    <tr>
-                                        <td>
-                                            <div>
-                                                <div class="text-dark"><?php echo formatDate($appointment['appointment_date']); ?></div>
-                                                <div class="text-muted small"><?php echo formatTime($appointment['appointment_time']); ?></div>
+                        <!-- MODIFIED: Replaced table with a responsive list -->
+                        <div class="appointments-list">
+                            <?php foreach ($upcoming_appointments as $appointment): ?>
+                                <div class="appointment-item">
+                                    <div class="appointment-date">
+                                        <span class="day"><?php echo date('d', strtotime($appointment['appointment_date'])); ?></span>
+                                        <span class="month"><?php echo date('M', strtotime($appointment['appointment_date'])); ?></span>
+                                    </div>
+                                    <div class="appointment-details">
+                                        <div>
+                                            <div class="detail-label">Pet</div>
+                                            <div class="detail-value"><?php echo sanitize($appointment['pet_name']); ?></div>
+                                        </div>
+                                        <div>
+                                            <div class="detail-label">Owner</div>
+                                            <div class="detail-value"><?php echo sanitize($appointment['owner_name']); ?></div>
+                                        </div>
+                                        <div>
+                                            <div class="detail-label">Time</div>
+                                            <div class="detail-value"><?php echo formatTime($appointment['appointment_time']); ?></div>
+                                        </div>
+                                        <div>
+                                            <div class="detail-label">Status</div>
+                                            <div class="detail-value">
+                                                <span class="status-badge status-<?php echo $appointment['status']; ?>">
+                                                    <?php echo ucfirst($appointment['status']); ?>
+                                                </span>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <div class="pet-info">
-                                                <span class="pet-name"><?php echo sanitize($appointment['pet_name']); ?></span>
-                                                <span class="pet-species"><?php echo sanitize($appointment['species']); ?></span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div>
-                                                <div><?php echo sanitize($appointment['owner_name']); ?></div>
-                                                <div class="text-muted small"><?php echo sanitize($appointment['owner_phone']); ?></div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="status-badge status-<?php echo $appointment['status']; ?>">
-                                                <?php echo ucfirst($appointment['status']); ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button 
-                                                class="btn btn-sm btn-primary view-appointment-btn" 
-                                                data-id="<?php echo $appointment['appointment_id']; ?>">
-                                                View
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                                        </div>
+                                    </div>
+                                    <div class="appointment-actions">
+                                        <button 
+                                            class="btn btn-sm btn-primary view-appointment-btn" 
+                                            data-id="<?php echo $appointment['appointment_id']; ?>">
+                                            View Details
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        
+                        <!-- NEW: Pagination Controls -->
+                        <?php if ($total_pages > 1): ?>
+                        <nav class="pagination">
+                            <?php if ($current_page > 1): ?>
+                                <a href="?page=<?php echo $current_page - 1; ?>">Prev</a>
+                            <?php else: ?>
+                                <span class="disabled">Prev</span>
+                            <?php endif; ?>
+
+                            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                <?php if ($i == $current_page): ?>
+                                    <span class="current"><?php echo $i; ?></span>
+                                <?php else: ?>
+                                    <a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                                <?php endif; ?>
+                            <?php endfor; ?>
+
+                            <?php if ($current_page < $total_pages): ?>
+                                <a href="?page=<?php echo $current_page + 1; ?>">Next</a>
+                            <?php else: ?>
+                                <span class="disabled">Next</span>
+                            <?php endif; ?>
+                        </nav>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
 
@@ -1049,7 +1243,6 @@ function timeAgo($timestamp) {
                         <div class="form-group form-group-full"><label for="reason">Reason for Visit</label><input type="text" id="reason" name="reason" class="form-control" value="${details.reason || ''}"></div>
                         <div class="form-group form-group-full"><label for="notes">Staff Notes</label><textarea id="notes" name="notes" class="form-control" rows="3">${details.notes || ''}</textarea></div>
                     </div>
-                    <style>.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}.form-group-full{grid-column:1/-1;}.form-group{display:flex;flex-direction:column;}.form-group label{margin-bottom:0.5rem;font-weight:600;font-size:0.875rem;color:var(--text-light);}.form-control{width:100%;padding:0.75rem;border:1px solid var(--gray-light);border-radius:var(--radius-sm);font-size:1rem;}</style>
                 `;
 
                 editModeBtn.style.display = 'none';
@@ -1085,7 +1278,7 @@ function timeAgo($timestamp) {
             }
 
             // --- Event Listeners ---
-            document.querySelector('.appointments-table tbody').addEventListener('click', e => {
+            document.querySelector('.appointments-list').addEventListener('click', e => {
                 if (e.target && e.target.classList.contains('view-appointment-btn')) {
                     openModal(e.target.dataset.id);
                 }
