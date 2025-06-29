@@ -1,6 +1,14 @@
 <?php
 require_once '../../config/init.php';
-$pageTitle = 'Patients - ' . SITE_NAME;
+
+// Authentication & permissions
+if (session_status() == PHP_SESSION_NONE) session_start();
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'staff'])) {
+    header('Location: ../../login.php');
+    exit();
+}
+
+$pageTitle = 'Client Management - ' . SITE_NAME;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +20,29 @@ $pageTitle = 'Patients - ' . SITE_NAME;
     <link rel="stylesheet" href="../../assets/css/style.css">
     <?php include '../../includes/favicon.php'; ?>
     <style>
-        /* Dashboard specific styles */
+        /* CSS Variables */
+        :root {
+            --primary-color: #ff6b6b;
+            --primary-hover: #ff5252;
+            --secondary-color: #4ecdc4;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #2c3e50;
+            --light-color: #f8f9fa;
+            --gray-light: #e9ecef;
+            --text-dark: #2d3748;
+            --text-light: #6c757d;
+            --border-color: #dee2e6;
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --transition-base: all 0.2s ease-in-out;
+        }
+
         * {
             box-sizing: border-box;
         }
@@ -22,15 +52,18 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
         }
 
+        /* Dashboard Layout */
         .dashboard-layout {
             display: flex;
             min-height: 100vh;
             width: 100%;
         }
 
-        /* Sidebar */
+        /* Sidebar Styles */
         .sidebar {
             background: var(--dark-color);
             color: white;
@@ -43,186 +76,326 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             top: 0;
             overflow-y: auto;
             z-index: 1000;
-        }
-
-        .sidebar-header {
-            padding: 0 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            text-align: center;
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            margin-bottom: 1rem;
-        }
-
-        .sidebar-logo:hover {
-            color: white;
-            text-decoration: none;
-        }
-
-        .sidebar-user {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.7);
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 1.5rem 0;
-            margin: 0;
-        }
-
-        .sidebar-menu li {
-            margin-bottom: 0.25rem;
-        }
-
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem 1.5rem;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            transition: all var(--transition-base);
-        }
-
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border-left: 3px solid var(--primary-color);
-        }
-
-        .sidebar-menu .icon {
-            font-size: 1.25rem;
-            width: 1.5rem;
-            text-align: center;
+            transition: transform var(--transition-base);
         }
 
         /* Main Content */
         .main-content {
             flex: 1;
             margin-left: 250px;
-            padding: 20px;
+            padding: 2rem;
+            min-height: 100vh;
+            background: var(--light-color);
+            width: 600px;
         }
-        .main-content .container {
-            max-width: 1200px;
-            margin: 0 auto;
+
+        /* Page Header */
+        .page-header {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
         }
-        .main-content .header {
-            margin-bottom: 30px;
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0 0 0.5rem 0;
         }
-        .main-content .header h1 {
-            font-size: 28px;
-            margin-bottom: 5px;
+
+        .page-header p {
+            color: var(--text-light);
+            margin: 0;
+            font-size: 1rem;
         }
-        .main-content .controls {
+
+        /* Controls Section */
+        .controls-section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .controls-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            gap: 15px;
+            gap: 1.5rem;
         }
-        .search-filter {
-            display: flex;
-            gap: 10px;
+
+        .search-container {
             flex: 1;
-        }
-        .search-box {
+            max-width: 400px;
             position: relative;
-            flex: 1;
-            max-width: 300px;
         }
-        .search-box input {
+
+        .search-input {
             width: 100%;
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            transition: var(--transition-base);
+            background: var(--light-color);
         }
-        .search-box::before {
-            content: "🔍";
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+            background: white;
+        }
+
+        .search-icon {
             position: absolute;
-            left: 15px;
+            left: 0.75rem;
             top: 50%;
             transform: translateY(-50%);
-            color: #999;
+            color: var(--text-light);
+            font-size: 0.875rem;
         }
-        .filter-btn {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .action-buttons .btn {
-            padding: 10px 20px;
+
+        /* Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 6px;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-base);
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
+            white-space: nowrap;
         }
+
         .btn-primary {
             background: var(--primary-color);
             color: white;
         }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
         .btn-secondary {
             background: white;
-            border: 1px solid #ddd;
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
         }
-        .table-container {
+
+        .btn-secondary:hover {
+            background: var(--light-color);
+            border-color: var(--text-light);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Card Styles */
+        .card {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
             overflow: hidden;
         }
-        table {
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: white;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .card-body {
+            padding: 0;
+        }
+
+        /* Table Styles */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
             width: 100%;
             border-collapse: collapse;
+            margin: 0;
         }
-        th, td {
-            padding: 15px;
+
+        .table th {
+            background: var(--light-color);
+            padding: 1rem 1.5rem;
             text-align: left;
-            border-bottom: 1px solid #e9ecef;
-            font-size: 14px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
         }
-        .status.active {
-            background: #ffe6e6;
-            color: var(--primary-color);
-            padding: 4px 12px;
-            border-radius: 20px;
+
+        .table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+            font-size: 0.875rem;
+            vertical-align: middle;
         }
+
+        .table tbody tr:hover {
+            background: var(--light-color);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-inactive {
+            background: rgba(107, 114, 128, 0.1);
+            color: #6b7280;
+        }
+
+        /* Action Links */
         .action-links {
             display: flex;
-            gap: 15px;
+            gap: 0.75rem;
+            align-items: center;
         }
-        .action-links a {
+
+        .action-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
             text-decoration: none;
-            font-size: 12px;
+            transition: var(--transition-base);
         }
-        .action-links a.delete {
+
+        .action-edit {
             color: var(--primary-color);
+            background: rgba(255, 107, 107, 0.1);
         }
-        .pagination {
+
+        .action-edit:hover {
+            background: rgba(255, 107, 107, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .action-delete {
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .action-delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Pagination */
+        .pagination-container {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            background: white;
             display: flex;
             justify-content: space-between;
-            padding: 20px;
-            background: white;
-            font-size: 14px;
-            color: #666;
+            align-items: center;
         }
+
+        .pagination-info {
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .pagination-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--transition-base);
+        }
+
+        .pagination-link:hover:not(.disabled) {
+            background: var(--light-color);
+            border-color: var(--text-light);
+        }
+
+        .pagination-link.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .pagination-link.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: #999;
+            padding: 3rem 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--gray-light);
         }
 
         /* Modal Styles */
@@ -236,180 +409,274 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
         }
-        .modal.hidden {
-            display: none;
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
         }
-        .modal-overlay {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.4);
-        }
+
         .modal-content {
-            position: relative;
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            width: 500px;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .modal-content h2 {
-            margin-top: 0;
-        }
-        /* NEW: Form layout classes */
-        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
-        .form-group { flex: 1; }
-        .form-group label, .modal-content > label { display: block; margin-bottom: 5px; font-weight: 500; }
-        .modal-content label {
-            display: block;
-            margin-top: 15px;
-        }
-        .modal-content input,
-        .modal-content textarea,
-        .modal-content select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
         }
 
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
 
-        /* Pagination */
-        .pagination-controls {
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
-            justify-content: center; /* This centers the controls horizontally */
+            justify-content: space-between;
             align-items: center;
-            gap: 0.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e9ecef; /* Matching table border color */
         }
-        .pagination-link {
-            display: inline-flex; /* Helps center the icon */
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+            padding: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0.5rem 1rem;
-            text-decoration: none;
-            color: var(--primary-color); /* Make sure --primary-color is defined */
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            font-weight: 500;
-            min-width: 40px; /* Ensures consistent button size */
-            height: 40px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition-base);
         }
-        .pagination-link:hover {
-            background-color: #f5f5f5;
-            border-color: #ccc;
+
+        .modal-close:hover {
+            background: var(--light-color);
+            color: var(--text-dark);
         }
-        .pagination-link.active {
-            background-color: var(--primary-color);
-            color: white;
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            background: var(--light-color);
+        }
+
+        /* Form Styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            transition: var(--transition-base);
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
             border-color: var(--primary-color);
-            cursor: default;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
         }
-        .pagination-link.disabled {
-            color: #aaa;
+
+        .form-required {
+            color: var(--danger-color);
+        }
+
+        /* Loading State */
+        .loading {
+            position: relative;
             pointer-events: none;
-            background-color: #f8f9fa;
-            border-color: #e9ecef;
         }
 
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 1100; position: fixed; top: 0; height: 100vh; margin-top: 0; }
-            .main-content { margin-left: 0; }
-            body.sidebar-is-open .sidebar { transform: translateX(0); box-shadow: 0 0 20px rgba(0,0,0,0.25); }
-            body.sidebar-is-open .sidebar-overlay { opacity: 1; visibility: visible; }
-            .main-content { padding-top: 85px; } /* Space for fixed navbar */
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
-        /* For Mobile Phones */
+        @keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .main-content { padding: 15px; }
-            .main-content .header h1 { font-size: 24px; }
-            .controls { flex-direction: column; align-items: stretch; }
-            .search-box { max-width: none; }
-            .action-buttons .btn { width: 100%; }
-            .pagination { flex-direction: column; align-items: center; border-top: 1px solid #ddd; }
-            .form-row { flex-direction: column; gap: 0; margin-bottom: 0; }
-            .form-row .form-group { margin-bottom: 15px; }
-
-            /* =============================== */
-            /* === NEW RESPONSIVE TABLE STYLES === */
-            /* =============================== */
-
-            /* Remove the scroll container behavior */
-            .table-container {
-                overflow-x: hidden;
-                background: transparent;
-                box-shadow: none;
-                border-radius: 0;
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 1100;
             }
 
-            /* Hide the table header row */
-            #patientsTable thead {
+            body.sidebar-open .sidebar {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .search-container {
+                max-width: none;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table-responsive {
                 display: none;
             }
 
-            /* Make table elements block-level */
-            #patientsTable, #patientsTable tbody, #patientsTable tr, #patientsTable td {
+            .mobile-cards {
                 display: block;
-                width: 100%;
             }
 
-            /* Style each row as a card */
-            #patientsTable tr {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-                margin-bottom: 1rem;
-                padding: 0.5rem 1rem;
-                border-bottom: none; /* Remove original border */
+            .pagination-container {
+                flex-direction: column;
+                gap: 1rem;
             }
 
-            /* Style each cell */
-            #patientsTable td {
-                display: flex; /* Key for alignment */
-                justify-content: space-between; /* Pushes label and value apart */
-                align-items: center;
-                padding: 0.75rem 0;
-                border-bottom: 1px solid #f0f0f0;
-                text-align: right; /* Aligns cell value to the right */
-                white-space: normal; /* Allows long text to wrap */
-            }
-
-            #patientsTable tr td:last-child {
-                border-bottom: none; /* No border for the last cell in a card */
-            }
-
-            /* Use the data-label attribute to create a label */
-            #patientsTable td::before {
-                content: attr(data-label); /* The magic! */
-                font-weight: 500;
-                text-align: left;
-                margin-right: 1rem;
-                color: #333;
-            }
-
-            /* Special styling for the action links container */
-            #patientsTable td.action-links {
-                justify-content: flex-end; /* Align links to the right */
-                padding-top: 1rem;
-            }
-            #patientsTable td.action-links::before {
-                display: none; /* We don't need a label for "Actions" */
+            .pagination-controls {
+                justify-content: center;
             }
         }
 
+        .mobile-cards {
+            display: none;
+        }
+
+        .client-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .client-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .client-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .client-info {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .client-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .client-info-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .client-info-value {
+            font-size: 0.875rem;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .client-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-light);
+        }
+
+        @media (max-width: 768px) {
+            .table-responsive {
+                display: none;
+            }
+
+            .mobile-cards {
+                display: block;
+            }
+
+            .client-actions .btn {
+                flex: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -419,136 +686,165 @@ $pageTitle = 'Patients - ' . SITE_NAME;
         <?php include '../../includes/navbar.php'; ?>
         
         <main class="main-content">
-            <div class="container">
-                <div class="header">
-                    <h1>Patients Management</h1>
-                    <p>Manage your clients and their pets in one place</p>
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1><i class="fas fa-users"></i> Client Management</h1>
+                <p>Manage your clients and their information</p>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="controls-section">
+                <div class="controls-row">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search clients..." id="searchInput">
+                    </div>
+                    <button class="btn btn-primary" onclick="createClient()">
+                        <i class="fas fa-plus"></i>
+                        Add New Client
+                    </button>
+                </div>
+            </div>
+
+            <!-- Data Table Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-table"></i> Clients List</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Desktop Table -->
+                    <div class="table-responsive">
+                        <table class="table" id="patientsTable">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-user"></i> Name</th>
+                                    <th><i class="fas fa-envelope"></i> Email</th>
+                                    <th><i class="fas fa-circle"></i> Status</th>
+                                    <th><i class="fas fa-calendar"></i> Created</th>
+                                    <th><i class="fas fa-cog"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Table data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Cards -->
+                    <div class="mobile-cards" id="mobileCards">
+                        <!-- Mobile cards will be loaded here -->
+                    </div>
                 </div>
 
-                <div class="controls">
-                    <div class="search-filter">
-                        <div class="search-box">
-                            <input type="text" placeholder="Search..." id="searchInput">
-                        </div>
+                <!-- Pagination -->
+                <div class="pagination-container">
+                    <div class="pagination-info" id="paginationInfo">
+                        <!-- Pagination info will be updated here -->
                     </div>
-                    <div class="action-buttons">
-                        <button class="btn btn-primary" onclick="createClient()">Create Client</button>
-                    </div>
-                </div>
-
-                <div class="table-container">
-                    <table id="patientsTable">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Phone</th>
-                                <th>Email</th>
-                                <th>City</th>
-                                <th>Status</th>
-                                <th>Created At ↑</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody"></tbody>
-                    </table>
-                    <div class="pagination">
-                        <div class="pagination-info">
-                            <span></span>
-                            <span>Show</span>
-                            <select id="entriesPerPage" onchange="changeEntriesPerPage()">
-                                <option value="5">5</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
-                        <div id="pagination-controls">
-                            <!-- Pagination buttons will be generated here by JavaScript -->
-                        </div>
+                    <div class="pagination-controls" id="paginationControls">
+                        <!-- Pagination controls will be generated here -->
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-        <!-- Modal -->
-    <div id="clientModal" class="modal hidden">
-        <div class="modal-overlay" onclick="closeModal()"></div>
+    <!-- Modal -->
+    <div id="clientModal" class="modal">
         <div class="modal-content">
-            <h2 id="modalTitle">Add New Client</h2>
-            <form id="clientForm" novalidate>
-                <input type="hidden" name="user_id" id="user_id">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Client</h2>
+                <button type="button" class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="clientForm">
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" id="user_id">
 
-                <!-- MODIFIED: Using classes instead of inline style for responsiveness -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="first_name">First Name*</label>
-                        <input type="text" id="first_name" name="first_name" placeholder="Enter first name" required>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">
+                                First Name <span class="form-required">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter first name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                Last Name <span class="form-required">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter last name" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="last_name">Last Name*</label>
-                        <input type="text" id="last_name" name="last_name" placeholder="Enter last name" required>
+
+                    <div class="form-group form-group-full">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email address">
+                    </div>
+                    
+                    <div class="form-group form-group-full">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="phone" name="phone" placeholder="Enter phone number">
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-control" id="address" name="address" placeholder="Enter address">
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" id="city" name="city" placeholder="Enter city">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-control" id="is_active" name="is_active">
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter email">
-                </div>
                 
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="phone">Phone</label>
-                    <input type="text" id="phone" name="phone" placeholder="Enter phone number">
-                </div>
-
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="address">Address</label>
-                    <input type="text" id="address" name="address" placeholder="Enter address">
-                </div>
-
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="city">City</label>
-                    <input type="text" id="city" name="city" placeholder="Enter city">
-                </div>
-                
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label for="is_active">Status</label>
-                    <select id="is_active" name="is_active">
-                        <option value="1">Active</option>
-                        <option value="0">Inactive</option>
-                    </select>
-                </div>
-                
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="modalSubmitButton">Create Client</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="modalSubmitButton">
+                        <i class="fas fa-save"></i>
+                        <span id="submitButtonText">Create Client</span>
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-
-   <script>
-        // --- GLOBAL STATE & CONFIG ---
+    <script>
+        // Global state & config
         let currentPage = 1;
-        let entriesPerPage = 5;
+        const entriesPerPage = 10; // Fixed at 10 entries per page
         let totalRecords = 0;
-        let searchTimeout; // For debouncing search input
+        let searchTimeout;
 
         const API_URL = 'ajax/owners_handler.php';
 
-        // --- DOM ELEMENTS ---
+        // DOM elements
         const tableBody = document.getElementById('tableBody');
+        const mobileCards = document.getElementById('mobileCards');
         const searchInput = document.getElementById('searchInput');
-        const entriesPerPageSelect = document.getElementById('entriesPerPage');
-        const paginationControls = document.getElementById('pagination-controls');
+        const paginationControls = document.getElementById('paginationControls');
+        const paginationInfo = document.getElementById('paginationInfo');
         const clientModal = document.getElementById('clientModal');
         const clientForm = document.getElementById('clientForm');
         const modalTitle = document.getElementById('modalTitle');
         const modalSubmitButton = document.getElementById('modalSubmitButton');
+        const submitButtonText = document.getElementById('submitButtonText');
 
-        // --- DATA FETCHING & RENDERING ---
-
+        // Data fetching & rendering
         async function fetchPatients() {
             const searchTerm = searchInput.value;
             const url = new URL(API_URL, window.location.href);
@@ -558,6 +854,9 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             url.searchParams.append('search', searchTerm);
 
             try {
+                // Show loading state
+                tableBody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fas fa-spinner fa-spin"></i><br>Loading...</td></tr>`;
+                
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
@@ -565,110 +864,191 @@ $pageTitle = 'Patients - ' . SITE_NAME;
                 if (result.success) {
                     totalRecords = result.totalRecords;
                     renderTable(result.data);
+                    renderMobileCards(result.data);
                     updatePaginationInfo();
                     renderPaginationControls();
                 } else {
-                    alert('Error fetching data: ' + result.message);
-                    tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">${result.message}</td></tr>`;
+                    showError(result.message);
                 }
             } catch (error) {
                 console.error('Failed to fetch patients:', error);
-                tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">Error loading data. Please try again.</td></tr>`;
+                showError('Error loading data. Please try again.');
             }
         }
 
-        function renderTable(patients) {
-            if (patients.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px;">No patients found</td></tr>`;
-                return;
-            }
-            tableBody.innerHTML = patients.map(p => {
-                const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
-                const statusText = p.is_active == 1 ? 'Active' : 'Inactive';
-                const statusClass = p.is_active == 1 ? 'active' : 'inactive';
-                const createdAt = new Date(p.user_created_at).toLocaleDateString('en-CA');
+// Update the renderTable function (around line 950)
+function renderTable(patients) {
+    if (patients.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <br>No clients found
+                    <br><small>Try adjusting your search terms</small>
+                </td>
+            </tr>
+        `;
+        return;
+    }
 
-                // We add a `data-label` to each `<td>` for the responsive CSS to use
-                return `
-                    <tr>
-                        <td data-label="Name">${fullName || 'N/A'}</td>
-                        <td data-label="Phone">${p.phone || 'N/A'}</td>
-                        <td data-label="Email">${p.email || 'N/A'}</td>
-                        <td data-label="City">${p.city || 'N/A'}</td>
-                        <td data-label="Status"><span class="status ${statusClass}">${statusText}</span></td>
-                        <td data-label="Created At">${createdAt}</td>
-                        <td data-label="Actions" class="action-links">
-                            <a href="#" onclick="event.preventDefault(); editClient(${p.user_id})">Edit</a>
-                            <a href="#" class="delete" onclick="event.preventDefault(); deleteClient(${p.user_id})">Delete</a>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
+    tableBody.innerHTML = patients.map(p => {
+        const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+        const statusClass = p.is_active == 1 ? 'status-active' : 'status-inactive';
+        const statusText = p.is_active == 1 ? 'Active' : 'Inactive';
+        const createdAt = new Date(p.user_created_at).toLocaleDateString();
 
-        // --- PAGINATION & SEARCH ---
+        return `
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 2rem; height: 2rem; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.75rem;">
+                            ${(p.first_name?.[0] || '') + (p.last_name?.[0] || '')}
+                        </div>
+                        <span style="font-weight: 600;">${fullName || 'N/A'}</span>
+                    </div>
+                </td>
+                <td>${p.email || 'N/A'}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${createdAt}</td>
+                <td class="action-links">
+                    <a href="#" class="action-link action-edit" onclick="event.preventDefault(); editClient(${p.user_id})">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="#" class="action-link action-delete" onclick="event.preventDefault(); deleteClient(${p.user_id})">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
 
+// Update the renderMobileCards function to also remove phone from mobile view (around line 1000)
+function renderMobileCards(patients) {
+    if (patients.length === 0) {
+        mobileCards.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <br>No clients found
+                <br><small>Try adjusting your search terms</small>
+            </div>
+        `;
+        return;
+    }
+
+    mobileCards.innerHTML = patients.map(p => {
+        const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+        const statusClass = p.is_active == 1 ? 'status-active' : 'status-inactive';
+        const statusText = p.is_active == 1 ? 'Active' : 'Inactive';
+        const createdAt = new Date(p.user_created_at).toLocaleDateString();
+
+        return `
+            <div class="client-card">
+                <div class="client-card-header">
+                    <h3 class="client-name">${fullName || 'N/A'}</h3>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                
+                <div class="client-info">
+                    <div class="client-info-item">
+                        <span class="client-info-label">Email</span>
+                        <span class="client-info-value">${p.email || 'N/A'}</span>
+                    </div>
+                    <div class="client-info-item">
+                        <span class="client-info-label">Created</span>
+                        <span class="client-info-value">${createdAt}</span>
+                    </div>
+                </div>
+                
+                <div class="client-actions">
+                    <button class="btn btn-sm btn-primary" onclick="editClient(${p.user_id})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteClient(${p.user_id})">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+// Update the showError function to use the correct colspan (around line 1040)
+function showError(message) {
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="5" class="empty-state">
+                <i class="fas fa-exclamation-triangle" style="color: var(--danger-color);"></i>
+                <br>${message}
+            </td>
+        </tr>
+    `;
+    mobileCards.innerHTML = `
+        <div class="empty-state">
+            <i class="fas fa-exclamation-triangle" style="color: var(--danger-color);"></i>
+            <br>${message}
+        </div>
+    `;
+}
+
+        // Pagination functions
         function updatePaginationInfo() {
             const start = totalRecords === 0 ? 0 : (currentPage - 1) * entriesPerPage + 1;
             const end = Math.min(currentPage * entriesPerPage, totalRecords);
-            document.querySelector('.pagination-info span:first-child').textContent = `Showing ${start} to ${end} of ${totalRecords} entries`;
+            paginationInfo.textContent = `Showing ${start} to ${end} of ${totalRecords} entries`;
         }
 
         function renderPaginationControls() {
             const totalPages = Math.ceil(totalRecords / entriesPerPage);
-            paginationControls.innerHTML = ''; // Clear previous controls
-
+            
             if (totalPages <= 1) {
-                return; // No need for controls if there's only one page
+                paginationControls.innerHTML = '';
+                return;
             }
 
-            // Use an array to build the links, then join. It's cleaner.
             const links = [];
 
-            // Previous Page Link
-            const prevClass = (currentPage === 1) ? 'disabled' : '';
-            links.push(`<a href="#" class="pagination-link ${prevClass}" onclick="goToPage(${currentPage - 1}, event)"><i class="fas fa-chevron-left"></i></a>`);
+            // Previous button
+            const prevClass = currentPage === 1 ? 'disabled' : '';
+            links.push(`
+                <a href="#" class="pagination-link ${prevClass}" onclick="goToPage(${currentPage - 1}, event)">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            `);
 
-            // Page Number Links (Smart Ellipsis Logic)
-            const pagesToShow = 5;
-            let startPage = Math.max(1, currentPage - Math.floor(pagesToShow / 2));
-            let endPage = Math.min(totalPages, startPage + pagesToShow - 1);
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-            if (endPage - startPage + 1 < pagesToShow) {
-                startPage = Math.max(1, endPage - pagesToShow + 1);
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
             }
-            
-            if (startPage > 1) {
-                links.push(`<a href="#" class="pagination-link" onclick="goToPage(1, event)">1</a>`);
-                if (startPage > 2) {
-                    links.push(`<span class="pagination-link disabled">...</span>`);
-                }
-            }
-            
+
             for (let i = startPage; i <= endPage; i++) {
-                const activeClass = (i === currentPage) ? 'active' : '';
-                links.push(`<a href="#" class="pagination-link ${activeClass}" onclick="goToPage(${i}, event)">${i}</a>`);
+                const activeClass = i === currentPage ? 'active' : '';
+                links.push(`
+                    <a href="#" class="pagination-link ${activeClass}" onclick="goToPage(${i}, event)">
+                        ${i}
+                    </a>
+                `);
             }
 
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    links.push(`<span class="pagination-link disabled">...</span>`);
-                }
-                links.push(`<a href="#" class="pagination-link" onclick="goToPage(${totalPages}, event)">${totalPages}</a>`);
-            }
+            // Next button
+            const nextClass = currentPage === totalPages ? 'disabled' : '';
+            links.push(`
+                <a href="#" class="pagination-link ${nextClass}" onclick="goToPage(${currentPage + 1}, event)">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            `);
 
-            // Next Page Link
-            const nextClass = (currentPage === totalPages) ? 'disabled' : '';
-            links.push(`<a href="#" class="pagination-link ${nextClass}" onclick="goToPage(${currentPage + 1}, event)"><i class="fas fa-chevron-right"></i></a>`);
-            
             paginationControls.innerHTML = links.join('');
         }
 
         function goToPage(page, event) {
-            if (event) event.preventDefault(); // Prevent the link from navigating
-
-            // Do nothing if the link is disabled or it's the current page
-            if (page === currentPage || page < 1 || page > Math.ceil(totalRecords / entriesPerPage)) {
+            if (event) event.preventDefault();
+            
+            const totalPages = Math.ceil(totalRecords / entriesPerPage);
+            if (page === currentPage || page < 1 || page > totalPages) {
                 return;
             }
             
@@ -676,46 +1056,42 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             fetchPatients();
         }
 
-        function changeEntriesPerPage() {
-            entriesPerPage = parseInt(entriesPerPageSelect.value);
-            currentPage = 1;
-            fetchPatients();
-        }
-
         function handleSearch() {
             clearTimeout(searchTimeout);
-            // Debounce: wait 300ms after user stops typing before making the API call
             searchTimeout = setTimeout(() => {
                 currentPage = 1;
                 fetchPatients();
             }, 300);
         }
-        
-        // --- MODAL & FORM HANDLING (Largely unchanged, minor tweaks for clarity) ---
 
-        function openModal() { clientModal.classList.remove('hidden'); }
+        // Modal functions
+        function openModal() {
+            clientModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
         function closeModal() {
-            clientModal.classList.add('hidden');
+            clientModal.classList.remove('show');
+            document.body.style.overflow = '';
             clientForm.reset();
             clientForm.removeAttribute('data-editing-id');
         }
 
         function createClient() {
             clientForm.reset();
-            modalTitle.textContent = 'Add New Client';
-            modalSubmitButton.textContent = 'Create Client';
+            modalTitle.innerHTML = '<i class="fas fa-plus"></i> Add New Client';
+            submitButtonText.textContent = 'Create Client';
             document.getElementById('is_active').value = '1';
             openModal();
         }
 
         async function editClient(userId) {
-            // We fetch the latest data directly instead of relying on a potentially stale local copy
             const client = await getClientById(userId);
-            if (!client) return alert("Could not retrieve client data.");
+            if (!client) return showNotification("Could not retrieve client data.", 'error');
             
             clientForm.reset();
-            modalTitle.textContent = 'Edit Client';
-            modalSubmitButton.textContent = 'Save Changes';
+            modalTitle.innerHTML = '<i class="fas fa-edit"></i> Edit Client';
+            submitButtonText.textContent = 'Save Changes';
             
             document.getElementById('user_id').value = client.user_id;
             document.getElementById('first_name').value = client.first_name || '';
@@ -729,18 +1105,21 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             clientForm.setAttribute('data-editing-id', userId);
             openModal();
         }
-        
-        // Helper to get a single client's full details for the edit form
+
         async function getClientById(userId) {
-            // This is a simplified approach. In a real app, you might have a dedicated API endpoint `?action=get&id=...`
-            // For now, we'll just re-fetch the list and find the user.
-            const response = await fetch(`${API_URL}?action=fetch&search=&limit=${totalRecords || 1000}`);
-            const result = await response.json();
-            return result.success ? result.data.find(p => p.user_id === userId) : null;
+            try {
+                const response = await fetch(`${API_URL}?action=fetch&search=&limit=${totalRecords || 1000}`);
+                const result = await response.json();
+                return result.success ? result.data.find(p => p.user_id === userId) : null;
+            } catch (error) {
+                console.error('Error fetching client:', error);
+                return null;
+            }
         }
 
         async function deleteClient(userId) {
             if (!confirm("Are you sure you want to deactivate this client?")) return;
+            
             const formData = new FormData();
             formData.append('action', 'delete');
             formData.append('user_id', userId);
@@ -748,55 +1127,123 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: formData });
                 const result = await response.json();
-                alert(result.message);
+                
+                showNotification(result.message, result.success ? 'success' : 'error');
+                
                 if (result.success) {
-                    // If the last item on a page is deleted, go to the previous page
-                    if (tableBody.rows.length === 1 && currentPage > 1) {
+                    if (tableBody.children.length === 1 && currentPage > 1) {
                         currentPage--;
                     }
                     fetchPatients();
                 }
             } catch (error) {
                 console.error('Failed to delete client:', error);
-                alert('An error occurred. Please try again.');
+                showNotification('An error occurred. Please try again.', 'error');
             }
         }
-        
+
+        // Form submission
         clientForm.addEventListener('submit', async function (e) {
             e.preventDefault();
+            
             const formData = new FormData(clientForm);
             formData.append('action', clientForm.hasAttribute('data-editing-id') ? 'update' : 'create');
             
             if (!formData.get('first_name') || !formData.get('last_name')) {
-                return alert('First Name and Last Name are required.');
+                return showNotification('First Name and Last Name are required.', 'error');
             }
+
+            // Show loading state
+            modalSubmitButton.classList.add('loading');
             modalSubmitButton.disabled = true;
-            modalSubmitButton.textContent = 'Saving...';
+            submitButtonText.textContent = 'Saving...';
 
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: formData });
                 const result = await response.json();
-                alert(result.message);
+                
+                showNotification(result.message, result.success ? 'success' : 'error');
+                
                 if (result.success) {
                     closeModal();
                     fetchPatients();
                 }
             } catch (error) {
                 console.error('Form submission error:', error);
-                alert('An error occurred while saving.');
+                showNotification('An error occurred while saving.', 'error');
             } finally {
+                modalSubmitButton.classList.remove('loading');
                 modalSubmitButton.disabled = false;
+                submitButtonText.textContent = clientForm.hasAttribute('data-editing-id') ? 'Save Changes' : 'Create Client';
             }
         });
 
-        // --- INITIALIZATION ---
+        // Notification system
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                padding: 1rem 1.5rem;
+                border-radius: var(--radius-md);
+                color: white;
+                font-weight: 600;
+                z-index: 9999;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 20rem;
+                box-shadow: var(--shadow-lg);
+            `;
+            
+            if (type === 'success') {
+                notification.style.background = 'var(--success-color)';
+            } else if (type === 'error') {
+                notification.style.background = 'var(--danger-color)';
+            } else {
+                notification.style.background = 'var(--primary-color)';
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Animate out
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
 
-        
+        // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
             fetchPatients();
             searchInput.addEventListener('input', handleSearch);
+            
+            // Modal close on backdrop click
+            clientModal.addEventListener('click', (e) => {
+                if (e.target === clientModal) {
+                    closeModal();
+                }
+            });
+            
+            // Escape key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && clientModal.classList.contains('show')) {
+                    closeModal();
+                }
+            });
         });
 
+        // Mobile menu toggle
         document.addEventListener('DOMContentLoaded', function() {
             const hamburgerBtn = document.querySelector('.hamburger-menu');
             const overlay = document.querySelector('.sidebar-overlay');
@@ -805,17 +1252,16 @@ $pageTitle = 'Patients - ' . SITE_NAME;
             if (hamburgerBtn && body) {
                 hamburgerBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    body.classList.toggle('sidebar-is-open');
+                    body.classList.toggle('sidebar-open');
                 });
             }
             
             if (overlay && body) {
                 overlay.addEventListener('click', function() {
-                    body.classList.remove('sidebar-is-open');
+                    body.classList.remove('sidebar-open');
                 });
             }
         });
     </script>
-
 </body>
 </html>
