@@ -21,8 +21,8 @@ if ($isLocal) {
     define('DB_HOST', 'localhost');  // MySQL is on the same server
     define('DB_PORT', '3306');       // Default MySQL port
     define('DB_NAME', 'vet_precision');
-    define('DB_USER', 'vet_precision_user');     // You'll need to create this user
-    define('DB_PASS', 'VetPrecision2024Server!'); // Strong password for production
+    define('DB_USER', 'dev_team');     // You'll need to create this user
+    define('DB_PASS', 'VetPrecision2024!'); // Strong password for production
     define('DB_CHARSET', 'utf8mb4');
 }
 

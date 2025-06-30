@@ -417,6 +417,395 @@ $pageTitle = 'Appointments - ' . SITE_NAME;
             .form-actions .btn { width: 100%; text-align: center; }
             .view-controls { flex-direction: column; align-items: flex-start; }
         }
+        
+        /* Base responsive adjustments */
+@media (max-width: 1200px) {
+    .main-content {
+        padding: 1.5rem;
+    }
+    
+    .form-grid {
+        gap: 1rem 1.5rem;
+    }
+}
+
+@media (max-width: 992px) {
+    /* Sidebar and main layout adjustments */
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 1100;
+        position: fixed;
+        top: 0;
+        height: 100vh;
+        margin-top: 0;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding-top: 85px; /* Space for fixed navbar */
+        padding: 85px 1rem 1rem 1rem;
+    }
+    
+    body.sidebar-is-open .sidebar {
+        transform: translateX(0);
+        box-shadow: 0 0 20px rgba(0,0,0,0.25);
+    }
+    
+    body.sidebar-is-open .sidebar-overlay {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    /* Page header responsive */
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    /* Form grid becomes single column */
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    /* Calendar grid wrapper - hide on mobile, show agenda */
+    .calendar-grid-wrapper {
+        display: none;
+    }
+    
+    .agenda-view {
+        display: block;
+    }
+    
+    /* View controls stack vertically */
+    .view-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    /* Week navigation adjustments */
+    .week-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .week-navigation {
+        order: 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        padding: 85px 0.75rem 1rem 0.75rem;
+    }
+    
+    /* Page header mobile */
+    .page-header {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    /* Card padding reduction */
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Center wrapper adjustments */
+    .center-wrapper {
+        padding: 1rem;
+    }
+    
+    .form-container {
+        padding: 1rem;
+    }
+    
+    /* Form elements mobile optimization */
+    .form-grid > div {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Time slots grid mobile */
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .time-slot label {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Form actions mobile */
+    .form-actions {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Table responsive behavior */
+    .table thead {
+        display: none;
+    }
+    
+    .table,
+    .table tbody,
+    .table tr,
+    .table td {
+        display: block;
+        width: 100%;
+    }
+    
+    .table tr {
+        margin-bottom: 1rem;
+        border: 1px solid var(--gray-light);
+        border-radius: 8px;
+        padding: 1rem;
+        background: white;
+    }
+    
+    .table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0.5rem 0;
+        text-align: right;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .table td:last-child {
+        border-bottom: none;
+    }
+    
+    .table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-align: left;
+        margin-right: 1rem;
+        color: var(--text-dark);
+        flex-shrink: 0;
+    }
+    
+    /* Status badges mobile */
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+    }
+    
+    /* Buttons mobile */
+    .btn-sm {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Pagination mobile */
+    .pagination-controls {
+        gap: 0.25rem;
+        padding-top: 1rem;
+    }
+    
+    .pagination-link {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Week view mobile adjustments */
+    .week-title {
+        font-size: 1rem;
+    }
+    
+    .week-nav-btn {
+        padding: 0.4rem;
+    }
+    
+    /* Agenda view mobile optimization */
+    .agenda-day {
+        margin-bottom: 1rem;
+    }
+    
+    .agenda-day-header {
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .agenda-appointment-item {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+    
+    .agenda-appointment-item .time {
+        width: 70px;
+        font-size: 0.875rem;
+    }
+    
+    .agenda-appointment-item .details .pet-name {
+        font-size: 0.9rem;
+    }
+    
+    .agenda-appointment-item .details .reason-text {
+        font-size: 0.8rem;
+    }
+    
+    /* Modal mobile optimization */
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-header h3 {
+        font-size: 1.125rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-footer {
+        padding: 1rem;
+    }
+    
+    /* View toggle mobile */
+    .view-toggle {
+        width: 100%;
+    }
+    
+    .view-toggle-btn {
+        flex: 1;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding: 85px 0.5rem 1rem 0.5rem;
+    }
+    
+    /* Ultra-small screen adjustments */
+    .page-header {
+        padding: 0.75rem;
+    }
+    
+    .page-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .card {
+        padding: 0.75rem;
+    }
+    
+    .form-container {
+        padding: 0.75rem;
+    }
+    
+    /* Time slots ultra-mobile */
+    .time-slots-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .time-slot label {
+        padding: 0.4rem 0.2rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Table ultra-mobile */
+    .table tr {
+        padding: 0.75rem;
+    }
+    
+    .table td::before {
+        font-size: 0.875rem;
+    }
+    
+    /* Agenda ultra-mobile */
+    .agenda-appointment-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .agenda-appointment-item .time {
+        width: auto;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Modal ultra-mobile */
+    .modal-content {
+        width: 98%;
+        margin: 0.5rem;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 0.75rem;
+    }
+}
+
+/* Landscape orientation fixes for mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .main-content {
+        padding-top: 70px;
+    }
+    
+    .agenda-appointment-item {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .agenda-appointment-item .time {
+        width: 70px;
+        margin-bottom: 0;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .time-slot label,
+    .pagination-link,
+    .view-toggle-btn {
+        min-height: 44px; /* Apple's recommended touch target size */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .time-slot label {
+        min-height: 40px;
+    }
+    
+    .table td {
+        min-height: 44px;
+        align-items: center;
+    }
+}
     </style>
     
 </head>

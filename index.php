@@ -1053,16 +1053,221 @@
             transform: translateY(-2px);
         }
 
-        /* ===== Mobile Menu ===== */
-        .mobile-menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--gray-700);
-            cursor: pointer;
-            padding: var(--spacing-sm);
-        }
+/* ===== Mobile Menu Fixes ===== */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--gray-700);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    z-index: 1001;
+}
+
+/* Desktop nav links */
+.nav-links {
+    display: flex;
+    list-style: none;
+    gap: var(--spacing-xl);
+    align-items: center;
+    margin: 0;
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: block;
+        position: relative;
+    }
+
+    .mobile-menu-toggle span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: var(--gray-700);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        gap: 0;
+        padding: 1rem 0;
+        border-top: 1px solid var(--gray-200);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border-radius: 0 0 12px 12px;
+        z-index: 1000;
+    }
+
+    .nav-links.active {
+        display: flex;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    .nav-links li {
+        width: 100%;
+        margin: 0;
+    }
+
+    .nav-links a {
+        display: block;
+        padding: 1rem 1.5rem;
+        color: var(--gray-700);
+        font-weight: 500;
+        text-align: left;
+        border-bottom: 1px solid var(--gray-100);
+        transition: all 0.2s ease;
+        width: 100%;
+    }
+
+    .nav-links a:hover {
+        background: var(--gray-50);
+        color: var(--primary-teal);
+        padding-left: 2rem;
+    }
+
+    .nav-links a::after {
+        display: none; /* Remove underline animation on mobile */
+    }
+
+    /* Special styling for buttons in mobile menu */
+    .nav-links .btn {
+        margin: 0.5rem 1.5rem;
+        width: calc(100% - 3rem);
+        justify-content: center;
+        border-radius: var(--radius-lg);
+    }
+
+    .nav-links .btn-outline {
+        background: transparent;
+        border: 2px solid var(--primary-teal);
+        color: var(--primary-teal);
+    }
+
+    .nav-links .btn-outline:hover {
+        background: var(--primary-teal);
+        color: white;
+        padding-left: 1rem; /* Override the padding-left from general hover */
+    }
+
+    .nav-links .btn-primary {
+        background: var(--gradient-primary);
+        color: white;
+        border: none;
+    }
+
+    .nav-links .btn-primary:hover {
+        background: var(--primary-teal-dark);
+        padding-left: 1rem; /* Override the padding-left from general hover */
+    }
+
+    /* Last item should not have border */
+    .nav-links li:last-child a {
+        border-bottom: none;
+    }
+
+    /* Hamburger icon animation */
+    .mobile-menu-toggle {
+        width: 30px;
+        height: 24px;
+        position: relative;
+        cursor: pointer;
+        font-size: 0;
+    }
+
+    .mobile-menu-toggle::before,
+    .mobile-menu-toggle::after,
+    .mobile-menu-toggle {
+        background: var(--gray-700);
+    }
+
+    .mobile-menu-toggle::before,
+    .mobile-menu-toggle::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-menu-toggle::before {
+        top: 0;
+    }
+
+    .mobile-menu-toggle::after {
+        bottom: 0;
+    }
+
+    .mobile-menu-toggle span {
+        display: block;
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 100%;
+        height: 3px;
+        background: var(--gray-700);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    /* Active hamburger (X) state */
+    .mobile-menu-toggle.active::before {
+        top: 50%;
+        transform: translateY(-50%) rotate(45deg);
+    }
+
+    .mobile-menu-toggle.active::after {
+        bottom: 50%;
+        transform: translateY(50%) rotate(-45deg);
+    }
+
+    .mobile-menu-toggle.active span {
+        opacity: 0;
+        transform: translateY(-50%) scale(0);
+    }
+}
+
+/* Slide down animation */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ensure mobile menu works on smaller screens */
+@media (max-width: 480px) {
+    .navbar-container {
+        padding: 0 var(--spacing-md);
+    }
+
+    .nav-links a {
+        padding: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .nav-links .btn {
+        margin: 0.5rem 1rem;
+        width: calc(100% - 2rem);
+        font-size: 0.9rem;
+    }
+}
 
         /* ===== Responsive Design ===== */
         @media (max-width: 1024px) {
@@ -1294,9 +1499,14 @@
                     <li><a href="#reviews">Reviews</a></li>
                     <li><a href="#contact">Contact</a></li>
                     <li><a href="login.php" class="btn btn-outline btn-sm">Login</a></li>
-                    <li><a href="register.php" class="btn btn-primary btn-sm">Book Now</a></li>
+                    <li><a href="register.php" class="btn btn-primary btn-sm">Register</a></li>
                 </ul>
-                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+<!-- Replace the existing mobile menu button -->
+<button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
             </div>
         </nav>
 
