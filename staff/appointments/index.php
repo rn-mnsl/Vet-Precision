@@ -21,26 +21,80 @@ $preselected_pet_id = null;
 $preselected_owner_name = 'Select a client';
 $preselected_pet_name = 'Select a client first';
 
-if ($action === 'create' && isset($_GET['owner_id']) && isset($_GET['pet_id'])) {
-    try {
-        $stmt_preselect = $pdo->prepare("
-            SELECT o.owner_id, p.pet_id, CONCAT(u.first_name, ' ', u.last_name) as owner_name, p.name as pet_name
-            FROM pets p
-            JOIN owners o ON p.owner_id = o.owner_id
-            JOIN users u ON o.user_id = u.user_id
-            WHERE p.pet_id = ? AND o.owner_id = ?
-        ");
-        $stmt_preselect->execute([$_GET['pet_id'], $_GET['owner_id']]);
-        $preselect_data = $stmt_preselect->fetch(PDO::FETCH_ASSOC);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_appointment'])) {
+    $owner_id = $_POST['owner_id'] ?? '';
+    $pet_id = $_POST['pet_id'] ?? '';
+    $appointment_date = $_POST['appointment_date'] ?? '';
+    $appointment_time = $_POST['appointment_time'] ?? '';
+    $reason = trim($_POST['reason'] ?? '');
+    $notes = trim($_POST['notes'] ?? '');
 
-        if ($preselect_data) {
-            $preselected_owner_id = $preselect_data['owner_id'];
-            $preselected_pet_id = $preselect_data['pet_id'];
-            $preselected_owner_name = $preselect_data['owner_name'];
-            $preselected_pet_name = $preselect_data['pet_name'];
+    if (empty($owner_id)) $errors[] = "A client must be selected.";
+    if (empty($pet_id)) $errors[] = "A pet must be selected.";
+    if (empty($appointment_date)) $errors[] = "Please select a date.";
+    if (empty($appointment_time)) $errors[] = "Please select a time slot.";
+    if (empty($reason)) $errors[] = "Please provide a reason for the visit.";
+
+    if (empty($errors)) {
+        try {
+            // 1. This part remains the same: Insert the new appointment
+            $sql = "INSERT INTO appointments (pet_id, appointment_date, appointment_time, duration_minutes, status, type, reason, notes, created_by) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $pdo->prepare($sql);
+            // Note: I removed the NOW() placeholders as your table likely handles them automatically. If not, add them back.
+            $stmt->execute([$pet_id, $appointment_date, $appointment_time, 30, 'confirmed', 'Checkup', $reason, $notes, $logged_in_staff_id]);
+            
+            // --- 2. [NEW] ADD THIS BLOCK TO FETCH DETAILS AND SEND THE EMAIL ---
+            // We need the client's email and name, and the pet's name for the notification.
+            // The $owner_id is from the form post, which we get from the hidden input.
+            $stmt_details = $pdo->prepare("
+                SELECT u.email, u.first_name, p.name as pet_name
+                FROM users u
+                JOIN owners o ON u.user_id = o.user_id
+                JOIN pets p ON p.owner_id = o.owner_id
+                WHERE o.owner_id = :owner_id AND p.pet_id = :pet_id
+            ");
+            $stmt_details->execute([':owner_id' => $owner_id, ':pet_id' => $pet_id]);
+            $details = $stmt_details->fetch(PDO::FETCH_ASSOC);
+
+            // 3. Check if we found the details, then construct and send the email
+            if ($details) {
+                $site_name = defined('SITE_NAME') ? SITE_NAME : 'Vet Precision';
+                $subject = "New Appointment Scheduled: " . htmlspecialchars($details['pet_name']);
+                $formatted_date = date("l, F j, Y", strtotime($appointment_date));
+                $formatted_time = date("g:i A", strtotime($appointment_time));
+                
+                $email_body = "<html><body>
+                    <p>Dear " . htmlspecialchars($details['first_name']) . ",</p>
+                    <p>Our staff has scheduled and confirmed a new appointment for your pet, <strong>" . htmlspecialchars($details['pet_name']) . "</strong>.</p>
+                    <p><strong>Date:</strong> " . $formatted_date . "</p>
+                    <p><strong>Time:</strong> " . $formatted_time . "</p>
+                    <p>If this time does not work for you or if you have any questions, please contact our clinic.</p>
+                    <p>Sincerely,<br>The " . $site_name . " Team</p>
+                </body></html>";
+                $alt_body = "A new appointment has been scheduled for {$details['pet_name']} on {$formatted_date} at {$formatted_time}.";
+                
+                // Use the function from init.php
+                sendClientNotification($details['email'], $subject, $email_body, $alt_body);
+
+                // Update the success message to reflect that the email was sent
+                $_SESSION['success_message'] = 'Appointment created successfully and the client has been notified.';
+
+            } else {
+                // This is a fallback in case the email details couldn't be found
+                $_SESSION['success_message'] = 'Appointment created, but the email notification failed to send. Please check logs.';
+                error_log("Staff Create Appointment Email Failed: Could not fetch details for owner_id {$owner_id} or pet_id {$pet_id}.");
+            }
+            // --- END OF NEW EMAIL BLOCK ---
+
+            // 4. Redirect after everything is done
+            header('Location: index.php?view=' . $view);
+            exit();
+
+        } catch (PDOException $e) { 
+            error_log("Staff Create Appointment DB Error: " . $e->getMessage());
+            $errors[] = "A database error occurred. Could not create the appointment."; 
         }
-    } catch (PDOException $e) {
-        $errors[] = "Could not load pre-selected data.";
     }
 }
 
