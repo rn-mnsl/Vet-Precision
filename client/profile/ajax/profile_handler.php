@@ -1,7 +1,7 @@
 <?php
 require_once '../../../config/init.php';
 
-// Security: Ensure a user is logged in before proceeding.
+// Ensure the user is logged in before proceeding
 if (!isset($_SESSION['user_id'])) {
     header('Content-Type: application/json');
     http_response_code(401); // Unauthorized
@@ -11,19 +11,18 @@ if (!isset($_SESSION['user_id'])) {
 
 header('Content-Type: application/json');
 $action = $_REQUEST['action'] ?? null;
-$userId = $_SESSION['user_id']; // Use the secure session ID
+$userId = $_SESSION['user_id']; // Get user ID from the session for security
 
 try {
     switch ($action) {
         case 'fetch':
-            fetch_staff_profile($pdo, $userId);
+            fetch_profile($pdo, $userId);
             break;
         case 'update':
-            update_staff_profile($pdo, $userId);
+            update_profile($pdo, $userId);
             break;
         case 'change_password':
-            // The password change logic is identical for all users, so we can reuse it.
-            change_user_password($pdo, $userId);
+            change_password($pdo, $userId);
             break;
         default:
             throw new Exception('Invalid action specified.');
@@ -34,49 +33,69 @@ try {
 }
 
 /**
- * Fetches the logged-in staff member's profile data from the 'users' table.
+ * Fetches the logged-in user's profile data.
  */
-function fetch_staff_profile($pdo, $userId) {
-    // This query is simpler: it only needs the users table.
+function fetch_profile($pdo, $userId) {
     $stmt = $pdo->prepare("
-        SELECT user_id, email, first_name, last_name
-        FROM users
-        WHERE user_id = ?
+        SELECT 
+            u.user_id, u.email, u.first_name, u.last_name,
+            o.phone, o.address, o.city
+        FROM users u
+        LEFT JOIN owners o ON u.user_id = o.user_id
+        WHERE u.user_id = ?
     ");
     $stmt->execute([$userId]);
     $profile = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$profile) {
-        throw new Exception('Staff profile not found.');
+        throw new Exception('Profile not found.');
     }
 
     echo json_encode(['success' => true, 'data' => $profile]);
 }
 
 /**
- * Updates the staff member's personal information in the 'users' table.
+ * Updates the user's personal information.
  */
-function update_staff_profile($pdo, $userId) {
+function update_profile($pdo, $userId) {
+    // Collect data from POST request
     $firstName = $_POST['first_name'] ?? '';
     $lastName = $_POST['last_name'] ?? '';
+    $phone = $_POST['phone'] ?? '';
+    $address = $_POST['address'] ?? '';
+    $city = $_POST['city'] ?? '';
 
-    $stmt = $pdo->prepare("UPDATE users SET first_name = ?, last_name = ? WHERE user_id = ?");
-    $stmt->execute([$firstName, $lastName, $userId]);
+    $pdo->beginTransaction();
+
+    // 1. Update the 'users' table
+    $stmtUser = $pdo->prepare("UPDATE users SET first_name = ?, last_name = ? WHERE user_id = ?");
+    $stmtUser->execute([$firstName, $lastName, $userId]);
+
+    // 2. Insert or Update the 'owners' table.
+    // This is robust: it creates the owner record if it doesn't exist,
+    // or updates it if it does. Requires `user_id` to be a UNIQUE key in `owners`.
+    $stmtOwner = $pdo->prepare("
+        INSERT INTO owners (user_id, phone, address, city) 
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE phone = VALUES(phone), address = VALUES(address), city = VALUES(city)
+    ");
+    $stmtOwner->execute([$userId, $phone, $address, $city]);
+
+    $pdo->commit();
 
     echo json_encode(['success' => true, 'message' => 'Profile updated successfully!']);
 }
 
 /**
- * Changes any user's password after verifying the current one.
- * (This function is generic and can be used by both clients and staff).
+ * Changes the user's password after verifying the current one.
  */
-function change_user_password($pdo, $userId) {
+function change_password($pdo, $userId) {
     $currentPassword = $_POST['current_password'] ?? '';
     $newPassword = $_POST['new_password'] ?? '';
     $confirmPassword = $_POST['confirm_password'] ?? '';
 
-    if (empty($currentPassword) || empty($newPassword)) {
-        throw new Exception('Current and new password fields are required.');
+    if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+        throw new Exception('All password fields are required.');
     }
     if ($newPassword !== $confirmPassword) {
         throw new Exception('New passwords do not match.');
@@ -85,14 +104,17 @@ function change_user_password($pdo, $userId) {
         throw new Exception('Password must be at least 8 characters long.');
     }
 
+    // Fetch the current hashed password from the DB
     $stmt = $pdo->prepare("SELECT password FROM users WHERE user_id = ?");
     $stmt->execute([$userId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    // Verify the current password
     if (!$user || !password_verify($currentPassword, $user['password'])) {
         throw new Exception('Incorrect current password.');
     }
 
+    // Hash the new password and update the database
     $newHashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
     $updateStmt = $pdo->prepare("UPDATE users SET password = ? WHERE user_id = ?");
     $updateStmt->execute([$newHashedPassword, $userId]);
